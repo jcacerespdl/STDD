@@ -1,0 +1,26 @@
+<?php
+include_once("conexion/conexion.php");
+session_start();
+
+$iCodTramite = $_GET['iCodTramite'] ?? null;
+$archivo = $_GET['archivo'] ?? null;
+
+if (!$iCodTramite || !$archivo) {
+    die("Datos incompletos.");
+}
+
+$ruta = __DIR__ . "/cAlmacenArchivos/" . $archivo;
+
+// Borrar archivo del servidor
+if (file_exists($ruta)) {
+    unlink($ruta);
+}
+
+// Borrar registro de la base de datos
+$sql = "DELETE FROM Tra_M_Tramite_Digitales WHERE iCodTramite = ? AND cDescripcion = ?";
+$params = [$iCodTramite, $archivo];
+$stmt = sqlsrv_query($cnx, $sql, $params);
+
+header("Location: registroOficinaEditor.php?iCodTramite=" . urlencode($iCodTramite));
+exit;
+?>
