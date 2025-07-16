@@ -222,3 +222,36 @@
 [2025-07-10 15:36:17] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 158023 bytes (155 KiB) |  | Creating archive: C:\AppServ\www\SGD\principal_561533_.7z |  | Add new data to archive: 1 file, 158023 bytes (155 KiB) |  |  | Files read from disk: 1 | Archive size: 141276 bytes (138 KiB) | Everything is Ok
 [2025-07-10 15:36:17] 🔁 Código salida: 0
 [2025-07-10 15:36:17] ✅ ZIP generado correctamente: C:\AppServ\www\SGD\principal_561533_.7z
+[2025-07-14 09:42:30] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\SGD\principal_561542_.7z" "C:\Windows\TEMP/firma_principal_68751756929ca\NOTA-INFORMATIVA-00012-2025_AAF_UF_SAT_DAADYT_HEVES(E).pdf"
+[2025-07-14 09:42:30] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 156500 bytes (153 KiB) |  | Creating archive: C:\AppServ\www\SGD\principal_561542_.7z |  | Add new data to archive: 1 file, 156500 bytes (153 KiB) |  |  | Files read from disk: 1 | Archive size: 138961 bytes (136 KiB) | Everything is Ok
+[2025-07-14 09:42:30] 🔁 Código salida: 0
+[2025-07-14 09:42:30] ✅ ZIP generado correctamente: C:\AppServ\www\SGD\principal_561542_.7z
+[2025-07-14 09:43:24] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\SGD\principal_561543_.7z" "C:\Windows\TEMP/firma_principal_6875178c32598\NOTA-INFORMATIVA-00040-2025_UTI_HEVES(e).pdf"
+[2025-07-14 09:43:24] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 153234 bytes (150 KiB) |  | Creating archive: C:\AppServ\www\SGD\principal_561543_.7z |  | Add new data to archive: 1 file, 153234 bytes (150 KiB) |  |  | Files read from disk: 1 | Archive size: 136565 bytes (134 KiB) | Everything is Ok
+[2025-07-14 09:43:24] 🔁 Código salida: 0
+[2025-07-14 09:43:24] ✅ ZIP generado correctamente: C:\AppServ\www\SGD\principal_561543_.7z
+[2025-07-14 09:44:53] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\SGD\principal_561543_.7z" "C:\Windows\TEMP/firma_principal_687517e5a0f91\NOTA-INFORMATIVA-00040-2025_UTI_HEVES(e).pdf"
+[2025-07-14 09:44:53] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 153239 bytes (150 KiB) |  | Creating archive: C:\AppServ\www\SGD\principal_561543_.7z |  | Add new data to archive: 1 file, 153239 bytes (150 KiB) |  |  | Files read from disk: 1 | Archive size: 136554 bytes (134 KiB) | Everything is Ok
+[2025-07-14 09:44:53] 🔁 Código salida: 0
+[2025-07-14 09:44:53] ✅ ZIP generado correctamente: C:\AppServ\www\SGD\principal_561543_.7z
+[2025-07-14 10:01:43] 🧹 ZIP anterior eliminado: C:\AppServ\www\SGD\principal_561543_.7z
+[2025-07-14 10:01:43] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\SGD\principal_561543_.7z" "C:\Windows\TEMP/firma_principal_68751bd7c3039\NOTA-INFORMATIVA-00040-2025_UTI_HEVES(e).pdf"
+[2025-07-14 10:01:43] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 153239 bytes (150 KiB) |  | Creating archive: C:\AppServ\www\SGD\principal_561543_.7z |  | Add new data to archive: 1 file, 153239 bytes (150 KiB) |  |  | Files read from disk: 1 | Archive size: 136554 bytes (134 KiB) | Everything is Ok
+[2025-07-14 10:01:43] 🔁 Código salida: 0
+[2025-07-14 10:01:43] ✅ ZIP generado correctamente: C:\AppServ\www\SGD\principal_561543_.7z
+[2025-07-14 12:02:07] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\SGD\principal_561544_.7z" "C:\Windows\TEMP/firma_principal_6875380fb53ec\NOTA-INFORMATIVA-00013-2025_AAF_UF_SAT_DAADYT_HEVES(E).pdf"
+[2025-07-14 12:02:07] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 158341 bytes (155 KiB) |  | Creating archive: C:\AppServ\www\SGD\principal_561544_.7z |  | Add new data to archive: 1 file, 158341 bytes (155 KiB) |  |  | Files read from disk: 1 | Archive size: 140792 bytes (138 KiB) | Everything is Ok
+[2025-07-14 12:02:07] 🔁 Código salida: 0
+[2025-07-14 12:02:07] ✅ ZIP generado correctamente: C:\AppServ\www\SGD\principal_561544_.7z
+[2025-07-14 12:09:34] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\SGD\principal_561545_.7z" "C:\Windows\TEMP/firma_principal_687539ce37531\NOTA-INFORMATIVA-REQUERIMIENTO-00001-2025_UF_SAT_DAADYT_HEVES(E).pdf"
+[2025-07-14 12:09:34] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 231776 bytes (227 KiB) |  | Creating archive: C:\AppServ\www\SGD\principal_561545_.7z |  | Add new data to archive: 1 file, 231776 bytes (227 KiB) |  |  | Files read from disk: 1 | Archive size: 214716 bytes (210 KiB) | Everything is Ok
+[2025-07-14 12:09:34] 🔁 Código salida: 0
+[2025-07-14 12:09:34] ✅ ZIP generado correctamente: C:\AppServ\www\SGD\principal_561545_.7z
+[2025-07-14 12:46:26] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\SGD\principal_561552_.7z" "C:\Windows\TEMP/firma_principal_68754272d8fed\NOTA-INFORMATIVA-00001-2025_AC_OPP_HEVES(E).pdf"
+[2025-07-14 12:46:26] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 220970 bytes (216 KiB) |  | Creating archive: C:\AppServ\www\SGD\principal_561552_.7z |  | Add new data to archive: 1 file, 220970 bytes (216 KiB) |  |  | Files read from disk: 1 | Archive size: 204647 bytes (200 KiB) | Everything is Ok
+[2025-07-14 12:46:26] 🔁 Código salida: 0
+[2025-07-14 12:46:26] ✅ ZIP generado correctamente: C:\AppServ\www\SGD\principal_561552_.7z
+[2025-07-14 12:49:27] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\SGD\principal_561553_.7z" "C:\Windows\TEMP/firma_principal_6875432790b50\MEMORANDUM-00001-2025_OPP_HEVES(E).pdf"
+[2025-07-14 12:49:27] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 155174 bytes (152 KiB) |  | Creating archive: C:\AppServ\www\SGD\principal_561553_.7z |  | Add new data to archive: 1 file, 155174 bytes (152 KiB) |  |  | Files read from disk: 1 | Archive size: 138084 bytes (135 KiB) | Everything is Ok
+[2025-07-14 12:49:27] 🔁 Código salida: 0
+[2025-07-14 12:49:27] ✅ ZIP generado correctamente: C:\AppServ\www\SGD\principal_561553_.7z

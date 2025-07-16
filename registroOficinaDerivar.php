@@ -136,28 +136,28 @@ foreach ($itemsManual as $registro) {
 
                 // Buscar delegado previo
                // Buscar delegado si la oficina actual ya recibió este trámite antes y fue delegado
-$iCodTrabajadorDelegado = null;
-$fFecDelegado = null;
-$iCodIndicacionDelegado = null;
+                $iCodTrabajadorDelegado = null;
+                $fFecDelegado = null;
+                $iCodIndicacionDelegado = null;
 
-$sqlDelegado = "SELECT TOP 1 
-        tm.iCodTrabajadorDelegado,
-        tm.fFecDelegado,
-        tm.iCodIndicacionDelegado
-    FROM Tra_M_Tramite_Movimientos tm
-    JOIN Tra_M_Tramite_Movimientos origen ON tm.iCodMovimiento = origen.iCodMovimientoDerivo
-    WHERE tm.iCodOficinaDerivar = ? -- oficina actual
-      AND origen.iCodMovimiento = ? -- movimiento anterior
-      AND tm.iCodTrabajadorDelegado IS NOT NULL";
+                $sqlDelegado = "SELECT TOP 1 
+                        tm.iCodTrabajadorDelegado,
+                        tm.fFecDelegado,
+                        tm.iCodIndicacionDelegado
+                    FROM Tra_M_Tramite_Movimientos tm
+                    JOIN Tra_M_Tramite_Movimientos origen ON tm.iCodMovimiento = origen.iCodMovimientoDerivo
+                    WHERE tm.iCodOficinaDerivar = ? -- oficina actual
+                    AND origen.iCodMovimiento = ? -- movimiento anterior
+                    AND tm.iCodTrabajadorDelegado IS NOT NULL";
 
-$stmtDelegado = sqlsrv_query($cnx, $sqlDelegado, [$iCodOficinaDerivar, $iCodMovimientoDerivo]);
-$rowDelegado = sqlsrv_fetch_array($stmtDelegado, SQLSRV_FETCH_ASSOC);
+                $stmtDelegado = sqlsrv_query($cnx, $sqlDelegado, [$iCodOficinaDerivar, $iCodMovimientoDerivo]);
+                $rowDelegado = sqlsrv_fetch_array($stmtDelegado, SQLSRV_FETCH_ASSOC);
 
-if ($rowDelegado) {
-    $iCodTrabajadorDelegado = $rowDelegado['iCodTrabajadorDelegado'];
-    $fFecDelegado = date('Y-m-d H:i:s');
-        $iCodIndicacionDelegado = $rowDelegado['iCodIndicacionDelegado'] ?? 1;
-}
+                if ($rowDelegado) {
+                    $iCodTrabajadorDelegado = $rowDelegado['iCodTrabajadorDelegado'];
+                    $fFecDelegado = date('Y-m-d H:i:s');
+                        $iCodIndicacionDelegado = $rowDelegado['iCodIndicacionDelegado'] ?? 1;
+                }
 
                 // fin buscar delegado previo 
 

@@ -97,6 +97,7 @@ $cTipoActual = $documento['cTipoComplementario'] ?? null;
             <option value="3" <?= $cTipoActual == 3 ? 'selected' : '' ?>>Solicitud de Crédito Presupuestario</option>
             <option value="4" <?= $cTipoActual == 4 ? 'selected' : '' ?>>Aprobación de Crédito Presupuestario</option>
             <option value="5" <?= $cTipoActual == 5 ? 'selected' : '' ?>>Orden de Servicio</option>
+            <option value="6" <?= $cTipoActual == 6 ? 'selected' : '' ?>>Orden de Compra</option>
         </select>
 
         <button type="submit" name="guardar">Guardar y Asignar Firmantes</button>
@@ -229,6 +230,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['guardar'])) {
 
             asignarFirmanteFijo($cnx, $iCodTramite, $iCodDigital, 3, $iCodOficinaPadreGeneradora, 1, 'Z');
             break;
+        case 6: // Orden de Compra
+                asignarFirmantePorPerfil($cnx, $iCodTramite, $iCodDigital, 4, 3, 0, 'W'); // Profesional adquisiciones (VB)
+                asignarFirmanteFijo($cnx, $iCodTramite, $iCodDigital, 3, 3, 1, 'X');       // Jefe adquisiciones
+                asignarFirmanteFijo($cnx, $iCodTramite, $iCodDigital, 3, 112, 1, 'Y');     // Jefe logística
+                asignarFirmanteFijo($cnx, $iCodTramite, $iCodDigital, 3, 4, 1, 'Z');      // Jefe almacén
+                break;
     }
 
     echo "<script>alert('Firmantes asignados correctamente.'); window.close();</script>";

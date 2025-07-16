@@ -73,7 +73,8 @@ GROUP BY
     "2" => 0,
     "3" => 0,
     "4" => 0,
-    "5" => 0
+    "5" => 0,
+    "6" => 0,
 ];
 $stmtResumen = sqlsrv_query($cnx, $sqlResumen, [$iCodTrabajador]);
 if ($stmtResumen) {
@@ -103,9 +104,11 @@ if ($stmtResumen) {
                 <optgroup label="DOCUMENTOS COMPLEMENTARIOS de REQUERIMIENTO">
                     <option value="1" <?= $filtroTipoComplementario === "1" ? 'selected' : '' ?>>Pedido SIGA</option>
                     <option value="2" <?= $filtroTipoComplementario === "2" ? 'selected' : '' ?>>TDR o ETT</option>
-                    <option value="3" <?= $filtroTipoComplementario === "3" ? 'selected' : '' ?>>Solicitud de crédito</option>
-                    <option value="4" <?= $filtroTipoComplementario === "4" ? 'selected' : '' ?>>Aprobación de crédito</option>
+                    <option value="3" <?= $filtroTipoComplementario === "3" ? 'selected' : '' ?>>Solicitud de Crédito Presupuestario</option>
+                    <option value="4" <?= $filtroTipoComplementario === "4" ? 'selected' : '' ?>>Aprobación de Crédito presupuestario</option>
                     <option value="5" <?= $filtroTipoComplementario === "5" ? 'selected' : '' ?>>Orden de servicio</option>
+                    <option value="6" <?= $filtroTipoComplementario === "6" ? 'selected' : '' ?>>Orden de compra</option>
+
                 </optgroup>
             </select>
         </div>
@@ -158,6 +161,9 @@ if ($stmtResumen) {
             <?php endif; ?>
             <?php if ($resumen['5'] > 0): ?>
                 <tr><td>Orden de servicio</td><td><?= $resumen['5'] ?></td></tr>
+            <?php endif; ?>
+            <?php if ($resumen['6'] > 0): ?>
+                <tr><td>Orden de compra</td><td><?= $resumen['6'] ?></td></tr>
             <?php endif; ?>
         </tbody>
 

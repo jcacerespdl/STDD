@@ -70,7 +70,9 @@
 
   <div class="form-card">
     <h2>Redacción del Encabezado</h2>
+
       <div class="form-row">
+
         <div class="input-container select-flotante">                        
           <select id="tipoDocumento" name="tipoDocumento" required>
             <option value="" disabled selected hidden></option>
@@ -85,6 +87,7 @@
           <input type="text" id="correlativo" name="correlativo" class="form-control" placeholder="" readonly required>
           <label for="correlativo">Correlativo:</label>
         </div>
+        
       </div>
       
    <!-- INICIO: GRUPO REQUERIMIENTO -->

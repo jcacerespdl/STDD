@@ -250,3 +250,16 @@
 [2025-07-10 15:20:44] Actualizando BD para iCodTramite: 561529
 [2025-07-10 15:20:44] 🧹 Limpieza completada.
 [2025-07-10 15:20:44] === FIN PROCESO ===
+[2025-07-14 12:43:20] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-07-14 12:43:20] ZIP recibido: C:\AppServ\www\SGD/porAprobar_1803_687541aabf522.signed.7z
+[2025-07-14 12:43:20] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\SGD/porAprobar_1803_687541aabf522.signed.7z" -o"C:\AppServ\www\SGD/cDocumentosFirmados" -y
+[2025-07-14 12:43:20] Código retorno: 0
+[2025-07-14 12:43:20] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 304966 bytes (298 KiB) |  | Extracting archive: C:\AppServ\www\SGD\porAprobar_1803_687541aabf522.signed.7z | -- | Path = C:\AppServ\www\SGD\porAprobar_1803_687541aabf522.signed.7z | Type = 7z | Physical Size = 304966 | Headers Size = 192 | Method = LZMA2:23 | Solid = - | Blocks = 1 |  | Everything is Ok |  | Size:       364530 | Compressed: 304966
+[2025-07-14 12:43:20] Procesando archivo: NOTA-INFORMATIVA-00004-2025_UL_OA_HEVES(e).pdf
+[2025-07-14 12:43:20] Firmado esperado: C:\AppServ\www\SGD/cDocumentosFirmados/NOTA-INFORMATIVA-00004-2025_UL_OA_HEVES(e)[FP].pdf
+[2025-07-14 12:43:20] Original destino: C:\AppServ\www\SGD/cDocumentosFirmados/NOTA-INFORMATIVA-00004-2025_UL_OA_HEVES(e).pdf
+[2025-07-14 12:43:20] 🗑️ Original eliminado: C:\AppServ\www\SGD/cDocumentosFirmados/NOTA-INFORMATIVA-00004-2025_UL_OA_HEVES(e).pdf
+[2025-07-14 12:43:20] ✅ Renombrado: C:\AppServ\www\SGD/cDocumentosFirmados/NOTA-INFORMATIVA-00004-2025_UL_OA_HEVES(e)[FP].pdf → C:\AppServ\www\SGD/cDocumentosFirmados/NOTA-INFORMATIVA-00004-2025_UL_OA_HEVES(e).pdf
+[2025-07-14 12:43:20] Actualizando BD para iCodTramite: 561549
+[2025-07-14 12:43:21] 🧹 Limpieza completada.
+[2025-07-14 12:43:21] === FIN PROCESO ===

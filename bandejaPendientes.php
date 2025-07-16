@@ -79,157 +79,302 @@ while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
  
 <!-- Material Icons y CSS -->
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
- <style>
-  
-/* Parche solo para este archivo */
-.container {
-    max-width: 1500px !important;
-    width: 100% !important;
-    padding-inline: 30px !important;
+<style>
+:root {
+  --primary: #005a86;
+  --secondary: #c69157;
 }
- 
-    .row {
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* Contenedor general para mantener separación del header */
+body > .contenedor-principal {
+  margin-top: 105px;
+}
+
+/* Barra azul superior */
+.barra-titulo {
+  background-color: var(--primary);
+  color: white;
+  padding: 8px 20px;
+  font-weight: bold;
+  font-size: 15px;
+  width: 100vw;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* Formulario de filtros a pantalla completa */
+.filtros-formulario {
   display: flex;
-  gap: 20px;
+  gap: 30px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 0;
+  padding: 20px 20px 10px;
+  width: 100vw;
+    box-sizing: border-box;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin: 0;
+}
+
+.columna-izquierda {
+  flex: 1;
+  max-width: 40%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.columna-derecha {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fila {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .input-container {
   position: relative;
   flex: 1;
-  min-width: 250px;
+  min-width: 120px;
 }
+
 .input-container input,
 .input-container select {
   width: 100%;
-  padding: 20px 12px 8px;
-  font-size: 15px;
+  padding: 14px 12px 6px;
+  font-size: 14px;
   border: 1px solid #ccc;
   border-radius: 4px;
-  background: #fff;
+  background: white;
   box-sizing: border-box;
+  appearance: none;
+  height: 42px;
+  line-height: 1.2;
 }
+
+.input-container select:required:invalid {
+  color: #aaa;
+}
+
 .input-container label {
   position: absolute;
-  top: 20px;
+  top: 50%;
   left: 12px;
-  font-size: 14px;
+  transform: translateY(-50%);
+  font-size: 13px;
   color: #666;
-  background: #fff;
+  background: white;
   padding: 0 4px;
   pointer-events: none;
-  transition: 0.2s ease;
+  transition: 0.2s ease all;
 }
+
 .input-container input:focus + label,
 .input-container input:not(:placeholder-shown) + label,
 .input-container select:focus + label,
 .input-container select:valid + label {
-  top: 0px;
-  font-size: 12px;
+  top: -7px;
+  font-size: 11px;
   color: #333;
+  transform: translateY(0);
 }
-.titulo-principal {
-  color: var(--primary, #005a86);
-  font-size: 22px;
-  font-weight: bold;
-  margin-top: 0;      /* 🔧 quitar espacio innecesario arriba */
-  margin-bottom: 20px;
+
+.input-container input[type="date"]:not(:placeholder-shown) + label,
+.input-container input[type="date"]:valid + label {
+  top: -7px;
+  font-size: 11px;
+  color: #333;
+  transform: translateY(0);
 }
- </style>
 
-<div class="container" style="margin: 120px auto; max-width: 1500px !important; width: 100% !important; background: white; border: 1px solid #ccc; border-radius: 10px; padding: 30px;">
-<div class="titulo-principal">BANDEJA DE PENDIENTES</div>
+.botones-filtro {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+  margin-left: auto;
+}
 
-<div class="card">
-    <div class="card-title">CRITERIOS DE BÚSQUEDA</div>
-    <form>
+.btn-filtro {
+  padding: 0 16px;
+  font-size: 14px;
+  border-radius: 4px;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+  height: 42px;
+  box-sizing: border-box;
+}
 
-        <!-- FILA 1 -->
-  <div class="row">
-    <!-- Grupo: Documentos -->
-    <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
-      <label style="font-weight:bold;">Documentos</label>
-      <label><input type="checkbox" name="tipo_doc_externo"> Externos</label>
-      <label><input type="checkbox" name="tipo_doc_interno"> Internos</label>
-    </div>
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+}
 
-    <!-- Grupo: Desde - Hasta -->
-    <div style="flex: 2; display: flex; gap: 20px;">
-      <div class="input-container" style="flex: 1;">
-        <input type="date" name="desde" value="<?= $valorDesde ?>" placeholder=" ">
-        <label>Desde</label>
+.btn-secondary {
+  background-color: var(--secondary);
+  color: white;
+}
+
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+.modal-content.small{
+    max-width: 450px;
+}
+
+.modal-content {
+    background: white;
+    margin: 5% auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 1000px;
+    border-radius: 8px;
+    position: relative;
+}
+.modal-close {
+    position: absolute;
+    top: 10px; right: 20px;
+    font-size: 24px;
+    cursor: pointer;
+}
+td.acciones .btn-link {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #364897;
+    font-size: 18px;
+    vertical-align: middle;
+}
+td.acciones .btn-link:hover {
+    color: #1a237e;
+}
+</style>
+
+<div class="contenedor-principal">
+
+  <!-- TÍTULO PRINCIPAL PEGADO AL HEADER -->
+  <div class="barra-titulo">BANDEJA DE PENDIENTES</div>
+
+    <!-- FORMULARIO OCUPANDO TODA LA PANTALLA -->
+  <form class="filtros-formulario">
+    <!-- COLUMNA IZQUIERDA -->
+    <div class="columna-izquierda">
+      <div class="fila">
+        <div class="input-container">
+          <input type="text" name="anio" placeholder=" " required>
+          <label>Año</label>
+        </div>
+        <div class="input-container">
+          <input type="text" name="expediente" value="<?= $valorExpediente ?>" placeholder=" " required>
+          <label>N° Expediente</label>
+        </div>
+        <div class="input-container">
+          <input type="text" name="extension" value="<?= $valorExtension ?>" placeholder=" " required>
+          <label>Extensión</label>
+        </div>
       </div>
-      <div class="input-container" style="flex: 1;">
-        <input type="date" name="hasta" value="<?= $valorHasta ?>" placeholder=" ">
-        <label>Hasta</label>
+
+      <div class="fila">
+        <div class="input-container">
+          <select name="oficina_origen" required>
+            <option value="" disabled selected hidden></option>
+            <?php while ($of = sqlsrv_fetch_array($oficinasResult, SQLSRV_FETCH_ASSOC)): ?>
+              <option value="<?= $of['cNomOficina'] ?>"><?= $of['cNomOficina'] ?></option>
+            <?php endwhile; ?>
+          </select>
+          <label>Oficina de Origen</label>
+        </div>
+      </div>
+
+      <div class="fila">
+        <div class="input-container">
+          <input type="date" name="desde" value="<?= $valorDesde ?>" placeholder=" " required>
+          <label>Desde</label>
+        </div>
+        <div class="input-container">
+          <input type="date" name="hasta" value="<?= $valorHasta ?>" placeholder=" " required>
+          <label>Hasta</label>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- FILA 2 -->
-  <div class="row">
-    <div class="input-container" style="flex: 1;">
-      <input type="text" name="expediente" value="<?= $valorExpediente ?>" placeholder=" ">
-      <label>N° Expediente</label>
-    </div>
-    <div class="input-container" style="flex: 2;">
-      <input type="text" name="asunto" value="<?= $valorAsunto ?>" placeholder=" ">
-      <label>Asunto</label>
-    </div>
-  </div>
-
-  <!-- FILA 3 -->
-  <div class="row">
-    <div class="input-container select-flotante" style="flex: 1;">
-      <select name="tipo_documento" required>
-        <option value="" disabled selected hidden> </option>
-        <?php while ($td = sqlsrv_fetch_array($tipoDocResult, SQLSRV_FETCH_ASSOC)): ?>
-          <option value="<?= $td['cDescTipoDoc'] ?>"><?= $td['cDescTipoDoc'] ?></option>
-        <?php endwhile; ?>
-      </select>
-      <label>Tipo de Documento</label>
-    </div>
-
-    <div class="input-container select-flotante" style="flex: 2;">
-      <select name="oficina_destino" required>
-        <option value="" disabled selected hidden> </option>
-        <?php while ($of = sqlsrv_fetch_array($oficinasResult, SQLSRV_FETCH_ASSOC)): ?>
-          <option value="<?= $of['cNomOficina'] ?>"><?= $of['cNomOficina'] ?></option>
-        <?php endwhile; ?>
-      </select>
-      <label>Oficina de Origen</label>
-    </div>
-  </div>
-
-    <!-- FILA 4: Estado + Delegado -->
-    <div class="row">
-        <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
-            <label style="font-weight: bold; margin-right: 30px;">Estado</label>
-            <label><input type="checkbox" name="estado_aceptado"> Aceptado</label>
-            <label><input type="checkbox" name="estado_sin_aceptar"> Sin Aceptar</label>
+    <!-- COLUMNA DERECHA -->
+    <div class="columna-derecha">
+      <div class="fila">
+        <div class="input-container">
+          <input type="text" name="tipo_tramite" placeholder=" " required>
+          <label>Tipo de Trámite</label>
         </div>
-        <div class="input-container" style="flex: 2;">
-            <input type="text" name="delegado" placeholder=" ">
-            <label>Delegado a</label>
+        <div class="input-container">
+          <select id="tipoDocumento" name="tipoDocumento" required>
+            <option value="" disabled selected hidden></option>
+            <?php while ($td = sqlsrv_fetch_array($tipoDocResult, SQLSRV_FETCH_ASSOC)): ?>
+              <option value="<?= $td['cCodTipoDoc'] ?>"><?= $td['cDescTipoDoc'] ?></option>
+            <?php endwhile; ?>
+          </select>
+          <label for="tipoDocumento">Tipo de Documento</label>
         </div>
+        <div class="input-container">
+          <input type="text" name="nro_documento" placeholder=" " required>
+          <label>Nro de Documento</label>
         </div>
+        <div class="input-container">
+          <input type="text" name="estado" placeholder=" " required>
+          <label>Estado</label>
+        </div>
+      </div>
 
-        <!-- FILA 5: Botones -->
-        <div class="row" style="justify-content: flex-end;">
-        <button type="submit" class="btn btn-primary">
+      <div class="fila">
+        <div class="input-container" style="flex: 1;">
+          <input type="text" name="asunto" value="<?= $valorAsunto ?>" placeholder=" " required>
+          <label>Asunto</label>
+        </div>
+      </div>
+
+      <div class="fila">
+        <div class="input-container">
+          <input type="text" name="operador" placeholder=" " required>
+          <label>Operador</label>
+        </div>
+        <div class="input-container">
+          <input type="text" name="delegado" placeholder=" " required>
+          <label>Delegado a</label>
+        </div>
+        <div class="botones-filtro">
+          <button type="submit" class="btn-filtro btn-primary">
             <span class="material-icons">search</span> Buscar
-        </button>
-        <button type="button" class="btn btn-secondary" onclick="window.location.href='bandejaPendientes.php'">
+          </button>
+          <button type="button" class="btn-filtro btn-secondary" onclick="window.location.href='bandejaPendientes.php'">
             <span class="material-icons">autorenew</span> Reestablecer
-        </button>
+          </button>
         </div>
+      </div>
+    </div>
+  </form>
 
-    </form>
-</div>
-
-<div style="text-align: center; font-weight: bold; color: var(--primary); font-size: 18px; margin: 30px 0 10px;">
-REGISTROS
+  <!-- BARRA DE REGISTROS PEGADA AL FORMULARIO -->
+  <div class="barra-titulo">REGISTROS</div>
 </div>
 
 <table class="table table-bordered">
@@ -278,9 +423,6 @@ REGISTROS
                     <?php else: ?>
                         <span>Sin documento</span>
                     <?php endif; ?>
-
-
-
 
                      </td>
                        <td><?= htmlspecialchars($tramite['cAsunto']) ?></td>
@@ -443,54 +585,6 @@ REGISTROS
     </form>
 </div>
 
-
-
-
-<style>
-.button-row a.btn {
-    text-decoration: none;
-}
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.5);
-}
-.modal-content.small{
-    max-width: 450px;
-}
-
-.modal-content {
-    background: white;
-    margin: 5% auto;
-    padding: 20px;
-    width: 90%;
-    max-width: 1000px;
-    border-radius: 8px;
-    position: relative;
-}
-.modal-close {
-    position: absolute;
-    top: 10px; right: 20px;
-    font-size: 24px;
-    cursor: pointer;
-}
-td.acciones .btn-link {
-    background: none;
-    border: none;
-    padding: 4px;
-    cursor: pointer;
-    color: #364897;
-    font-size: 18px;
-    vertical-align: middle;
-}
-td.acciones .btn-link:hover {
-    color: #1a237e;
-}
-</style>
-
 <script>
 document.querySelectorAll('.ver-flujo-btn').forEach(btn => {
     btn.addEventListener('click', function() {
@@ -579,7 +673,7 @@ document.querySelectorAll(".aceptar-btn").forEach(btn => {
         const iCodMovimiento = btn.dataset.movimiento;
         const iCodTramite = btn.dataset.tramite;
 
-        // if (!confirm("¿Desea aceptar este movimiento?")) return;
+        if (!confirm("¿Desea aceptar este expediente?")) return;
 
         try {
             const res = await fetch("aceptarMovimiento.php", {
