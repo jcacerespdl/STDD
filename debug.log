@@ -263,3 +263,22 @@
 [2025-07-14 12:43:20] Actualizando BD para iCodTramite: 561549
 [2025-07-14 12:43:21] 🧹 Limpieza completada.
 [2025-07-14 12:43:21] === FIN PROCESO ===
+[2025-07-24 16:19:09] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-07-24 16:19:09] ZIP recibido: C:\AppServ\www\SGD/porAprobar_129_6882a338e807e.signed.7z
+[2025-07-24 16:19:09] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\SGD/porAprobar_129_6882a338e807e.signed.7z" -o"C:\AppServ\www\SGD/cDocumentosFirmados" -y
+[2025-07-24 16:19:09] Código retorno: 0
+[2025-07-24 16:19:09] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 618391 bytes (604 KiB) |  | Extracting archive: C:\AppServ\www\SGD\porAprobar_129_6882a338e807e.signed.7z | -- | Path = C:\AppServ\www\SGD\porAprobar_129_6882a338e807e.signed.7z | Type = 7z | Physical Size = 618391 | Headers Size = 296 | Method = LZMA2:23 | Solid = - | Blocks = 2 |  | Everything is Ok |  | Files: 2 | Size:       737596 | Compressed: 618391
+[2025-07-24 16:19:09] Procesando archivo: NOTA-INFORMATIVA-00059-2025_UTI_HEVES(e).pdf
+[2025-07-24 16:19:09] Firmado esperado: C:\AppServ\www\SGD/cDocumentosFirmados/NOTA-INFORMATIVA-00059-2025_UTI_HEVES(e)[FP].pdf
+[2025-07-24 16:19:09] Original destino: C:\AppServ\www\SGD/cDocumentosFirmados/NOTA-INFORMATIVA-00059-2025_UTI_HEVES(e).pdf
+[2025-07-24 16:19:09] 🗑️ Original eliminado: C:\AppServ\www\SGD/cDocumentosFirmados/NOTA-INFORMATIVA-00059-2025_UTI_HEVES(e).pdf
+[2025-07-24 16:19:09] ✅ Renombrado: C:\AppServ\www\SGD/cDocumentosFirmados/NOTA-INFORMATIVA-00059-2025_UTI_HEVES(e)[FP].pdf → C:\AppServ\www\SGD/cDocumentosFirmados/NOTA-INFORMATIVA-00059-2025_UTI_HEVES(e).pdf
+[2025-07-24 16:19:09] Actualizando BD para iCodTramite: 31
+[2025-07-24 16:19:09] Procesando archivo: INFORME-00012-2025_UTI_HEVES(e).pdf
+[2025-07-24 16:19:09] Firmado esperado: C:\AppServ\www\SGD/cDocumentosFirmados/INFORME-00012-2025_UTI_HEVES(e)[FP].pdf
+[2025-07-24 16:19:09] Original destino: C:\AppServ\www\SGD/cDocumentosFirmados/INFORME-00012-2025_UTI_HEVES(e).pdf
+[2025-07-24 16:19:09] 🗑️ Original eliminado: C:\AppServ\www\SGD/cDocumentosFirmados/INFORME-00012-2025_UTI_HEVES(e).pdf
+[2025-07-24 16:19:09] ✅ Renombrado: C:\AppServ\www\SGD/cDocumentosFirmados/INFORME-00012-2025_UTI_HEVES(e)[FP].pdf → C:\AppServ\www\SGD/cDocumentosFirmados/INFORME-00012-2025_UTI_HEVES(e).pdf
+[2025-07-24 16:19:09] Actualizando BD para iCodTramite: 30
+[2025-07-24 16:19:09] 🧹 Limpieza completada.
+[2025-07-24 16:19:09] === FIN PROCESO ===

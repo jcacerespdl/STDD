@@ -192,7 +192,7 @@ document.getElementById('formGuardarAsignaciones').addEventListener('submit', as
 </script>
 
 <?php else: ?>
-    <p style="color:red"><strong>Este módulo solo está disponible para la oficina logística (112).</strong></p>
+    <p style="color:red"><strong> </strong></p>
 <?php endif; ?>
 </body>
 </html>

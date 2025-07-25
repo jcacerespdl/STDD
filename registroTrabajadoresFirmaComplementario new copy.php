@@ -98,13 +98,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['asignarTipoComplement
     $iCodOficinaSession = $_SESSION['iCodOficinaLogin'];
 
     switch ($tipo) {
-        // case 1: //PEDIDO SIGA
-        //     $jerarquia = obtenerJerarquiaOficinas($cnx, $iCodOficinaSession);
-        //     $oficinaBase = end($jerarquia);
-        //     $oficinaTop  = reset($jerarquia);
-        //     asignarFirmanteFijo($cnx, $iCodTramite, $iCodDigital, 3, $oficinaBase, 1, 'P');
-        //     asignarFirmanteFijo($cnx, $iCodTramite, $iCodDigital, 3, $oficinaTop, 1, 'Q');
-        //     break;
+        case 1: //PEDIDO SIGA
+            $jerarquia = obtenerJerarquiaOficinas($cnx, $iCodOficinaSession);
+            $oficinaBase = end($jerarquia);
+            $oficinaTop  = reset($jerarquia);
+            asignarFirmanteFijo($cnx, $iCodTramite, $iCodDigital, 3, $oficinaBase, 1, 'P');
+            asignarFirmanteFijo($cnx, $iCodTramite, $iCodDigital, 3, $oficinaTop, 1, 'Q');
+            break;
         // case 2:
         //     $jerarquia = obtenerJerarquiaOficinas($cnx, $iCodOficinaSession);
         //     $nivelActual = count($jerarquia) - 1;
@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['asignarTipoComplement
             break;
     }
 
-    echo "<script>alert('Tipo de Documento asignado correctamente.'); window.location.href=window.location.href;</script>";
+    echo "<script>alert('Firmantes asignados correctamente.'); window.location.href=window.location.href;</script>";
     exit;
 }
 ?>
@@ -191,7 +191,7 @@ $cTipoActual = $docInfo['cTipoComplementario'] ?? null;
         </select>
 
 
-    <button type="submit" name="asignarTipoComplementario">Guardar </button>
+    <button type="submit" name="asignarTipoComplementario">Guardar y Asignar Firmantes</button>
   </div>
 
   <!-- Oficina flotante -->
@@ -251,8 +251,13 @@ $firmantesExistentesVB = 0;
       <td><?= $row['cNomOficina'] ?></td>
       <td><?= $row['tipoFirma'] == 1 ? 'Principal' : 'Visto Bueno' ?></td>
       <td>
-      <button onclick="eliminarFirmante(<?= $row['iCodTrabajador'] ?>)" style="color:red; border:none; background:none; cursor:pointer;" title="Eliminar firmante">❌</button>
-
+        <form method="POST" onsubmit="return confirm('¿Eliminar firmante?')">
+          <input type="hidden" name="accion" value="eliminar">
+          <input type="hidden" name="iCodTramite" value="<?= $iCodTramite ?>">
+          <input type="hidden" name="iCodDigital" value="<?= $iCodDigital ?>">
+          <input type="hidden" name="iCodTrabajador" value="<?= $row['iCodTrabajador'] ?>">
+          <button type="submit" style="color:red; border:none; background:none; cursor:pointer;">❌</button>
+        </form>
       </td>
     </tr>
     <?php if ($row['tipoFirma'] == 2) $firmantesExistentesVB++; ?>
@@ -261,31 +266,17 @@ $firmantesExistentesVB = 0;
 </table>
 
 <script>
-let tipoComplementarioSeleccionado = parseInt(document.getElementById("tipo").value || 0);
-
 let firmantesExistentesVB = <?= $firmantesExistentesVB ?>;
 let seleccionados = [];
 const iCodTramite = <?= (int)$iCodTramite ?>;
 const iCodDigital = <?= (int)$iCodDigital ?>;
 
-let contadorVB = firmantesExistentesVB;
-
-function asignarFirma(id, nombre, apellidos, oficinaId, oficinaNombre, perfil, tipoFirma, posicionManual = null) {
+function asignarFirma(id, nombre, apellidos, oficinaId, oficinaNombre, perfil, tipoFirma) {
     let posicion = 'A';
-
-    if (posicionManual) {
-        // Si se define una posición manual, se usa directamente (ej. 'P', 'Q', 'O')
-        posicion = posicionManual;
-    } else if (tipoFirma === '2') {
-        const letrasVB = ['B','C','D','E','F','G','H','I','J'];
-        const usadosVB = Array.from(document.querySelectorAll('table.popup-table tbody tr td:nth-child(4)'))
-                              .filter(td => td.textContent.trim() === 'Visto Bueno').length;
-        posicion = letrasVB[usadosVB] || 'Z';
-    } else if (tipoFirma === '1') {
-        const letrasFP = ['A','J','K','L','M','N','O','P'];
-        const usadosFP = Array.from(document.querySelectorAll('table.popup-table tbody tr td:nth-child(4)'))
-                              .filter(td => td.textContent.trim() === 'Principal').length;
-        posicion = letrasFP[usadosFP] || 'Z';
+    if (tipoFirma === '2') {
+        const letras = ['B','C','D','E','F','G','H','I','J'];
+        const indexVB = firmantesExistentesVB + 1;
+        posicion = letras[indexVB] || 'Z';
     }
 
     fetch("insertarFirmanteDirecto.php", {
@@ -303,7 +294,6 @@ function asignarFirma(id, nombre, apellidos, oficinaId, oficinaNombre, perfil, t
         }
     });
 }
-
 
 function eliminarSeleccionado(id) {
     seleccionados = seleccionados.filter(t => t.id != id);
@@ -346,10 +336,6 @@ function cargarTrabajadores() {
     const oficina = document.getElementById("iCodOficinaHidden").value;
     if (!oficina) return;
 
-     // ✅ obtener tipo actual en tiempo real
-     const tipoComplementarioSeleccionado = parseInt(document.getElementById("tipo").value || 0);
-
-
     fetch(`./ajax_trabajadores_por_oficina.php?iCodOficina=${oficina}`)
         .then(res => res.json())
         .then(data => {
@@ -359,30 +345,14 @@ function cargarTrabajadores() {
                 tbody.innerHTML += `<tr id="fila-${trab.id}">
                     <td>${trab.nombre} ${trab.apellidos}</td>
                     <td>${trab.perfil}</td>
-                        <td>
-        ${
-            tipoComplementarioSeleccionado === 1
-            ? `
-                <button class="botonFirma" onclick="asignarFirma('${trab.id}', '${trab.nombre}', '${trab.apellidos}', '${trab.iCodOficina}', '${trab.oficinaNombre}', '${trab.perfil}', '1', 'P')">
-                    Solicita
-                </button>
-                <button class="botonFirma" onclick="asignarFirma('${trab.id}', '${trab.nombre}', '${trab.apellidos}', '${trab.iCodOficina}', '${trab.oficinaNombre}', '${trab.perfil}', '1', 'Q')">
-                    Autoriza
-                </button>
-                <button class="botonFirma" onclick="asignarFirma('${trab.id}', '${trab.nombre}', '${trab.apellidos}', '${trab.iCodOficina}', '${trab.oficinaNombre}', '${trab.perfil}', '2', 'O')">
-                    Revisa
-                </button>
-            `
-            : `
-                <button class="botonFirma" onclick="asignarFirma('${trab.id}', '${trab.nombre}', '${trab.apellidos}', '${trab.iCodOficina}', '${trab.oficinaNombre}', '${trab.perfil}', '1')">
-                    <span class="material-symbols-outlined">signature</span> Principal
-                </button>
-                <button class="botonFirma" onclick="asignarFirma('${trab.id}', '${trab.nombre}', '${trab.apellidos}', '${trab.iCodOficina}', '${trab.oficinaNombre}', '${trab.perfil}', '2')">
-                    <span class="material-icons">task_alt</span> Visto Bueno
-                </button>
-            `
-        }
-    </td>
+                    <td>
+                        <button class="botonFirma" onclick="asignarFirma('${trab.id}', '${trab.nombre}', '${trab.apellidos}', '${trab.iCodOficina}', '${trab.oficinaNombre}', '${trab.perfil}', '1')">
+                            <span class="material-symbols-outlined">signature</span> Principal
+                        </button>
+                        <button class="botonFirma" onclick="asignarFirma('${trab.id}', '${trab.nombre}', '${trab.apellidos}', '${trab.iCodOficina}', '${trab.oficinaNombre}', '${trab.perfil}', '2')">
+                            <span class="material-icons">task_alt</span> Visto Bueno
+                        </button>
+                    </td>
                 </tr>`;
             });
         });
@@ -448,7 +418,7 @@ function bloquearPorTipo(bloquear) {
 
 document.getElementById("tipo").addEventListener("change", function () {
     const tipo = parseInt(this.value);
-    const bloquear = [3, 4, 5, 6].includes(tipoComplementarioSeleccionado);
+    const bloquear = [3, 4, 5, 6].includes(tipo);
     bloquearPorTipo(bloquear);
 });
 
@@ -485,26 +455,6 @@ document.getElementById("tipo").addEventListener("change", function () {
 
     bloquearPorTipo(bloquear);
 });
-
-//ELIMINAR FIRMANTES MANUAL
-function eliminarFirmante(iCodTrabajador) {
-    if (!confirm("¿Eliminar firmante?")) return;
-
-    fetch("eliminarFirmanteTramite.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `iCodTramite=${iCodTramite}&iCodDigital=${iCodDigital}&iCodTrabajador=${iCodTrabajador}`
-    })
-    .then(res => res.text())
-    .then(res => {
-        if (res.trim() === "ok") {
-            alert("Firmante eliminado correctamente.");
-            window.location.href = window.location.href;
-        } else {
-            alert("Error al eliminar firmante:\n" + res);
-        }
-    });
-}
 
 
 </script>

@@ -1,3 +1,89 @@
+<?php
+include("head.php");
+include("conexion/conexion.php");
+
+$iCodTrabajador = $_SESSION['CODIGO_TRABAJADOR'];
+$iCodOficina = $_SESSION['iCodOficinaLogin'];
+$iCodPerfil = $_SESSION['ID_PERFIL']; 
+
+// Capturar filtros
+$filtroExpediente = isset($_GET['expediente']) ? trim($_GET['expediente']) : '';
+$valorExpediente  = htmlspecialchars($filtroExpediente);
+
+$filtroExtension = isset($_GET['extension']) ? trim($_GET['extension']) : '';
+$valorExtension  = htmlspecialchars($filtroExtension);
+
+$filtroAsunto = isset($_GET['asunto']) ? trim($_GET['asunto']) : '';
+$valorAsunto  = htmlspecialchars($filtroAsunto);
+
+$filtroDesde = isset($_GET['desde']) ? $_GET['desde'] : '';
+$valorDesde  = htmlspecialchars($filtroDesde);
+
+$filtroHasta = isset($_GET['hasta']) ? $_GET['hasta'] : '';
+$valorHasta  = htmlspecialchars($filtroHasta);
+
+// Obtener tipos de documento internos
+$tipoDocQuery = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgInterno = 1 ORDER BY cDescTipoDoc ASC";
+$tipoDocResult = sqlsrv_query($cnx, $tipoDocQuery);
+
+// Obtener oficinas
+$oficinasQuery = "SELECT iCodOficina, cNomOficina FROM Tra_M_Oficinas ORDER BY cNomOficina ASC";
+$oficinasResult = sqlsrv_query($cnx, $oficinasQuery);
+
+$tipoDocQuery = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgInterno = 1 ORDER BY cDescTipoDoc ASC";
+$tipoDocResult = sqlsrv_query($cnx, $tipoDocQuery);
+
+$oficinasQuery = "SELECT iCodOficina, cNomOficina FROM Tra_M_Oficinas ORDER BY cNomOficina ASC";
+$oficinasResult = sqlsrv_query($cnx, $oficinasQuery);
+
+$sql = "
+    SELECT 
+        M1.iCodMovimiento,
+        M1.nEstadoMovimiento,
+        M1.fFecRecepcion,
+        M1.iCodTrabajadorDelegado,
+        M1.iCodIndicacionDelegado,
+        M1.cObservacionesDelegado,
+        M1.fFecDelegado,
+        ISNULL(TD.expediente, T.expediente) AS expediente,
+        M1.extension AS extensionMovimiento,
+        ISNULL(TD.extension, T.extension) AS extensionTramite,
+        ISNULL(TD.iCodTramite, T.iCodTramite) AS iCodTramite,
+        T.iCodTramite AS iCodTramitePadre,
+        ISNULL(TD.cCodificacion, T.cCodificacion) AS cCodificacion,
+        ISNULL(TD.cAsunto, T.cAsunto) AS cAsunto,
+        ISNULL(TD.fFecRegistro, T.fFecRegistro) AS fFecRegistro,
+        ISNULL(TD.documentoElectronico, T.documentoElectronico) AS documentoElectronico,
+        O1.cNomOficina AS OficinaOrigen,
+        O2.cNomOficina AS OficinaDestino
+    FROM Tra_M_Tramite_Movimientos M1
+    INNER JOIN Tra_M_Tramite T ON T.iCodTramite = M1.iCodTramite
+    LEFT JOIN Tra_M_Tramite TD ON TD.iCodTramite = M1.iCodTramiteDerivar
+    INNER JOIN Tra_M_Oficinas O1 ON O1.iCodOficina = M1.iCodOficinaOrigen
+    INNER JOIN Tra_M_Oficinas O2 ON O2.iCodOficina = M1.iCodOficinaDerivar
+    WHERE 
+        M1.iCodOficinaDerivar = ? 
+        AND T.nFlgEnvio = 1
+        AND NOT EXISTS (
+            SELECT 1 
+            FROM Tra_M_Tramite_Movimientos M2
+            WHERE M2.iCodMovimientoDerivo = M1.iCodMovimiento
+        )
+    ORDER BY ISNULL(TD.fFecRegistro, T.fFecRegistro) DESC";
+
+
+$params = [$iCodOficina];
+$stmt = sqlsrv_prepare($cnx, $sql, $params);
+sqlsrv_execute($stmt);
+
+$tramites = [];
+while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+    $tramites[] = $row;
+}
+?>
+ 
+<!-- Material Icons y CSS -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <style>
 :root {
   --primary: #005a86;
@@ -35,7 +121,7 @@ body > .contenedor-principal {
   border-radius: 0;
   padding: 20px 20px 10px;
   width: 100vw;
-  box-sizing: border-box;
+    box-sizing: border-box;
   flex-wrap: wrap;
   margin: 0;
 }
@@ -147,6 +233,47 @@ body > .contenedor-principal {
   background-color: var(--secondary);
   color: white;
 }
+
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+.modal-content.small{
+    max-width: 450px;
+}
+
+.modal-content {
+    background: white;
+    margin: 5% auto;
+    padding: 20px;
+    width: 90%;
+    max-width: 1000px;
+    border-radius: 8px;
+    position: relative;
+}
+.modal-close {
+    position: absolute;
+    top: 10px; right: 20px;
+    font-size: 24px;
+    cursor: pointer;
+}
+td.acciones .btn-link {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #364897;
+    font-size: 18px;
+    vertical-align: middle;
+}
+td.acciones .btn-link:hover {
+    color: #1a237e;
+}
 </style>
 
 <div class="contenedor-principal">
@@ -154,7 +281,7 @@ body > .contenedor-principal {
   <!-- TÍTULO PRINCIPAL PEGADO AL HEADER -->
   <div class="barra-titulo">BANDEJA DE PENDIENTES</div>
 
-  <!-- FORMULARIO OCUPANDO TODA LA PANTALLA -->
+    <!-- FORMULARIO OCUPANDO TODA LA PANTALLA -->
   <form class="filtros-formulario">
     <!-- COLUMNA IZQUIERDA -->
     <div class="columna-izquierda">
@@ -253,5 +380,461 @@ body > .contenedor-principal {
 
   <!-- BARRA DE REGISTROS PEGADA AL FORMULARIO -->
   <div class="barra-titulo">REGISTROS</div>
-
 </div>
+
+<table class="table table-bordered">
+    <thead class="table-secondary">
+        <tr>                 
+        <th style="width: 110px;">Expediente</th>
+        <th style="width: 90px;">Extensión</th>
+        <th style="width: 300px;">Documento</th>
+        <th style="width: 260px;">Asunto</th>
+                <th style="width: 180px;">Derivado por</th> 
+                <th style="width: 90px;">Estado</th>
+                <th style="width: 220px;">Opciones</th>
+                        </tr>
+        </thead>
+        <tbody>
+            <?php foreach ($tramites as $tramite): ?>
+                <tr id="fila-<?= $tramite['iCodMovimiento'] ?>">
+                <td><?= htmlspecialchars($tramite['expediente']) ?></td>   
+                <td><?= htmlspecialchars($tramite['extensionMovimiento']) ?></td> <!-- o extensionTramite si prefieres -->
+                    <td>
+                    <!-- Botón de flujo -->
+                    <?php if (intval($tramite['extensionTramite']) === 1): ?>
+                        <a href="bandejaFlujoraiz.php?iCodTramite=<?= $tramite['iCodTramitePadre'] ?>"
+                            title="Ver flujo raíz"
+                            target="_blank"
+                            style="color: #6c757d; text-decoration: none;">
+                                <span class="material-icons" style="font-size: 22px;">device_hub</span>
+                            </a>
+                        <?php else: ?>
+                            <a href="bandejaFlujo.php?iCodTramite=<?= $tramite['iCodTramitePadre'] ?>&extension=<?= $tramite['extensionMovimiento'] ?>"
+                            title="Ver flujo"
+                            target="_blank"
+                            style="color: #6c757d; text-decoration: none;">
+                                <span class="material-icons" style="font-size: 22px;">device_hub</span>
+                            </a>
+                        <?php endif; ?>
+
+                    <?php if (!empty($tramite['documentoElectronico'])): ?>
+                        <a href="./cDocumentosFirmados/<?= urlencode($tramite['documentoElectronico']) ?>"
+                        class="chip-adjunto"
+                        target="_blank"
+                        title="<?= htmlspecialchars($tramite['documentoElectronico']) ?>">
+                            <span class="material-icons chip-icon">picture_as_pdf</span>
+                            <span class="chip-text"><?= htmlspecialchars($tramite['documentoElectronico']) ?></span>
+                        </a>
+                    <?php else: ?>
+                        <span>Sin documento</span>
+                    <?php endif; ?>
+
+                     </td>
+                       <td><?= htmlspecialchars($tramite['cAsunto']) ?></td>
+                       <td>
+                        <?= htmlspecialchars($tramite['OficinaOrigen']) ?><br>
+                        <small style="color: gray; font-size: 12px;">
+                            <?= isset($tramite['fFecRegistro']) ? $tramite['fFecRegistro']->format("d/m/Y H:i") : '' ?>
+                        </small>
+                    </td>
+                    <td id="estado-<?= $tramite['iCodMovimiento'] ?>">
+                        <?php if ($tramite['nEstadoMovimiento'] == 0): ?>
+                            <span style="font-weight: bold; color: #d9534f;">Pendiente</span>
+                        <?php else: ?>
+                            <span style="font-weight: bold; color: #0d6efd;">En proceso</span>
+                            <br>
+                            <small style="color: gray;">
+                                <?= isset($tramite['fFecRecepcion']) ? $tramite['fFecRecepcion']->format("d/m/Y H:i") : '' ?>
+                            </small>
+                        <?php endif; ?>
+                    </td>
+                   <td class="acciones" id="acciones-<?= $tramite['iCodMovimiento'] ?>">
+                    <?php if ($tramite['nEstadoMovimiento'] == 0): ?>
+                        <!-- Aceptar -->
+                        <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+
+                        <button class="btn btn-primary aceptar-btn" 
+                                data-movimiento="<?= $tramite['iCodMovimiento'] ?>" 
+                                data-tramite="<?= $tramite['iCodTramite'] ?>"
+                                title="Aceptar">
+                            <span class="material-icons">drafts</span>
+                        </button>
+
+                        <!-- Observar -->
+                        <!-- <button class= "btn btn-secondary "
+                                data-movimiento="<?= $tramite['iCodMovimiento'] ?>" 
+                                data-expediente="<?= $tramite['expediente'] ?>"
+                                title="Observar">
+                            <span class="material-icons">visibility_off</span>
+                        </button> -->
+                        </div>
+                    <?php else: ?>
+                        <!-- Agrupar todos los botones en un mismo contenedor flex -->
+                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                                                <!-- Derivar -->
+                        <a href="registroDerivar.php?iCodTramite=<?= $tramite['iCodTramite'] ?>&iCodMovimiento=<?= $tramite['iCodMovimiento'] ?>" 
+                            class="btn btn-link" title="Derivar">
+                            <span class="material-icons">forward_to_inbox</span>
+                        </a>
+
+                        <button class="btn btn-link delegar-btn" 
+                            data-tramite="<?= $tramite['iCodTramite'] ?>" 
+                            data-movimiento="<?= $tramite['iCodMovimiento'] ?>"
+                            data-expediente="<?= $tramite['expediente'] ?>"
+                            data-delegado="<?= $tramite['iCodTrabajadorDelegado'] ?? '' ?>"
+                            data-indicacion="<?= $tramite['iCodIndicacionDelegado'] ?? '' ?>"
+                            data-observacion="<?= htmlspecialchars($tramite['cObservacionesDelegado'] ?? '', ENT_QUOTES) ?>"
+                            data-fechadelegado="<?= $tramite['fFecDelegado'] ? $tramite['fFecDelegado']->format('d/m/Y H:i') : '' ?>"
+                            title="Delegar">
+                            <span class="material-icons">cases</span>
+                        </button>
+               
+                           <!-- Finalizar-->
+                            <!-- Finalizar -->
+                            <a href="finalizarMovimiento.php?iCodMovimiento=<?= $tramite['iCodMovimiento'] ?>" 
+                            class="btn btn-link" title="Finalizar">
+                            <span class="material-icons">system_update_alt</span>
+                            </a>
+
+                        <!-- Crear Extensión -->
+                        <button class="btn btn-link" title="Crear Extensión" onclick="crearExtension(<?= $tramite['iCodMovimiento'] ?>, <?= $tramite['iCodTramite'] ?>)">
+                            <span class="material-icons">content_copy</span>
+                        </button>
+                    </div>
+                        <?php endif; ?>
+</td>
+                </tr>
+            <?php endforeach; ?>
+        </tbody>
+    </table>
+</div>
+ 
+ 
+
+<!-- Modal DELEGAR -->
+<div id="modalDelegar" class="modal">
+  <form id="formDelegar" class="modal-content small">
+    <input type="hidden" name="iCodMovimiento">
+    <input type="hidden" name="iCodTramite">
+
+    <h2 style="margin-bottom: 10px;">Delegar Trámite</h2>
+    <p id="expedienteDelegar" style="margin-bottom: 5px; font-weight: bold;"></p>
+    <p id="fechaDelegadoTexto" style="margin-bottom: 15px; font-style: italic; color: #666;"></p>
+
+    <!-- PROFESIONAL -->
+    <div style="margin-bottom: 15px;">
+      <label style="display: block; font-weight: bold; margin-bottom: 6px;">PROFESIONAL DE LA OFICINA</label>
+      <select name="iCodTrabajadorDelegado" id="iCodTrabajadorDelegado" style="width: 100%; padding: 8px;" required>
+        <option value="">Seleccione un profesional</option>
+        <?php
+          $sqlTrabajadores = "
+              SELECT T.iCodTrabajador, 
+                     CONCAT(T.cApellidosTrabajador, ', ', T.cNombresTrabajador) AS nombre
+              FROM tra_M_trabajadores T
+              INNER JOIN Tra_M_Perfil_Ususario PU ON T.iCodTrabajador = PU.iCodTrabajador
+              WHERE PU.iCodOficina = ? AND PU.iCodPerfil = 4
+              ORDER BY nombre";
+          $stmtTrab = sqlsrv_query($cnx, $sqlTrabajadores, [$iCodOficina]);
+          while ($trab = sqlsrv_fetch_array($stmtTrab, SQLSRV_FETCH_ASSOC)) {
+              echo "<option value='{$trab['iCodTrabajador']}'>{$trab['nombre']}</option>";
+          }
+        ?>
+      </select>
+    </div>
+
+    <!-- INDICACION -->
+    <div style="margin-bottom: 15px;">
+      <label style="display: block; font-weight: bold; margin-bottom: 6px;">INDICACIÓN</label>
+      <select name="iCodIndicacionDelegado" id="iCodIndicacionDelegado" style="width: 100%; padding: 8px;" required>
+        <option value="">Seleccione una indicación</option>
+        <?php
+          $sqlInd = "
+            SELECT iCodIndicacion, cIndicacion,
+                CASE WHEN cIndicacion = 'INDAGACION DE MERCADO' THEN 0 ELSE 1 END AS prioridad
+            FROM Tra_M_Indicaciones
+            ORDER BY prioridad, iCodIndicacion";
+          $stmtInd = sqlsrv_query($cnx, $sqlInd);
+          while ($ind = sqlsrv_fetch_array($stmtInd, SQLSRV_FETCH_ASSOC)) {
+            echo "<option value='{$ind['iCodIndicacion']}'>{$ind['cIndicacion']}</option>";
+          }
+        ?>
+      </select>
+    </div>
+
+    <!-- OBSERVACIONES -->
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: bold; margin-bottom: 6px;">OBSERVACIONES</label>
+      <textarea name="cObservacionesDelegado" id="cObservacionesDelegado" rows="4" style="width: 100%; padding: 8px;"></textarea>
+    </div>
+
+    <!-- BOTONES -->
+    <div style="text-align: right;">
+      <button type="button" class="btn-secondary cerrarModalDelegar" style="margin-right: 10px;">Cancelar</button>
+      <button type="submit" class="btn-primary">Guardar</button>
+    </div>
+  </form>
+</div>
+<!-- FIN Modal DELEGAR -->
+
+
+<!-- MODAL OBSERVAR -->
+<div id="modalObservar" class="modal">
+    <form id="formObservar" class="modal-content small">
+        <input type="hidden" name="iCodMovimiento" id="movimientoObservar">
+        <span class="modal-close cerrarModal" onclick="cerrarModal('modalObservar')">&times;</span>
+        <h2>Observar Expediente <span id="expedienteObservar"></span></h2>
+
+        <div style="margin-top: 20px;">
+            <label style="font-weight: bold;">Observaciones</label>
+            <textarea name="cObservacionesEnviar" rows="5" style="width: 100%; padding: 10px;" required></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <button type="button" class="btn-secondary cerrarModal" onclick="cerrarModal('modalObservar')">Cancelar</button>
+            <button type="submit" class="btn-primary">Guardar Observación</button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.querySelectorAll('.ver-flujo-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const id = this.dataset.id;
+        const extension = this.dataset.extension ?? 1;
+        window.open('bandejaFlujo.php?iCodTramite=' + id + '&extension=' + extension, '_blank');
+
+    });
+});
+
+document.querySelectorAll('.cerrarModal').forEach((el) => {
+    el.addEventListener('click', function() {
+        document.getElementById('modalFlujo').style.display = 'none';
+     });
+})
+
+window.addEventListener('click', function(event) {
+    const modal = document.getElementById('modalFlujo');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+});
+ 
+
+function crearExtension(iCodMovimiento, iCodTramite) {
+    const url = `generarExtension.php?iCodMovimiento=${iCodMovimiento}&iCodTramite=${iCodTramite}`;
+    window.open(url, '_blank', 'width=1250,height=550,scrollbars=yes,resizable=yes');
+}
+
+ 
+// Abrir modal con datos existentes
+document.querySelectorAll(".delegar-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const form = document.getElementById("formDelegar");
+
+    // Rellenar campos ocultos
+    form.iCodMovimiento.value = btn.dataset.movimiento;
+    form.iCodTramite.value = btn.dataset.tramite;
+
+    // Mostrar expediente
+    document.getElementById("expedienteDelegar").textContent = "Expediente: " + btn.dataset.expediente;
+
+    // Mostrar fecha si ya fue delegado
+    const fechaDelegado = btn.dataset.fechadelegado;
+    document.getElementById("fechaDelegadoTexto").textContent = fechaDelegado 
+      ? "Delegado anteriormente el " + fechaDelegado 
+      : "";
+
+    // Rellenar los valores seleccionados si existen
+    document.getElementById("iCodTrabajadorDelegado").value = btn.dataset.delegado || '';
+    document.getElementById("iCodIndicacionDelegado").value = btn.dataset.indicacion || '';
+    document.getElementById("cObservacionesDelegado").value = btn.dataset.observacion || '';
+
+    document.getElementById("modalDelegar").style.display = "block";
+  });
+});
+
+// Botón para registrar atención directa
+document.querySelectorAll(".atender-btn").forEach(btn => {
+  btn.addEventListener("click", async () => {
+    const confirmado = confirm("¿Desea registrar la atención del trámite?");
+    if (!confirmado) return;
+
+    const body = new FormData();
+    body.append("iCodMovimiento", btn.dataset.movimiento);
+    body.append("iCodTramite", btn.dataset.tramite);
+    body.append("autoAtiende", "1");
+
+    const res = await fetch("delegarMovimiento.php", { method: "POST", body });
+    const json = await res.json();
+
+    if (json.status === "ok") {
+      alert("Atención registrada.");
+      location.reload();
+    } else {
+      alert("Error: " + json.message);
+    }
+  });
+});
+
+// Guardar delegación
+document.getElementById("formDelegar").addEventListener("submit", async e => {
+  e.preventDefault();
+  const body = new FormData(e.target);
+
+  const res = await fetch("delegarMovimiento.php", { method: "POST", body });
+  const json = await res.json();
+
+  if (json.status === "ok") {
+    alert("Delegación registrada.");
+    location.reload();
+  } else {
+    alert("Error: " + json.message);
+  }
+});
+
+// Cerrar modal
+document.querySelectorAll('.cerrarModalDelegar').forEach(el => {
+  el.addEventListener('click', () => {
+    document.getElementById('modalDelegar').style.display = 'none';
+  });
+});
+ 
+
+document.querySelectorAll(".aceptar-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+        const iCodMovimiento = btn.dataset.movimiento;
+        const iCodTramite = btn.dataset.tramite;
+
+        if (!confirm("¿Desea aceptar este expediente?")) return;
+
+        try {
+            const res = await fetch("aceptarMovimiento.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: `iCodMovimiento=${encodeURIComponent(iCodMovimiento)}`
+            });
+
+            const json = await res.json();
+
+            if (json.status === "ok") {
+                // ✅ Reemplazar columna ACCIONES
+                const accionesTd = document.getElementById("acciones-" + iCodMovimiento);
+                accionesTd.innerHTML = `
+                    <div style="display: flex; gap: 8px; justify-content: center; align-items: center;">
+                        
+
+                        <a href="registroDerivar.php?iCodTramite=${iCodTramite}&iCodMovimiento=${iCodMovimiento}" 
+                           class="btn btn-link" title="Derivar">
+                            <span class="material-icons">forward_to_inbox</span>
+                        </a>
+
+                        <button class="btn btn-link delegar-btn" 
+                                data-tramite="${iCodTramite}" 
+                                data-movimiento="${iCodMovimiento}"
+                                title="Delegar">
+                            <span class="material-icons">cases</span>
+                        </button>
+
+                        <button class="btn btn-link" title="Finalizar" onclick="finalizarMovimiento(${iCodMovimiento}, '${json.expediente ?? ''}')">
+                            <span class="material-icons">system_update_alt</span>
+                        </button>
+
+                        <button class="btn btn-link" title="Crear Extensión" onclick="crearExtension(${iCodMovimiento}, ${iCodTramite})">
+                            <span class="material-icons">content_copy</span>
+                        </button>
+                    </div>
+                `;
+
+                // ✅ Actualizar columna ESTADO
+                const estadoTd = document.getElementById("estado-" + iCodMovimiento);
+                if (estadoTd) {
+                    const ahora = new Date().toLocaleString("es-PE", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    });
+                    estadoTd.innerHTML = `
+                        <span style="font-weight: bold; color: #0d6efd;">En proceso</span><br>
+                        <small style="color: gray;">${ahora}</small>
+                    `;
+                }
+
+                // ✅ Reactivar eventos como delegar y flujo
+                reactivarEventosDinamicos();
+            } else {
+                alert("Error: " + json.message);
+            }
+
+        } catch (err) {
+            console.error(err);
+            alert("Error al procesar la solicitud.");
+        }
+    });
+});
+
+
+// Reactivar eventos luego de reemplazar HTML dinámicamente
+function reactivarEventosDinamicos() {
+    document.querySelectorAll('.ver-flujo-btn').forEach(btn => {
+        btn.onclick = () => {
+            const id = btn.dataset.id;
+            const extension = btn.dataset.extension ?? 1;
+            window.open('bandejaFlujo.php?iCodTramite=' + id + '&extension=' + extension, '_blank');
+        };
+    });
+
+    document.querySelectorAll(".delegar-btn").forEach(btn => {
+        btn.onclick = () => {
+            const form = document.getElementById("formDelegar");
+            form.iCodMovimiento.value = btn.dataset.movimiento;
+            form.iCodTramite.value = btn.dataset.tramite;
+            document.getElementById("modalDelegar").style.display = "block";
+        };
+    });
+}
+
+// Botón "Observar"
+document.querySelectorAll(".observar-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+        const iCodMovimiento = btn.dataset.movimiento;
+        const expediente = btn.dataset.expediente;
+
+        document.getElementById("movimientoObservar").value = iCodMovimiento;
+        document.getElementById("expedienteObservar").textContent = expediente;
+
+        document.getElementById("modalObservar").style.display = "block";
+    });
+});
+
+// Enviar formulario de observación
+document.getElementById("formObservar").addEventListener("submit", async e => {
+    e.preventDefault();
+    const form = e.target;
+    const body = new FormData(form);
+
+    try {
+        const res = await fetch("observarMovimiento.php", {
+            method: "POST",
+            body
+        });
+
+        const json = await res.json();
+        if (json.status === "ok") {
+            alert("Movimiento observado correctamente.");
+            location.reload();
+        } else {
+            alert("Error: " + json.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Error al procesar la observación.");
+    }
+});
+
+// Función genérica para cerrar cualquier modal por ID
+function cerrarModal(id) {
+    document.getElementById(id).style.display = "none";
+}
+</script>

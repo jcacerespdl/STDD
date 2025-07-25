@@ -255,3 +255,7 @@
 [2025-07-14 12:49:27] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 155174 bytes (152 KiB) |  | Creating archive: C:\AppServ\www\SGD\principal_561553_.7z |  | Add new data to archive: 1 file, 155174 bytes (152 KiB) |  |  | Files read from disk: 1 | Archive size: 138084 bytes (135 KiB) | Everything is Ok
 [2025-07-14 12:49:27] 🔁 Código salida: 0
 [2025-07-14 12:49:27] ✅ ZIP generado correctamente: C:\AppServ\www\SGD\principal_561553_.7z
+[2025-07-24 16:19:47] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\SGD\principal_32_.7z" "C:\Windows\TEMP/firma_principal_6882a373aca5f\INFORME-00013-2025_UTI_HEVES(e).pdf"
+[2025-07-24 16:19:47] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 153228 bytes (150 KiB) |  | Creating archive: C:\AppServ\www\SGD\principal_32_.7z |  | Add new data to archive: 1 file, 153228 bytes (150 KiB) |  |  | Files read from disk: 1 | Archive size: 136541 bytes (134 KiB) | Everything is Ok
+[2025-07-24 16:19:47] 🔁 Código salida: 0
+[2025-07-24 16:19:47] ✅ ZIP generado correctamente: C:\AppServ\www\SGD\principal_32_.7z

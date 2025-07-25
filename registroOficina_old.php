@@ -58,7 +58,7 @@
         h3 {
         margin-bottom: 12px;
         }
-         
+        
         </style>
     </head>
     <body>  
@@ -115,60 +115,54 @@
       <!-- Sección: Buscar por pedido SIGA -->
       <div id="seccionPedidoSiga" style="display:none; margin-top: 10px;">
         <div class="form-row">
-          <div class="input-container">
-            <input type="text" id="nroPedidoSIGA" placeholder=" " autocomplete="off">
-            <label for="nroPedidoSIGA">N° Pedido SIGA</label>
+            <div class="input-container">
+              <input type="text" id="expedienteSIGA" name="expedienteSIGA" placeholder=" " autocomplete="off">
+              <label for="expedienteSIGA">Pedido SIGA</label>
+            </div>
+            <div class="input-container">
+              <button type="button" id="buscarSigaBtn" class="btn-primary">Buscar Pedido SIGA</button>
+            </div>
           </div>
-          <div class="input-container">
-            <button type="button" id="buscarSigaBtn" class="btn-primary">Buscar Pedido SIGA</button>
-          </div>
-          <div class="input-container">
-            <button type="button" id="agregarPedidoBtn" class="btn-secondary">Agregar Pedido SIGA</button>
-          </div>
-        </div>
 
             <!-- Resultados búsqueda SIGA -->
-              <div class="form-row" id="resultadoBusqueda" style="display: none; margin-top: 10px;">
-                <div class="input-container" style="width: 100%; overflow-x: auto;">
-                  <h3>Ítems SIGA Búsqueda</h3>
-                  <table id="tablaSiga" style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                    <thead style="background: #f5f5f5;">
-                      <tr>
-                        <th>PEDIDO SIGA</th>
-                        <th>CÓDIGO ITEM</th>
-                        <th>NOMBRE ITEM</th>
-                        <th>CANTIDAD SOLICITADA</th>
-                      </tr>
-                    </thead>
-                    <tbody></tbody>
-                  </table>
-                </div>
-              </div>
-               <!-- FIN Resultados búsqueda SIGA -->
+          <div class="form-row" id="resultadoBusqueda" style="display: none;">
+            <div class="input-container" style="width: 100%; overflow-x: auto;">
+              <h3>Ítems SIGA Búsqueda</h3>
+              <table id="tablaSiga" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead style="background: #f5f5f5;">
+                  <tr>
+                  <th>PEDIDO SIGA</th><th>N° ORDEN</th><th>TIPO DE BIEN</th><th>PROVEEDOR</th>
+                  <th>MES</th><th>CONCEPTO</th><th>TOTAL SOLES</th><th>FECHA</th>
+                  <th>CÓDIGO ITEM</th><th>NOMBRE ITEM</th><th>ACCIONES</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
 
               <!-- Ítems agregados -->
-              <div class="form-row" id="resultadoAgregado" style="margin-top: 10px;">
-                <div class="input-container" style="width: 100%; overflow-x: auto;">
-                  <h3>Ítems SIGA Agregados</h3>
-                  <table id="tablaSigaAgregados" style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                    <thead style="background: #f5f5f5;">
-                      <tr>
-                        <th>PEDIDO SIGA</th>
-                        <th>CÓDIGO ITEM</th>
-                        <th>NOMBRE ITEM</th>
-                        <th>CANTIDAD SOLICITADA</th>
-                        <th>ACCIONES</th>
-                      </tr>
-                    </thead>
-                    <tbody></tbody>
-                  </table>
-                </div>
+          <div class="form-row" id="resultadoAgregado" style="margin-top: 10px;">
+            <div class="input-container" style="width: 100%; overflow-x: auto;">
+              <h3>Ítems SIGA Agregados</h3>
+              <table id="tablaSigaAgregados" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead style="background: #f5f5f5;">
+                  <tr>
+                    <th>PEDIDO SIGA</th><th>N° ORDEN</th><th>TIPO DE BIEN</th><th>PROVEEDOR</th>
+                    <th>MES</th><th>CONCEPTO</th><th>TOTAL SOLES</th><th>FECHA</th>
+                    <th>CÓDIGO ITEM</th><th>NOMBRE ITEM</th><th>ACCIONES</th>
+                  </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
               </div>
-              </div>
+            </div>
+          </div>
 
             <!-- Sección: Buscar sin pedido SIGA -->
             <div id="busquedaItemSinPedido" style="display:none; margin-top: 20px;">
- 
+              <h3>Agregar Ítems SIN Pedido SIGA</h3>
+
               <!-- Fila de búsqueda -->
               <div class="form-row" style="display: flex; gap: 12px;">
                 <!-- Buscar por CÓDIGO_ITEM -->
@@ -216,14 +210,17 @@
               </table>
             </div>
           </div>
+
         </div>
     <!-- FIN: GRUPO REQUERIMIENTO -->
+
          <!-- Asunto y Observaciones, Selección de destinos, etc. continúan aquí... -->
          <div class="form-row">
           <div class="input-container" style="flex: 1; position: relative;">
             <textarea id="asunto" name="asunto" class="form-textarea" required></textarea>
             <label for="asunto">Asunto</label>
           </div>
+
           <div class="input-container" style="flex: 1; position: relative;">
             <textarea id="observaciones" name="observaciones" class="form-textarea"></textarea>
             <label for="observaciones">Observaciones</label>
@@ -346,8 +343,6 @@
             }
           });
 
-
-///////// INICIO JS PARA SIGA
 // 2. Al cambiar "¿Tiene Pedido SIGA?"
 $('#pedidoSiga').on('change', function () {
   const tipo = $('#tipoDocumento').val();
@@ -399,70 +394,46 @@ $('#tipoBien').on('change', function () {
   $('#expedienteSIGA, #buscarItemTexto, #buscarItemCodigo').val('');
 });
 
-// 4. Buscar ítems por pedido  SIGA
-let pedidosSigaData = {}; // Guardará { nroPedido_tipoBien: [...items] }
+// 4. Buscar ítems por expediente SIGA
 $('#buscarSigaBtn').on('click', function () {
-  const nro = $('#nroPedidoSIGA').val().trim();
-  const tipoBien = $('#tipoBien').val();
+  const exp = $('#expedienteSIGA').val().trim();
+  const tipoSeleccionado = $('#tipoBien').val();
 
-  if (!nro || !tipoBien) return alert("Debe ingresar N° Pedido y tipo de bien.");
+  if (!exp) return alert('Ingrese un número de expediente SIGA');
+  if (!tipoSeleccionado) return alert('Seleccione el tipo de requerimiento');
 
-  $.get('buscar_pedido_siga.php', { nro_pedido: nro, tipo_bien: tipoBien }, function (res) {
+  $.get('buscar_pedido_siga.php', { expediente: exp }, function (res) {
     if (res.status === 'success') {
-      const rows = res.datos.map(item => `
-        <tr>
-          <td>${item.NRO_PEDIDO}</td>
-          <td>${item.CODIGO_ITEM}</td>
-          <td>${item.NOMBRE_ITEM}</td>
-          <td>${item.CANT_SOLICITADA}</td>
-        </tr>`).join('');
+        const tipoEsperado = tipoSeleccionado;
+      const tipoEncontrado = res.datos.length > 0 ? res.datos[0].TIPO_BIEN : null;
+
+      // Validar si el pedido SIGA corresponde al tipo seleccionado
+      if (tipoEsperado !== tipoEncontrado) {
+        $('#tablaSiga tbody').empty();
+        alert("⚠️ El pedido SIGA no corresponde al tipo de requerimiento seleccionado.");
+        return;
+      }
+
+      const rows = res.datos.map(d => {
+        const clave = `${exp}_${d.CODIGO_ITEM}`;
+        const fecha = d.FECHA_REG?.date ? new Date(d.FECHA_REG.date).toLocaleDateString('es-PE') : '';
+        const tipoBien = d.TIPO_BIEN === 'S' ? 'SERVICIO' : 'BIEN';
+        return `
+        <tr data-clave="${clave}">
+          <td>${exp}</td><td>${d.NRO_ORDEN}</td><td>${tipoBien}</td><td>${d.NOM_PROVEEDOR ?? d.PROVEEDOR}</td>
+            <td>${d.MES_CALEND}</td><td>${d.CONCEPTO}</td><td>${d.TOTAL_FACT_SOLES}</td><td>${fecha}</td>
+            <td>${d.CODIGO_ITEM}</td><td>${d.NOMBRE_ITEM}</td>
+            <td><button type="button" class="btn-primary agregarPedido" data-expediente="${exp}" data-clave="${clave}">Agregar</button></td>
+          </tr>`;
+      }).join('');
 
       $('#tablaSiga tbody').html(rows);
-      pedidosSigaData[`${nro}_${tipoBien}`] = res.datos;
       $('#resultadoBusqueda').show();
     } else {
-      alert("No se encontraron ítems para ese pedido SIGA.");
+      alert('No se encontraron resultados');
     }
   }, 'json');
 });
-
-$('#agregarPedidoBtn').on('click', function () {
-  const nro = $('#nroPedidoSIGA').val().trim();
-  const tipoBien = $('#tipoBien').val();
-  const clave = `${nro}_${tipoBien}`;
-  const datos = pedidosSigaData[clave];
-
-  if (!datos || datos.length === 0) return alert("Primero debe buscar un pedido SIGA válido.");
-  if ($(`#tablaSigaAgregados tr[data-pedido='${clave}']`).length > 0) {
-    return alert("Este pedido SIGA ya fue agregado.");
-  }
-
-  const totalItems = datos.length;
-  let filas = '';
-
-  datos.forEach((item, idx) => {
-    const cantidadEntera = parseInt(item.CANT_SOLICITADA.split('.')[0]); // corta todo lo decimal
-    const hidden = `<input type="hidden" name="pedidosSiga[]" value="${nro}_${tipoBien}_${item.CODIGO_ITEM}_${cantidadEntera}">`;
-    filas += `
-      <tr data-pedido="${clave}">
-        ${idx === 0 ? `<td rowspan="${totalItems}">${nro}</td>` : ''}
-        <td>${item.CODIGO_ITEM}</td>
-        <td>${item.NOMBRE_ITEM}</td>
-        <td>${item.CANT_SOLICITADA}</td>
-        ${idx === 0 ? `<td rowspan="${totalItems}"><button type="button" class="btn-secondary" onclick="eliminarPedidoSiga('${clave}')">Eliminar</button></td>` : ''}
-        ${hidden}
-      </tr>
-    `;
-  });
-
-  $('#tablaSigaAgregados tbody').append(filas);
-  $('#tablaSiga tbody').empty();
-  $('#nroPedidoSIGA').val('');
-});
-function eliminarPedidoSiga(clave) {
-  $(`#tablaSigaAgregados tr[data-pedido='${clave}']`).remove();
-  delete pedidosSigaData[clave];
-}
 
 // 5. Agregar ítem SIGA a tabla
 $(document).on('click', '.agregarPedido', function () {
@@ -604,8 +575,6 @@ function eliminarItemManual(codigo) {
   delete itemsManual[codigo];
   $(`#tablaItemsSinPedido tbody tr:has(td:contains('${codigo}'))`).remove();
 }
-
-///////// FIN JS PARA SIGA
 
 async function guardarTramite() {
         const form = document.getElementById("formularioRegistro");

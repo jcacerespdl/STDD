@@ -281,6 +281,76 @@ while ($pedido = sqlsrv_fetch_array($stmtSIGA, SQLSRV_FETCH_ASSOC)) {
     display: inline-block;
     max-width: 180px;
 }
+.detail-content {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+}
+
+.detail-content summary {
+  background: #f7f9fc;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: background 0.2s ease;
+}
+
+.detail-content summary:hover {
+  background: #eef2f7;
+}
+
+
+.detail-content div {
+  line-height: 1.6;
+  font-size: 14px;
+  color: #333;
+}
+
+.detail-content div > b {
+  color: #1a1a1a;
+  display: inline-block;
+  min-width: 140px;
+}
+table {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+table thead {
+  background: #f1f5f9;
+  font-weight: bold;
+}
+
+table th, table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e6e6e6;
+  text-align: left;
+}
+
+table tbody tr:hover {
+  background-color: #f9fbfd;
+}
+
+table td {
+  font-size: 13px;
+  color: #444;
+}
+h3 {
+  font-size: 18px;
+  color: #0c2d5d;
+  margin: 1.5rem 0 0.75rem 0;
+  font-family: 'Segoe UI', sans-serif;
+  border-left: 4px solid #0072CE;
+  padding-left: 10px;
+}
+
 </style>
 
 <!-- DATOS GENERALES -->
@@ -310,6 +380,15 @@ while ($pedido = sqlsrv_fetch_array($stmtSIGA, SQLSRV_FETCH_ASSOC)) {
     <?php else: ?>
         <span>No disponible</span>
     <?php endif; ?>
+    </div>
+    <!-- NUEVO BOTÓN PARA EXPORTAR FLUJO -->
+    <div style="margin-top: 10px;">
+        <a href="exportarFlujoPDF.php?iCodTramite=<?= $iCodTramite ?>&extension=<?= $extension ?>" 
+            target="_blank"
+            style="background-color:#005a86; color:white; padding:6px 14px; border-radius:20px; font-size:13px; text-decoration:none; display:inline-block; margin-top:6px;">
+            <span class="material-icons" style="vertical-align:middle; font-size:17px; margin-right:4px;">download</span>
+            Exportar Flujo a PDF
+        </a>
     </div>
 
     <?php if (!empty($itemsSIGA)): ?>

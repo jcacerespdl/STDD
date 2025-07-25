@@ -115,16 +115,18 @@ $resultUpdate = sqlsrv_query($cnx, $sqlUpdateCorrelativo, $paramsUpdate);
     $stmtClave = sqlsrv_query($cnx, $sqlUpdateClave, [$cPassword, $iCodTramite]);
 
 // Insertar cada pedido SIGA asociado
-foreach ($pedidosSiga as $pedidoCompleto) {
-    $pedidoParts = explode("_", $pedidoCompleto);
-    $pedidoSiga = $pedidoParts[0] ?? null;
-    if ($pedidoSiga) {
-        $sqlSiga = "INSERT INTO Tra_M_Tramite_SIGA_Pedido (iCodTramite, pedido_siga, extension) VALUES (?, ?, 1)";
-        $stmtSiga = sqlsrv_query($cnx, $sqlSiga, [$iCodTramite, $pedidoSiga]);
-        if ($stmtSiga === false) {
-            echo json_encode(["status" => "error", "message" => "Error al registrar pedido SIGA: " . print_r(sqlsrv_errors(), true)]);
-            exit();
-        }
+foreach ($pedidosSiga as $registro) {
+    // esperado: nroPedido_tipoBien_codigoItem_cantidad
+    list($nroPedido, $tipoBien, $codigoItem, $cantidad) = explode("_", $registro);
+
+    $sql = "INSERT INTO Tra_M_Tramite_SIGA_Pedido 
+            (iCodTramite, pedido_siga, codigo_item, cantidad, extension)
+            VALUES (?, ?, ?, ?, 1)";
+    $stmt = sqlsrv_query($cnx, $sql, [$iCodTramite, $nroPedido, $codigoItem, $cantidad]);
+
+    if ($stmt === false) {
+        echo json_encode(["status" => "error", "message" => "Error al registrar pedido SIGA: " . print_r(sqlsrv_errors(), true)]);
+        exit();
     }
 }
 

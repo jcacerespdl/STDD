@@ -26,7 +26,7 @@ sqlsrv_query($cnx, $sqlFirma, $paramsFirma);
 // Borrar registro del documento digital
 $sql = "DELETE FROM Tra_M_Tramite_Digitales WHERE iCodTramite = ? AND cDescripcion = ?";
 $params = [$iCodTramite, $archivo];
-$stmt = sqlsrv_query($cnx, $sql, $params);
+sqlsrv_query($cnx, $sql, $params);
 
 header("Location: registroOficinaEditor.php?iCodTramite=" . urlencode($iCodTramite));
 exit;

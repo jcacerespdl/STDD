@@ -61,9 +61,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         cRUCEntidad, cRazonSocialEntidad,
         cTipoDocumentoAsegurado, cNumeroDocumentoAsegurado, cCelularAsegurado, cCorreoAsegurado,
         cApePaternoAsegurado, cApeMaternoAsegurado, cNombresAsegurado, cLinkArchivo, documentoElectronico,
-        fFecRegistro, cPassword, extension
+        fFecRegistro, cPassword, extension, nFlgEstado, nFlgEnvio
     ) OUTPUT INSERTED.iCodTramite
-    VALUES (1, 236, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,1)";
+    VALUES (1, 236, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,1, 1, 1)";
 
     $params = [
         $asunto, $descripcion,
@@ -113,8 +113,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $fechaActual = date('Y-m-d H:i:s');
             $expediente = 'E' . str_pad($iCodTramite, 9, '0', STR_PAD_LEFT);
             $movQuery = "INSERT INTO Tra_M_Tramite_Movimientos (
-                iCodTramite, iCodTrabajadorRegistro, iCodOficinaOrigen, iCodOficinaDerivar, fFecDerivar, nFlgEnvio, expediente, extension
-            ) VALUES (?, 1456, 236, 46, ?, 1, ?, 1)";
+                iCodTramite, iCodTrabajadorRegistro, iCodOficinaOrigen, iCodOficinaDerivar, fFecDerivar, nFlgEnvio, expediente, extension,cFlgTipoMovimiento, nEstadoMovimiento
+            ) VALUES (?, 1456, 236, 46, ?, 1, ?, 1,1,0)";
             $movParams = [$iCodTramite, $fechaActual, $expediente];
 
             if (sqlsrv_query($cnx, $movQuery, $movParams)) {
@@ -572,10 +572,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       </div>
     </div>
 
-    <div class="row" style="flex-direction: column; gap: 10px;">
-      <label><input type="checkbox" id="politica"> Acepto la política de privacidad</label>
-      <label><input type="checkbox" id="veracidad"> Declaro bajo juramento que los datos ingresados en este formulario son verdaderos y están sujetos a lo establecido en los artículos 51 y 67 del TUO de la Ley N° 27444</label>
-    </div>
+     
 
     <div class="row" style="justify-content: center; margin-top: 30px;">
       <button type="submit" disabled style="padding: 12px 24px; background-color: #1b53b2; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer;">Enviar</button>

@@ -56,5 +56,4 @@ if (session_status() === PHP_SESSION_NONE) {
 </head>
 <body>
     <div style="text-align:center; margin-bottom: 10px;">
-        <img src="img/head_mesadepartes.jpg" alt="Cabecera MINSA" style="width:100%; max-width:100%; height:auto;">
-    </div>
+     </div>

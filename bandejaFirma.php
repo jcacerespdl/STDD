@@ -28,9 +28,14 @@ $params = [$iCodTrabajador];
 
 if ($filtroTipoComplementario === 'principal') {
     $sql .= " AND F.iCodDigital IS NULL";
-} else {
-    $sql .= " AND F.iCodDigital IS NOT NULL AND ISNULL(D.cTipoComplementario, 0) = ?";
-    $params[] = $filtroTipoComplementario;
+} elseif (preg_match('/^1_[PQO]$/', $filtroTipoComplementario)) {
+    // Pedido SIGA por posición
+    $sql .= " AND ISNULL(D.cTipoComplementario, 0) = 1 AND F.posicion = ?";
+    $params[] = substr($filtroTipoComplementario, 2, 1);
+} elseif (in_array($filtroTipoComplementario, ['0','3','4','5','6'])) {
+    // Tipos estándar de complementarios
+    $sql .= " AND ISNULL(D.cTipoComplementario, 0) = ?";
+    $params[] = (int)$filtroTipoComplementario;
 }
 
 if ($filtroFirmado === "0") {
@@ -46,42 +51,80 @@ $stmt = sqlsrv_query($cnx, $sql, $params);
 
 // === Consulta de conteo por tipo ===
 $sqlResumen = "
-SELECT 
-  CASE 
-    WHEN F.iCodDigital IS NULL THEN 'PRINCIPAL'
-    WHEN ISNULL(D.cTipoComplementario, 0) = 0 THEN 'SIMPLE'
-    ELSE CAST(D.cTipoComplementario AS VARCHAR)
-  END AS tipoDoc,
-  COUNT(*) AS total
-FROM Tra_M_Tramite_Firma F
-JOIN Tra_M_Tramite T ON T.iCodTramite = F.iCodTramite
-LEFT JOIN Tra_M_Tramite_Digitales D 
-    ON D.iCodTramite = F.iCodTramite AND D.iCodDigital = F.iCodDigital
-WHERE F.iCodTrabajador = ? AND F.nFlgFirma = 0 AND F.nFlgEstado = 1 AND T.nFlgEstado = 1
-GROUP BY 
-  CASE 
-    WHEN F.iCodDigital IS NULL THEN 'PRINCIPAL'
-    WHEN ISNULL(D.cTipoComplementario, 0) = 0 THEN 'SIMPLE'
-    ELSE CAST(D.cTipoComplementario AS VARCHAR)
-  END";
-
-
-  $resumen = [
+SELECT tipoDoc, COUNT(*) AS total
+FROM (
+  SELECT 
+    CASE 
+      WHEN F.iCodDigital IS NULL THEN 'PRINCIPAL'
+      WHEN ISNULL(D.cTipoComplementario, 0) = 1 AND F.posicion = 'P' THEN '1_P'
+      WHEN ISNULL(D.cTipoComplementario, 0) = 1 AND F.posicion = 'Q' THEN '1_Q'
+      WHEN ISNULL(D.cTipoComplementario, 0) = 1 AND F.posicion = 'O' THEN '1_O'
+      WHEN ISNULL(D.cTipoComplementario, 0) = 0 THEN 'SIMPLE'
+      WHEN ISNULL(D.cTipoComplementario, 0) = 3 THEN '3'
+      WHEN ISNULL(D.cTipoComplementario, 0) = 4 THEN '4'
+      WHEN ISNULL(D.cTipoComplementario, 0) = 5 THEN '5'
+      WHEN ISNULL(D.cTipoComplementario, 0) = 6 THEN '6'
+      ELSE 'OTRO'
+    END AS tipoDoc
+  FROM Tra_M_Tramite_Firma F
+  JOIN Tra_M_Tramite T ON T.iCodTramite = F.iCodTramite
+  LEFT JOIN Tra_M_Tramite_Digitales D 
+      ON D.iCodTramite = F.iCodTramite AND D.iCodDigital = F.iCodDigital
+  WHERE F.iCodTrabajador = ? 
+    AND F.nFlgFirma = 0 
+    AND F.nFlgEstado = 1 
+    AND T.nFlgEstado = 1
+) AS sub
+GROUP BY tipoDoc";
+ 
+$resumen = [
     "PRINCIPAL" => 0,
-    "SIMPLE" => 0,
-    "1" => 0,
-    "2" => 0,
-    "3" => 0,
-    "4" => 0,
-    "5" => 0,
-    "6" => 0,
-];
+    "SIMPLE"    => 0,
+    "1_P"       => 0,
+    "1_Q"       => 0,
+    "1_O"       => 0,
+    "3"         => 0,
+    "4"         => 0,
+    "5"         => 0,
+    "6"         => 0
+  ];
 $stmtResumen = sqlsrv_query($cnx, $sqlResumen, [$iCodTrabajador]);
 if ($stmtResumen) {
     while ($row = sqlsrv_fetch_array($stmtResumen, SQLSRV_FETCH_ASSOC)) {
-        $resumen[$row['tipoDoc']] = $row['total'];
+        $key = trim($row['tipoDoc']);
+    
+        if (isset($resumen[$key])) {
+            $resumen[$key] = $row['total'];
+        }
     }
 }
+
+// echo "<pre>";
+// print_r($resumen);
+// echo "</pre>";
+
+// $sqlDebug = "
+// SELECT 
+//   F.iCodFirma, F.iCodTramite, F.iCodDigital,
+//   D.iCodDigital AS digitalExistente, D.cTipoComplementario,
+//   F.posicion, F.nFlgFirma
+// FROM Tra_M_Tramite_Firma F
+// JOIN Tra_M_Tramite T ON T.iCodTramite = F.iCodTramite
+// LEFT JOIN Tra_M_Tramite_Digitales D 
+//   ON D.iCodTramite = F.iCodTramite AND D.iCodDigital = F.iCodDigital
+// WHERE F.iCodTrabajador = ?
+//   AND F.nFlgFirma = 0 
+//   AND F.nFlgEstado = 1 
+//   AND T.nFlgEstado = 1
+// ORDER BY F.iCodTramite DESC";
+
+// $stmtDebug = sqlsrv_query($cnx, $sqlDebug, [$iCodTrabajador]);
+// while ($row = sqlsrv_fetch_array($stmtDebug, SQLSRV_FETCH_ASSOC)) {
+//     echo "<pre>";
+//     print_r($row);
+//     echo "</pre>";
+// }
+
 
 ?>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -102,14 +145,30 @@ if ($stmtResumen) {
                     <option value="0" <?= $filtroTipoComplementario === "0" ? 'selected' : '' ?>>Complementarios</option>
                 </optgroup>
                 <optgroup label="DOCUMENTOS COMPLEMENTARIOS de REQUERIMIENTO">
-                    <option value="1" <?= $filtroTipoComplementario === "1" ? 'selected' : '' ?>>Pedido SIGA</option>
-                    <option value="2" <?= $filtroTipoComplementario === "2" ? 'selected' : '' ?>>TDR o ETT</option>
-                    <option value="3" <?= $filtroTipoComplementario === "3" ? 'selected' : '' ?>>Solicitud de Crédito Presupuestario</option>
-                    <option value="4" <?= $filtroTipoComplementario === "4" ? 'selected' : '' ?>>Aprobación de Crédito presupuestario</option>
-                    <option value="5" <?= $filtroTipoComplementario === "5" ? 'selected' : '' ?>>Orden de servicio</option>
-                    <option value="6" <?= $filtroTipoComplementario === "6" ? 'selected' : '' ?>>Orden de compra</option>
 
+                    <?php if ($resumen["1_P"] > 0): ?>
+                        <option value="1_P" <?= $filtroTipoComplementario === "1_P" ? 'selected' : '' ?>>Pedido SIGA (Solicita)</option>
+                    <?php endif; ?>
+
+                    <?php if ($resumen["1_Q"] > 0): ?>
+                        <option value="1_Q" <?= $filtroTipoComplementario === "1_Q" ? 'selected' : '' ?>>Pedido SIGA (Autoriza)</option>
+                    <?php endif; ?>
+
+                    <?php if ($resumen["1_O"] > 0): ?>
+                        <option value="1_O" <?= $filtroTipoComplementario === "1_O" ? 'selected' : '' ?>>Pedido SIGA (Revisa)</option>
+                    <?php endif; ?>
+                    <option value="5" <?= $filtroTipoComplementario === "5" ? 'selected' : '' ?>>Orden de Servicio</option>
+
+                    <?php if (in_array($_SESSION['iCodOficinaLogin'], [112, 3])): ?>
+                        <option value="3" <?= $filtroTipoComplementario === "3" ? 'selected' : '' ?>>Solicitud de Crédito Presupuestario</option>
+                        <option value="6" <?= $filtroTipoComplementario === "6" ? 'selected' : '' ?>>Orden de Compra</option>
+                    <?php endif; ?>
+
+                    <?php if (in_array($_SESSION['iCodOficinaLogin'], [71, 23])): ?>
+                        <option value="4" <?= $filtroTipoComplementario === "4" ? 'selected' : '' ?>>Aprobación de Crédito Presupuestario</option>
+                    <?php endif; ?>
                 </optgroup>
+
             </select>
         </div>
 
@@ -144,15 +203,17 @@ if ($stmtResumen) {
             <?php if ($resumen['PRINCIPAL'] > 0): ?>
                 <tr><td>Documento Principal</td><td><?= $resumen['PRINCIPAL'] ?></td></tr>
             <?php endif; ?>
+
             <?php if ($resumen['SIMPLE'] > 0): ?>
                 <tr><td>Complementarios</td><td><?= $resumen['SIMPLE'] ?></td></tr>
             <?php endif; ?>
-            <?php if ($resumen['1'] > 0): ?>
-                <tr><td>Pedido SIGA</td><td><?= $resumen['1'] ?></td></tr>
+
+            <?php
+            $pedidoSigaTotal = $resumen['1_P'] + $resumen['1_Q'] + $resumen['1_O'];
+            if ($pedidoSigaTotal > 0): ?>
+            <tr><td>Pedido SIGA</td><td><?= $pedidoSigaTotal ?></td></tr>
             <?php endif; ?>
-            <?php if ($resumen['2'] > 0): ?>
-                <tr><td>TDR o ETT</td><td><?= $resumen['2'] ?></td></tr>
-            <?php endif; ?>
+            
             <?php if ($resumen['3'] > 0): ?>
                 <tr><td>Solicitud de crédito</td><td><?= $resumen['3'] ?></td></tr>
             <?php endif; ?>
@@ -248,9 +309,12 @@ $filtradoActivo = $filtroTipoComplementario !== ''; // solo permite firmar si ha
 
     <p id="contadorSeleccionados">(0 seleccionados)</p>
 <br>
-    <?php if ($filtradoActivo && is_numeric($filtroTipoComplementario) && intval($filtroTipoComplementario) > 0): ?>
-        <button id="btnFirmarSeleccionados" class="btn btn-primary">Firmar seleccionados</button>
-    <?php endif; ?>
+<?php
+$esComplementarioRequerimiento = preg_match('/^1_[PQO]$/', $filtroTipoComplementario) || in_array($filtroTipoComplementario, ['3','4','5','6']);
+if ($filtradoActivo && $esComplementarioRequerimiento):
+?>
+    <button id="btnFirmarSeleccionados" class="btn btn-primary">Firmar seleccionados</button>
+<?php endif; ?>
 <?php else: ?>
     <p>No hay documentos que coincidan con el filtro actual.</p>
 <?php endif; ?>

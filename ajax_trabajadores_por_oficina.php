@@ -13,7 +13,7 @@ $sql = "SELECT
             O.cNomOficina,
             P.cDescPerfil
         FROM Tra_M_Trabajadores T
-        INNER JOIN Tra_M_Perfil_Ususario PU ON T.iCodTrabajador = PU.iCodTrabajador AND PU.iCodPerfil IN (3,4)
+        INNER JOIN Tra_M_Perfil_Ususario PU ON T.iCodTrabajador = PU.iCodTrabajador AND PU.iCodPerfil IN (3)
         INNER JOIN Tra_M_Oficinas O ON PU.iCodOficina = O.iCodOficina AND O.iFlgEstado = 1
         INNER JOIN Tra_M_Perfil P ON P.iCodPerfil = PU.iCodPerfil
         WHERE T.nFlgEstado = 1";

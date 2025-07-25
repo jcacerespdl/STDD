@@ -1,5 +1,5 @@
 <?php
-include("headFlujo.php");
+ 
 include("conexion/conexion.php");
 
 $iCodTramite = isset($_GET['iCodTramite']) ? intval($_GET['iCodTramite']) : 0;

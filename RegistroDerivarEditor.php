@@ -716,9 +716,9 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
                     <a href="#" onclick="abrirPopupFirmantes(<?= $iCodTramite ?>, <?= $iCodDigital ?>, '<?= htmlspecialchars($doc['archivo']) ?>')" style="color: var(--primary);">
                     <i class="material-icons" title="Visar Complementario">person_add</i>
                      </a>
-                     <a href="#" onclick="abrirTipoComplementario(<?= $iCodTramite ?>, <?= $iCodDigital ?>, '<?= htmlspecialchars($doc['archivo']) ?>')" style="color: var(--primary);">
+                     <!-- <a href="#" onclick="abrirTipoComplementario(<?= $iCodTramite ?>, <?= $iCodDigital ?>, '<?= htmlspecialchars($doc['archivo']) ?>')" style="color: var(--primary);">
                      <i class="material-icons" title="Designar Tipo de Complementario">assignment</i>
-                     </a>
+                     </a> -->
                                         <?php endif; ?>
                                     </td>
                                       <!-- <td>

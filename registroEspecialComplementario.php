@@ -91,7 +91,7 @@ $cTipoActual = $documento['cTipoComplementario'] ?? null;
 
         <label for="tipo">Tipo de Complementario</label>
         <select name="tipo" id="tipo" required>
-            <option value="">Seleccione...</option>
+            <option value="">Seleccione</option>
             <option value="1" <?= $cTipoActual == 1 ? 'selected' : '' ?>>Pedido SIGA</option>
             <option value="2" <?= $cTipoActual == 2 ? 'selected' : '' ?>>TDR o ETT</option>
             <option value="3" <?= $cTipoActual == 3 ? 'selected' : '' ?>>Solicitud de Crédito Presupuestario</option>
