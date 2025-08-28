@@ -1,139 +1,46 @@
 <?php
 include 'conexion/conexion.php';
- include 'head.php' ;
+include 'head.php';
 
- 
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-       // Datos del formulario
-    $tipoDocumento = $_POST['tipoDocumento'] ?? null;
-    $nroDocumento = $_POST['nroDocumento'] ?? null;
-    $celular = $_POST['celular'] ?? null;
-    $correo = $_POST['correo'] ?? null;
-    $apePaterno = $_POST['apePaterno'] ?? null;
-    $apeMaterno = $_POST['apeMaterno'] ?? null;
-    $nombres = $_POST['nombres'] ?? null;
-    $departamento = $_POST['departamento'] ?? null;
-    $provincia = $_POST['provincia'] ?? null;
-    $distrito = $_POST['distrito'] ?? null;
-    $direccion = $_POST['direccion'] ?? null;
-    $ruc = $_POST['ruc'] ?? null;
-    $razonSocial = $_POST['razonSocial'] ?? null;
-    $tdoc_asegurado = $_POST['tdoc_asegurado'] ?? null;
-    $ndoc_asegurado = $_POST['ndoc_asegurado'] ?? null;
-    $cel_asegurado = $_POST['cel_asegurado'] ?? null;
-    $email_asegurado = $_POST['email_asegurado'] ?? null;
-    $apePaterno_asegurado = $_POST['apePaterno_asegurado'] ?? null;
-    $apeMaterno_asegurado = $_POST['apeMaterno_asegurado'] ?? null;
-    $nombres_asegurado = $_POST['nombres_asegurado'] ?? null;
-    $asunto = $_POST['asunto'] ?? null;
-    $descripcion = $_POST['descripcion'] ?? null;
-    $link = $_POST['link'] ?? null;
-    $cPassword = substr(str_pad(abs(crc32($nroDocumento)), 5, '0', STR_PAD_LEFT), 0, 5);
-    $fechaRegistro = date_create(); // objeto DateTime
-    $nombreArchivo = null;
-    $archivoValido = false;
-    $archivo = null;
+session_start();
+$iCodTrabajadorRegistro = $_SESSION['CODIGO_TRABAJADOR'] ?? null;
+$iCodOficinaRegistro = 236; // oficina Mesa de Partes
 
-    if (isset($_FILES['archivo']) && $_FILES['archivo']['error'] === UPLOAD_ERR_OK) {
-      $archivo = $_FILES['archivo'];
-      $nombreArchivo = basename($archivo['name']);
-      $extension = strtolower(pathinfo($nombreArchivo, PATHINFO_EXTENSION));
-      $tipoMime = $archivo['type'];
-      $pesoMaximo = 10 * 1024 * 1024;
-  
-      if ($extension !== 'pdf' || stripos($tipoMime, 'pdf') === false) {
-          echo "<script>alert('El archivo debe ser un PDF válido.');</script>";
-          $nombreArchivo = null;
-      } elseif ($archivo['size'] > $pesoMaximo) {
-          echo "<script>alert('El archivo excede los 10MB permitidos.');</script>";
-          $nombreArchivo = null;
-      } else {
-          $archivoValido = true;
-      }
-  }
+// Tipos de documento para Mesa de Partes (nFlgEntrada = 1)
+$sqlTiposDoc = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgEntrada = 1 ORDER BY cDescTipoDoc ASC";
+$resultTiposDoc = sqlsrv_query($cnx, $sqlTiposDoc);
+$tiposDocumentoEntrada = [];
+while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
+    $tiposDocumentoEntrada[] = $row;
+}
+// Oficinas
+$sqlOficinas = "SELECT iCodOficina, cNomOficina, cSiglaOficina  FROM Tra_M_Oficinas";
+$resultOficinas = sqlsrv_query($cnx, $sqlOficinas);
+$oficinas = [];
+while ($row = sqlsrv_fetch_array($resultOficinas, SQLSRV_FETCH_ASSOC)) {
+    $oficinas[] = $row;
+}
 
-    // Usando OUTPUT para recuperar el ID insertado
-    $query = "INSERT INTO Tra_M_Tramite (
-        nFlgTipoDoc, iCodOficinaRegistro, cAsunto, cObservaciones,  
-        cTipoDocumentoSolicitante, cNumeroDocumentoSolicitante, cCelularSolicitante, cCorreoSolicitante, 
-        cApePaternoSolicitante, cApeMaternoSolicitante, cNombresSolicitante,
-        cDepartamentoSolicitante, cProvinciaSolicitante, cDistritoSolicitante, cDireccionSolicitante, 
-        cRUCEntidad, cRazonSocialEntidad,
-        cTipoDocumentoAsegurado, cNumeroDocumentoAsegurado, cCelularAsegurado, cCorreoAsegurado,
-        cApePaternoAsegurado, cApeMaternoAsegurado, cNombresAsegurado, cLinkArchivo, documentoElectronico,
-        fFecRegistro, cPassword, extension
-    ) OUTPUT INSERTED.iCodTramite
-    VALUES (1, 236, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,1)";
-
-    $params = [
-        $asunto, $descripcion,
-        $tipoDocumento, $nroDocumento, $celular, $correo,
-        $apePaterno, $apeMaterno, $nombres,
-        $departamento, $provincia, $distrito, $direccion,
-        $ruc, $razonSocial,
-        $tdoc_asegurado, $ndoc_asegurado, $cel_asegurado, $email_asegurado,
-        $apePaterno_asegurado, $apeMaterno_asegurado, $nombres_asegurado,
-        $link, $nombreArchivo, $fechaRegistro, $cPassword
-         
+// Jefes
+$sqlJefes = "SELECT t.iCodOficina, t.iCodTrabajador, tr.cNombresTrabajador, tr.cApellidosTrabajador 
+        FROM Tra_M_Perfil_Ususario t 
+        JOIN Tra_M_Trabajadores tr ON t.iCodTrabajador = tr.iCodTrabajador
+        WHERE t.iCodPerfil = 3";
+$resultJefes = sqlsrv_query($cnx, $sqlJefes);
+$jefes = [];
+while ($row = sqlsrv_fetch_array($resultJefes, SQLSRV_FETCH_ASSOC)) {
+    $jefes[$row['iCodOficina']] = [
+      "name" => $row['cNombresTrabajador'] . " " . $row['cApellidosTrabajador'], 
+      "id" => $row['iCodTrabajador']
     ];
+}
 
-    echo "<script>console.group('Parámetros enviados al INSERT');</script>";
-    foreach ($params as $index => $valor) {
-        $val = is_null($valor) ? 'NULL' : addslashes($valor);
-        echo "<script>console.log('[$index] = \"$val\"');</script>";
-    }
-    echo "<script>console.groupEnd();</script>";
-
-    $stmt = sqlsrv_prepare($cnx, $query, $params);
-
-    if (sqlsrv_execute($stmt)) {
-        // Obtener el iCodTramite desde OUTPUT
-        $iCodTramite = null;
-        if (sqlsrv_fetch($stmt)) {
-            $iCodTramite = sqlsrv_get_field($stmt, 0);
-            echo "<script>console.log('iCodTramite generado: $iCodTramite');</script>";
-        }
-
-       // Subir archivo si corresponde
-       if ($archivoValido && $iCodTramite) {
-        $nombreSinEspacios = preg_replace('/\s+/', '_', pathinfo($nombreArchivo, PATHINFO_FILENAME));
-        $extension = pathinfo($nombreArchivo, PATHINFO_EXTENSION);
-        $archivoFinal = $iCodTramite . '-' . $nombreSinEspacios . '.' . $extension;
-        $rutaDestino = __DIR__ . "/cDocumentosFirmados/" . $archivoFinal;
-
-        if (move_uploaded_file($archivo['tmp_name'], $rutaDestino)) {
-            echo "<script>console.log('Archivo subido correctamente a: $archivoFinal');</script>";
-        } else {
-            echo "<script>alert('No se pudo mover el archivo al servidor.');</script>";
-        }
-    }
-
-        // Insertar en movimientos
-        if ($iCodTramite) {
-            $fechaActual = date('Y-m-d H:i:s');
-            $expediente = 'E' . str_pad($iCodTramite, 9, '0', STR_PAD_LEFT);
-            $movQuery = "INSERT INTO Tra_M_Tramite_Movimientos (
-                iCodTramite, iCodTrabajadorRegistro, iCodOficinaOrigen, iCodOficinaDerivar, fFecDerivar, nFlgEnvio, expediente, extension
-            ) VALUES (?, 1456, 236, 46, ?, 1, ?, 1)";
-            $movParams = [$iCodTramite, $fechaActual, $expediente];
-
-            if (sqlsrv_query($cnx, $movQuery, $movParams)) {
-              echo "<script>window.location.href = 'MesaDePartes_confirmacion.php?id=$iCodTramite&clave=$cPassword';</script>";
-              echo "<script>alert('Trámite registrado pero error al guardar movimiento.');</script>";
-            }
-        }
-
-            } else {
-        echo "<script>alert('Error al registrar el trámite');</script>";
-        if (($errors = sqlsrv_errors()) != null) {
-            echo "<script>console.group('Errores de SQL Server');</script>";
-            foreach ($errors as $error) {
-                $msg = "SQLSTATE: {$error['SQLSTATE']} - Code: {$error['code']} - Message: {$error['message']}";
-                echo "<script>console.error(" . json_encode($msg) . ");</script>";
-            }
-            echo "<script>console.groupEnd();</script>";
-        }
-    }
+// Indicaciones
+$sqlIndicaciones = "SELECT iCodIndicacion, cIndicacion FROM Tra_M_Indicaciones";
+$resultIndicaciones = sqlsrv_query($cnx, $sqlIndicaciones);
+$indicaciones = [];
+while ($row = sqlsrv_fetch_array($resultIndicaciones, SQLSRV_FETCH_ASSOC)) {
+    $indicaciones[] = $row;
 }
 ?>
 <!DOCTYPE html>
@@ -293,11 +200,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
   </style>
 </head>
 <body>
- 
- 
-
-<div style="margin: 130px auto 0 auto; max-width:1000px; background:white; border:1px solid #ccc; border-radius:10px; padding:40px;">
-
+<div style="margin: 130px auto 0 auto; max-width:1200px; background:white; border:1px solid #ccc; border-radius:10px; padding:40px;">
 <form class="form-wrapper" method="POST" enctype="multipart/form-data">
   <h3 style="margin-bottom: 0;">Datos del Solicitante</h3>
     <div class="row">
@@ -316,9 +219,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <label for="nroDocumento">Nro de Documento</label>
           </div>
           <div style="display: flex; align-items: flex-end;">
-            <button type="button" id="btnBuscarDNI" style="padding: 12px 16px; background: #364897; color: white; border: none; border-radius: 4px; height: 48px;">
-              Buscar
-            </button>
+          <button type="button" id="btnBuscarDNI" class="btn-primary" style="height: 48px;">
+  Buscar
+</button>
           </div>
           <div class="input-container">
             <input type="text" id="celular" name="celular" placeholder=" " autocomplete="off" >
@@ -397,9 +300,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <span class="material-icons">apartment</span>
           </div>
           <div style="display: flex; align-items: flex-end;">
-            <button type="button" id="btnBuscarRUC" style="padding: 12px 16px; background: #364897; color: white; border: none; border-radius: 4px; height: 48px;">
-              Buscar RUC
-            </button>
+          <button type="button" id="btnBuscarRUC" class="btn-primary" style="height: 48px;">
+          Buscar RUC
+        </button>
           </div>
           <div class="input-container">
             <input type="text" id="razonSocial" name="razonSocial" placeholder=" " autocomplete="off">
@@ -440,20 +343,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <label for="distritoEntidad">Distrito</label>
           </div>
         </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
       <div class="row">
         <label><strong>¿El trámite es de una empresa de seguros?</strong></label>
@@ -539,7 +428,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </div>
   
   <!-- Sección: Descripción del Trámite o Solicitud -->
-    <h3 style="margin-bottom: 0;">Descripción del Trámite / Solicitud</h3>
+    <h3 style="margin-bottom: 0;">Descripción del Trámite / Observaciones</h3>
+
+    <div class="row">
+
+  <!-- Tipo de Documento (cCodTipoDoc) dinámico -->
+  <div class="input-container select-flotante">
+    <select id="tipoDocumentoOficial" name="tipoDocumentoOficial" required>
+      <option value="" disabled selected hidden></option>
+      <?php foreach ($tiposDocumentoEntrada as $tipo): ?>
+        <option value="<?= $tipo['cCodTipoDoc'] ?>"><?= htmlentities($tipo['cDescTipoDoc']) ?></option>
+      <?php endforeach; ?>
+    </select>
+    <label for="tipoDocumentoOficial">Tipo de Documento</label>
+  </div>
+
+  <!-- Tipo de Registro (iCodTipoRegistro) -->
+  <div class="input-container select-flotante">
+    <select id="tipoRegistro" name="tipoRegistro" required>
+      <option value="" disabled hidden></option>
+      <option value="1">Registro vía Correo</option>
+      <option value="2" selected>Registro vía Presencial</option>
+      <option value="3">Registro vía Mesa de Partes Virtual</option>
+      <option value="4">Registro vía PIDE</option>
+    </select>
+    <label for="tipoRegistro">Tipo de Registro</label>
+  </div>
+
+  <!-- Número de Folios (nNumFolio) -->
+  <div class="input-container">
+    <input type="number" id="nNumFolio" name="nNumFolio" placeholder=" " min="1" value="1" required>
+    <label for="nNumFolio">N° de Folios</label>
+  </div>
+
+</div>
 
     <div class="row">
       <div class="input-container">
@@ -553,32 +475,99 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       <div class="input-container">
         <input type="text" id="descripcion" name="descripcion" placeholder=" " autocomplete="off" maxlength="250"
           style="height: 80px; padding-top: 24px; line-height: 1.4;">
-        <label for="descripcion">Descripción del Trámite o Solicitud</label>
+        <label for="descripcion">Descripción del Trámite / Observaciones </label>
         <small style="color: #666; display: block; margin-top: 5px;">La descripción debe contener un máximo de 250 caracteres</small>
       </div>
     </div>
 
     <div class="row" style="flex-direction: column; gap: 10px;">
-      <label style="font-weight: bold; font-size: 15px; color: #000;">Archivo adjunto</label>
+      <label style="font-weight: bold; font-size: 15px; color: #000;">Archivo Principal</label>
       <input type="file" id="archivo" name="archivo" accept="application/pdf"
         style="appearance: none; -webkit-appearance: none; background: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 6px; outline: none; color: #333;">
       <small style="color: #666;">Peso máximo: 10 MB en total, solo se aceptan formatos pdf. Si tu archivo pesa más del peso máximo ingresa el link de descarga.</small>
     </div>
 
-    <div class="row">
+    <!-- <div class="row">
       <div class="input-container">
         <input type="text" id="link" name="link"placeholder=" " autocomplete="off">
         <label for="link">Link</label>
       </div>
-    </div>
+    </div> -->
+
 
     <div class="row" style="flex-direction: column; gap: 10px;">
-      <label><input type="checkbox" id="politica"> Acepto la política de privacidad</label>
-      <label><input type="checkbox" id="veracidad"> Declaro bajo juramento que los datos ingresados en este formulario son verdaderos y están sujetos a lo establecido en los artículos 51 y 67 del TUO de la Ley N° 27444</label>
+      <label style="font-weight: bold; font-size: 15px; color: #000;">Archivos Complementarios  </label>
+      <input type="file" id="complementarios" name="complementarios[]" multiple accept="application/pdf"
+        style="appearance: none; background: #fff; border: 1px solid #ccc; border-radius: 4px; padding: 6px; outline: none; color: #333;">
+      <small style="color: #666;">Puede subir varios documentos complementarios en PDF (máximo 10 MB cada uno).</small>
     </div>
 
+    
+
+     <!-- CAMPO EXTRA DESTINOS -->
+     <h3>Búsqueda de Oficinas</h3>
+            
+        <div class="form-row">
+          <div class="input-container oficina-ancha" style="position: relative;">
+            <input type="text" id="nombreOficinaInput" placeholder=" " autocomplete="off" required>
+            <label for="nombreOficinaInput">Nombre de Oficina</label>
+            <input type="hidden" id="oficinasDestino" name="oficinasDestino">
+            <div id="sugerenciasOficinas" class="sugerencias-dropdown" style="position: absolute; top: 100%; left: 0; right: 0; z-index: 10; background: white; border: 1px solid #ccc; max-height: 150px; overflow-y: auto;"></div>
+          </div>
+
+            <div class="input-container">
+                <input type="text" id="jefeOficina" name="jefeOficina" placeholder=" " readonly>
+                <label for="jefeOficina">Jefe</label>
+            </div>
+
+            <div class="input-container select-flotante">
+                 <select id="indicacion" name="indicacion" required>
+                      <option value="" disabled hidden></option>
+                      <?php foreach($indicaciones as $ind) { ?>
+                          <option value="<?= $ind['iCodIndicacion'] ?>" <?= $ind['iCodIndicacion'] == 2 ? 'selected' : '' ?>>
+                              <?= trim($ind['cIndicacion']) ?>
+                          </option>
+                      <?php } ?>
+                  </select>
+                <label for="indicacion">Indicación</label>
+            </div>
+                    
+            <div class="input-container select-flotante prioridad-reducida">
+                <select id="prioridad" name="prioridad" required>
+                    <option value="" disabled selected hidden></option>
+                    <option value="1">Baja</option>
+                    <option value="2" selected>Media</option>
+                    <option value="3">Alta</option>
+                </select>
+                <label for="prioridad">Prioridad</label>
+            </div>
+                   
+            <button type="button" class="btn-primary" style="min-width: 100px;" onclick="agregarDestino()">Agregar</button>
+          </div>
+
+            <!-- Tabla destinos con el mismo diseño que SIGA -->
+            <div class="form-row" id="tablaDestinos" style="margin-top: 20px;">
+              <div class="input-container" style="width: 100%; overflow-x: auto;">
+                <h3 style="margin-top: 0;">Destinos</h3>
+                <table id="tablaDestinos" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                  <thead style="background: #f5f5f5;">
+                        <tr>
+                            <th>Oficina</th>
+                            <th>Jefe</th>
+                            <th>Indicación</th>
+                            <th>Prioridad</th>              
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            </div>
+
     <div class="row" style="justify-content: center; margin-top: 30px;">
-      <button type="submit" disabled style="padding: 12px 24px; background-color: #1b53b2; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer;">Enviar</button>
+    <button type="button" class="btn-primary" onclick="guardarTramite()">
+  Enviar
+</button>
     </div>
 
 </form>
@@ -658,20 +647,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
       });
     });
 
-    // Habilitar Boton
-    const politicaCheckbox = document.getElementById('politica');
-    const veracidadCheckbox = document.getElementById('veracidad');
+ 
     const submitBtn = document.querySelector('button[type="submit"]');
 
-    const actualizarBoton = () => {
-      submitBtn.disabled = !(politicaCheckbox.checked && veracidadCheckbox.checked);
-    };
-
-    politicaCheckbox.addEventListener('change', actualizarBoton);
-    veracidadCheckbox.addEventListener('change', actualizarBoton);
-
-    
-    actualizarBoton();
+ 
 
     $("#btnBuscarDNI").click(function () {
   const dni = $("#nroDocumento").val().trim();
@@ -763,6 +742,195 @@ $("#btnBuscarRUC").click(function () {
     });
 });
 
+const oficinasAgregadas = new Set(); // Conjunto que guarda las oficinas ya agregadas como destino (para evitar duplicados)
+        const jefesPorOficina = <?= json_encode($jefes, JSON_UNESCAPED_UNICODE) ?>;
+
+    function agregarDestino() {
+        const oficinaId = document.getElementById("oficinasDestino").value;
+        const oficinaNombre = document.getElementById("nombreOficinaInput").value;
+        const jefe = document.getElementById("jefeOficina").value;
+        const jefeId = document.getElementById("jefeOficina").dataset.jefeid;
+        const indicacionSelect = document.getElementById("indicacion");
+        const indicacionValue = indicacionSelect.value;
+        const indicacionText = indicacionSelect.options[indicacionSelect.selectedIndex].text;
+        const prioridadSelect = document.getElementById("prioridad");
+        const prioridadValue = prioridadSelect.value;
+        const prioridadText = prioridadSelect.options[prioridadSelect.selectedIndex].text;
+       
+
+         // Validar campos
+        if (!oficinaId || !indicacionValue || !prioridadValue) {
+            alert("Por favor, complete todos los campos.");
+            return;
+        }
+
+        // Prevenir duplicado
+        if (oficinasAgregadas.has(oficinaId)) {
+            alert("Esta oficina ya ha sido agregada.");
+            return;
+        }
+
+        oficinasAgregadas.add(oficinaId);
+
+        const table = document.getElementById("tablaDestinos").getElementsByTagName('tbody')[0];
+        const row = table.insertRow();
+
+          // Agregar fila con los datos
+        row.innerHTML = `
+            <input type="hidden" name="destinos[]" value="${oficinaId}_${jefeId}_${indicacionValue}_${prioridadText}"/>
+            <td>${oficinaNombre}</td>
+            <td>${jefe}</td>
+            <td>${indicacionText}</td>
+            <td>${prioridadText}</td>
+            
+            <td><button type="button" class="btn-secondary" onclick="eliminarDestino(this, '${oficinaId}')">Eliminar</button></td>`;
+
+        // Limpiar campos del formulario
+        document.getElementById("nombreOficinaInput").value = '';
+        document.getElementById("oficinasDestino").value = '';
+        document.getElementById("jefeOficina").value = '';
+        document.getElementById("jefeOficina").dataset.jefeid = '';
+        document.getElementById("indicacion").value = "2"; // cuando se seleccione nuevamente poner la indicacion 2 por defecto
+        document.getElementById("prioridad").selectedIndex = 1;
+ 
+    }
+
+    function eliminarDestino(btn, oficinaId) {
+        oficinasAgregadas.delete(oficinaId);
+        btn.parentElement.parentElement.remove();
+    }
+    
+    const oficinas = <?= json_encode($oficinas, JSON_UNESCAPED_UNICODE) ?>;
+const jefes = <?= json_encode($jefes, JSON_UNESCAPED_UNICODE) ?>;
+
+function mostrarSugerenciasOficinas(filtro = "") {
+  const contenedor = $('#sugerenciasOficinas');
+  contenedor.empty();
+
+  const filtroLower = filtro.toLowerCase();
+  const resultados = oficinas.filter(ofi =>
+    ofi.cNomOficina.toLowerCase().includes(filtroLower) ||
+    ofi.cSiglaOficina.toLowerCase().includes(filtroLower)
+  );
+
+  if (resultados.length === 0) {
+    contenedor.append('<div class="sugerencia-item" style="color:#888">Sin resultados</div>');
+  }
+
+  resultados.forEach(ofi => {
+    const textoCompleto = `${ofi.cNomOficina} - ${ofi.cSiglaOficina}`;
+    const item = $('<div class="sugerencia-item">').text(textoCompleto);
+    item.on('click', function () {
+      $('#nombreOficinaInput').val(textoCompleto);
+      $('#oficinasDestino').val(ofi.iCodOficina);
+
+      const jefe = jefes[ofi.iCodOficina];
+      $('#jefeOficina')
+        .val(jefe ? jefe.name : '')
+        .attr('data-jefeid', jefe ? jefe.id : '');
+
+      contenedor.hide();
+    });
+    contenedor.append(item);
+  });
+
+  contenedor.show();
+}
+
+// Mostrar todas al hacer focus si está vacío
+$('#nombreOficinaInput').on('focus', function () {
+  if ($(this).val().trim() === '') {
+    mostrarSugerenciasOficinas('');
+  }
+});
+
+// Buscar dinámico mientras escribe
+$('#nombreOficinaInput').on('input', function () {
+  const texto = $(this).val().trim();
+  if (texto.length >= 1) {
+    mostrarSugerenciasOficinas(texto);
+  } else {
+    $('#sugerenciasOficinas').hide();
+  }
+});
+
+// Ocultar sugerencias al hacer clic fuera
+$(document).on('click', function (e) {
+  if (!$(e.target).closest('#nombreOficinaInput, #sugerenciasOficinas').length) {
+    $('#sugerenciasOficinas').hide();
+  }
+});
+
+async function guardarTramite() {
+  const form = document.querySelector("form");
+  const formData = new FormData(form);
+
+  // Validación: debe haber al menos un destino
+  const destinosInputs = document.querySelectorAll('input[name="destinos[]"]');
+  if (destinosInputs.length === 0) {
+    alert("Debe agregar al menos una oficina de destino.");
+    return;
+  }
+
+  // Validación del archivo PDF
+  const archivo = document.getElementById("archivo").files[0];
+  if (archivo) {
+    const maxSize = 10 * 1024 * 1024;
+    const ext = archivo.name.split('.').pop().toLowerCase();
+    if (ext !== 'pdf') {
+      alert("Solo se permiten archivos PDF.");
+      return;
+    }
+    if (archivo.size > maxSize) {
+      alert("El archivo excede el límite de 10MB.");
+      return;
+    }
+  }
+
+  // Agregar manualmente todos los destinos al FormData
+  destinosInputs.forEach(input => {
+    formData.append("destinos[]", input.value);
+  });
+
+  // Validación: complementarios deben ser PDF y menor a 10MB cada uno
+  const complementarios = document.getElementById("complementarios").files;
+  for (let i = 0; i < complementarios.length; i++) {
+    const archivo = complementarios[i];
+    const ext = archivo.name.split('.').pop().toLowerCase();
+    if (ext !== 'pdf') {
+      alert(`El archivo ${archivo.name} no es un PDF.`);
+      return;
+    }
+    if (archivo.size > 10 * 1024 * 1024) {
+      alert(`El archivo ${archivo.name} supera los 10 MB.`);
+      return;
+    }
+  }
+
+
+  try {
+    const response = await fetch("registroMesaDePartes.php", {
+      method: "POST",
+      body: formData,
+    });
+
+    const text = await response.text();
+    console.log("Respuesta cruda:", text);
+
+    const data = JSON.parse(text); // Validación por si viene como texto
+    if (data.status !== "success" || !data.iCodTramite || !data.clave) {
+      alert("Error al registrar el trámite: " + (data.message || "Error desconocido"));
+      return;
+    }
+
+    // Redirigir a la página de confirmación
+    window.location.href = `MesaDePartes_confirmacion.php?id=${data.iCodTramite}&clave=${data.clave}`;
+    
+  } catch (err) {
+    console.error("Error general:", err);
+    alert("Ocurrió un problema al registrar el trámite.");
+  }
+}
 
 
   </script>

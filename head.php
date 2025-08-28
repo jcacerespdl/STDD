@@ -12,6 +12,8 @@ date_default_timezone_set('America/Lima');
 
 // Consulta para obtener el nombre del perfil
 $nombrePerfil = $_SESSION['cDescPerfil'] ?? '';
+$iCodTrabajador = $_SESSION['CODIGO_TRABAJADOR'] ?? null;
+$iCodOficina = $_SESSION['iCodOficinaLogin'] ?? null;
 
 // Consulta para obtener el nombre completo del trabajador
 $sqlTrabajadores = "SELECT cNombresTrabajador, cApellidosTrabajador FROM TRA_M_Trabajadores WHERE iCodTrabajador = " . $_SESSION['CODIGO_TRABAJADOR'];
@@ -31,7 +33,37 @@ if ($resultOficinas && $rowOficina = sqlsrv_fetch_array($resultOficinas, SQLSRV_
     $nombreOficina = "";
 }
 
- 
+ // Total de pendientes
+$sqlPendientes = "SELECT COUNT(*) AS total FROM Tra_M_Tramite_Movimientos M
+INNER JOIN Tra_M_Tramite T ON T.iCodTramite = M.iCodTramite
+WHERE M.iCodOficinaDerivar = ? 
+  AND T.nFlgEnvio = 1
+  AND NOT EXISTS (
+      SELECT 1 FROM Tra_M_Tramite_Movimientos M2
+      WHERE M2.iCodMovimientoDerivo = M.iCodMovimiento
+  )";
+$stmtPendientes = sqlsrv_query($cnx, $sqlPendientes, [$iCodOficina]);
+$pendientes = sqlsrv_fetch_array($stmtPendientes)['total'] ?? 0;
+
+// Total de documentos por aprobar
+$sqlPorAprobar = "SELECT COUNT(*) AS total FROM Tra_M_Tramite 
+WHERE iCodOficinaRegistro = ? 
+  AND (nFlgFirma = 0 OR nFlgFirma IS NULL)
+  AND nFlgEstado = 1
+  AND documentoElectronico IS NOT NULL";
+$stmtPorAprobar = sqlsrv_query($cnx, $sqlPorAprobar, [$iCodOficina]);
+$porAprobar = sqlsrv_fetch_array($stmtPorAprobar)['total'] ?? 0;
+
+// Total de documentos para firma
+$sqlParaFirma = "SELECT COUNT(*) AS total FROM Tra_M_Tramite_Firma F
+INNER JOIN Tra_M_Tramite T ON T.iCodTramite = F.iCodTramite
+WHERE F.iCodTrabajador = ? 
+  AND F.nFlgFirma = 0 
+  AND F.nFlgEstado = 1 
+  AND T.nFlgEstado = 1";
+$stmtParaFirma = sqlsrv_query($cnx, $sqlParaFirma, [$iCodTrabajador]);
+$paraFirma = sqlsrv_fetch_array($stmtParaFirma)['total'] ?? 0;
+
 
 ?>
 <!DOCTYPE html>
@@ -45,6 +77,9 @@ if ($resultOficinas && $rowOficina = sqlsrv_fetch_array($resultOficinas, SQLSRV_
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="includes/lytebox.css">
     <script src="includes/lytebox.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
     :root {
         --primary: #005a86; 
@@ -56,6 +91,8 @@ if ($resultOficinas && $rowOficina = sqlsrv_fetch_array($resultOficinas, SQLSRV_
         --font-md: 0.95rem; 
         --font-lg: 1.125rem;   
         --danger: #dc3545; 
+        --stick-top: 105px;    /* 75 (header fijo) + 30 (navbar fija) */
+  --barra-altura: 44px;  /* alto aprox. de la barra .barra-titulo */
     }
         * {
             margin: 0;
@@ -761,7 +798,7 @@ if ($resultOficinas && $rowOficina = sqlsrv_fetch_array($resultOficinas, SQLSRV_
             background-color: #f0f0f0;
             }
     </style>
-</header>
+</head>
  
 <body>
   <!-- HEADER INSTITUCIONAL -->
@@ -803,12 +840,12 @@ if ($resultOficinas && $rowOficina = sqlsrv_fetch_array($resultOficinas, SQLSRV_
                 <div class="submenu">
                     <a href="registroOficina.php" class="submenu-item">Redactar Nuevo</a>
                     <?php if ($_SESSION['iCodOficinaLogin'] == 236): ?>
-                    <a href="mesadepartes.php" class="submenu-item">Registrar Doc. Entrada</a>
+                    <a href="mesadepartes.php" class="submenu-item">Registrar Doc. Mesa de Partes Físico</a>
                     <?php endif; ?>
                 </div>
             </div>
 
-            <div class="nav-item">BANDEJA
+            <div class="nav-item">RECIBIDOS
                 <div class="submenu">
                     <?php if ($_SESSION['iCodPerfilLogin'] == 3 || $_SESSION['iCodPerfilLogin'] == 19): ?>
                     <a href="BandejaPendientes.php" class="submenu-item">Pendientes</a>
@@ -822,8 +859,8 @@ if ($resultOficinas && $rowOficina = sqlsrv_fetch_array($resultOficinas, SQLSRV_
                     
                     <?php endif; ?>
                     
-                    <a href="BandejaFirma.php" class="submenu-item">Documentos para Firma</a>
-                    <a href="BandejaObservados.php" class="submenu-item">Documentos Observados</a>
+                    <a href="BandejaFirma.php" class="submenu-item">Docs. para Visto Bueno y Firma</a>
+                    <!-- <a href="BandejaObservados.php" class="submenu-item">Documentos Observados</a> -->
                     <a href="BandejaFinalizados.php" class="submenu-item">Documentos Finalizados</a>
                     <!-- <a href="BandejaEspecial.php" class="submenu-item">Bandeja Especial</a> -->
                 </div>
@@ -835,6 +872,15 @@ if ($resultOficinas && $rowOficina = sqlsrv_fetch_array($resultOficinas, SQLSRV_
                 </div>
             </div>
 
+            <?php if ($_SESSION['iCodOficinaLogin'] == 46): ?>
+            <div class="nav-item">DASHBOARDS
+                <div class="submenu">
+                    <a href="dashboardRequerimientos.php" class="submenu-item">Dashboard Requerimientos</a>
+                    
+                </div>
+            </div>
+            <?php endif; ?>
+            
             <div class="nav-item">VALIDACIÓN
                 <div class="submenu">
                 <a href="https://apps.firmaperu.gob.pe/web/validador.xhtml" class="submenu-item" target="_blank">Validar Firmas</a>
@@ -843,8 +889,8 @@ if ($resultOficinas && $rowOficina = sqlsrv_fetch_array($resultOficinas, SQLSRV_
         <?php endif; ?>
      </div>
    </nav>
-</body>
-</html>
+<!-- </body>
+</html> -->
 
 
     <script>
@@ -872,4 +918,9 @@ if ($resultOficinas && $rowOficina = sqlsrv_fetch_array($resultOficinas, SQLSRV_
                         }
                     });
             }, 60000); // 60 segundos
+
+
+
+ 
+        
     </script>

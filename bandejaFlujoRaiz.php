@@ -1,12 +1,11 @@
 <?php
- 
 include("headFlujo.php");
 include("conexion/conexion.php");
 
 $iCodTramite = isset($_GET['iCodTramite']) ? intval($_GET['iCodTramite']) : 0;
 $extension = isset($_GET['extension']) ? intval($_GET['extension']) : 1;
 
-// Obtener datos del trámite original
+// Obtener los datos generales del trámite raíz (asunto, expediente, observaciones, tipo de doc, etc.)
 $sqlTramite = "SELECT 
     t.expediente, t.cCodificacion, t.cAsunto, t.fFecRegistro, t.cObservaciones, t.documentoElectronico, t.cCodTipoDoc,
     td.cDescTipoDoc, td.cCodTipoDoc, o.cSiglaOficina
@@ -16,7 +15,7 @@ $sqlTramite = "SELECT
  WHERE t.iCodTramite = ?";
 $stmtTramite = sqlsrv_query($cnx, $sqlTramite, [$iCodTramite]);
 $infoInicial = sqlsrv_fetch_array($stmtTramite, SQLSRV_FETCH_ASSOC);
-// Obtener todas las extensiones para este trámite
+// Obtener todas las extensiones del trámite raíz
 $sqlExtensiones = "SELECT DISTINCT extension FROM Tra_M_Tramite_Movimientos WHERE iCodTramite = ? ORDER BY extension ASC";
 $stmtExt = sqlsrv_query($cnx, $sqlExtensiones, [$iCodTramite]);
 
@@ -24,8 +23,7 @@ $extensiones = [];
 while ($r = sqlsrv_fetch_array($stmtExt, SQLSRV_FETCH_ASSOC)) {
     $extensiones[] = (int)$r['extension'];
 }
-
-// Obtener todos los movimientos agrupados por extensión
+// Organizar todos los movimientos por extensión, para luego renderizar flujo por bloques
 $movimientosPorExtension = [];
 
 foreach ($extensiones as $ext) {
@@ -33,8 +31,15 @@ foreach ($extensiones as $ext) {
         M.iCodTramiteDerivar, 
         M.iCodMovimiento,
         M.iCodMovimientoDerivo,
-        ISNULL(M.fFecDerivar, GETDATE()) AS fFecDerivar,
-        ISNULL(M.fFecRecepcion, GETDATE()) AS fFecRecepcion,
+
+         -- Fecha de envío calculada segun regla
+    CASE 
+        WHEN M.iCodMovimientoDerivo IS NULL THEN T.fFecRegistro
+        ELSE M.fFecMovimiento
+    END AS fFecEnvio,
+
+    M.fFecRecepcion,
+
         M.cAsuntoDerivar, 
         M.cObservacionesDerivar, 
         M.cPrioridadDerivar, 
@@ -50,20 +55,23 @@ foreach ($extensiones as $ext) {
         O2.cNomOficina AS OficinaDestino,
         O2.cSiglaOficina AS OficinaDestinoAbbr,
         T.fase,
+        -- Jefe destino
         (SELECT TOP 1 T2.cNombresTrabajador + ' ' + T2.cApellidosTrabajador 
          FROM Tra_M_Perfil_ususario PU
          INNER JOIN Tra_M_Trabajadores T2 ON PU.iCodTrabajador = T2.iCodTrabajador
          WHERE PU.iCodOficina = M.iCodOficinaDerivar AND PU.iCodPerfil = 3
          ORDER BY T2.iCodTrabajador ASC) AS JefeDestino,
+        -- Delegado
         (SELECT TOP 1 T3.cNombresTrabajador + ' ' + T3.cApellidosTrabajador 
          FROM Tra_M_Trabajadores T3 WHERE T3.iCodTrabajador = M.iCodTrabajadorDelegado) AS NombreDelegado,
+        -- Indicación
         (SELECT I.cIndicacion FROM Tra_M_Indicaciones I WHERE I.iCodIndicacion = M.iCodIndicacionDelegado) AS cIndicacionDelegado
     FROM Tra_M_Tramite_Movimientos M
     LEFT JOIN Tra_M_Oficinas O1 ON M.iCodOficinaOrigen = O1.iCodOficina
     LEFT JOIN Tra_M_Oficinas O2 ON M.iCodOficinaDerivar = O2.iCodOficina
-    LEFT JOIN Tra_M_Tramite T ON T.iCodTramite = M.iCodTramiteDerivar
+ LEFT JOIN Tra_M_Tramite T ON T.iCodTramite = ISNULL(M.iCodTramiteDerivar, M.iCodTramite)
     WHERE M.iCodTramite = ? AND M.extension = ?
-    ORDER BY ISNULL(M.fFecDerivar, GETDATE()) ASC";
+ORDER BY M.iCodMovimiento ASC";
 
     $stmtMov = sqlsrv_query($cnx, $sqlMov, [$iCodTramite, $ext]);
     $movs = [];
@@ -72,171 +80,80 @@ foreach ($extensiones as $ext) {
     }
     $movimientosPorExtension[$ext] = array_reverse($movs);
 }
-
-
-// === NUEVO: Recorremos todos esos trámites buscando ítems SIGA (con o sin pedido_siga) ===
+// === NUEVA LÓGICA: buscar ítems SIGA directamente por EXPEDIENTE y solo los código_item reales ===
 $itemsSIGA = [];
 
-if ((int)$extension === 1) {
-    $sqlDerivados = "SELECT iCodTramiteDerivar 
-                     FROM Tra_M_Tramite_Movimientos 
-                     WHERE iCodTramite = ? AND extension = 1 AND iCodTramiteDerivar IS NOT NULL";
-    $stmtDerivados = sqlsrv_query($cnx, $sqlDerivados, [$iCodTramite]);
-
-    $tramitesBusqueda = [];
-    while ($r = sqlsrv_fetch_array($stmtDerivados, SQLSRV_FETCH_ASSOC)) {
-        $tramitesBusqueda[] = $r['iCodTramiteDerivar'];
-    }
-
-    if (empty($tramitesBusqueda)) {
-        $tramitesBusqueda[] = $iCodTramite;
-    }
-
-    foreach ($tramitesBusqueda as $tramiteSIGA) {
-        $sqlSIGA = "SELECT pedido_siga, codigo_item, cantidad 
-                    FROM Tra_M_Tramite_SIGA_Pedido 
-                    WHERE iCodTramite = ?";
-        $stmtSIGA = sqlsrv_query($cnx, $sqlSIGA, [$tramiteSIGA]);
-
-        while ($pedido = sqlsrv_fetch_array($stmtSIGA, SQLSRV_FETCH_ASSOC)) {
-            $pedidoSiga = $pedido['pedido_siga'];
-            $codigoItem = $pedido['codigo_item'];
-            $cantidad = $pedido['cantidad'];
-
-            if ($pedidoSiga) {
-                $stmtOrden = sqlsrv_query($sigaConn,
-                    "SELECT NRO_ORDEN, TIPO_BIEN, PROVEEDOR, MES_CALEND, CONCEPTO, TOTAL_FACT_SOLES, FECHA_REG
-                     FROM SIG_ORDEN_ADQUISICION WHERE ANO_EJE = 2025 AND EXP_SIGA = ?", [$pedidoSiga]);
-
-                if ($stmtOrden) {
-                    while ($orden = sqlsrv_fetch_array($stmtOrden, SQLSRV_FETCH_ASSOC)) {
-                        $stmtItems = sqlsrv_query($sigaConn,
-                            "SELECT GRUPO_BIEN, CLASE_BIEN, FAMILIA_BIEN, ITEM_BIEN
-                             FROM SIG_ORDEN_ITEM WHERE ANO_EJE = 2025 AND NRO_ORDEN = ? AND TIPO_BIEN = ?",
-                            [$orden['NRO_ORDEN'], $orden['TIPO_BIEN']]);
-
-                        while ($item = sqlsrv_fetch_array($stmtItems, SQLSRV_FETCH_ASSOC)) {
-                            $stmtCat = sqlsrv_query($sigaConn,
-                                "SELECT CODIGO_ITEM, NOMBRE_ITEM FROM CATALOGO_BIEN_SERV
-                                 WHERE GRUPO_BIEN = ? AND CLASE_BIEN = ? AND FAMILIA_BIEN = ? AND ITEM_BIEN = ? AND TIPO_BIEN = ?",
-                                [$item['GRUPO_BIEN'], $item['CLASE_BIEN'], $item['FAMILIA_BIEN'], $item['ITEM_BIEN'], $orden['TIPO_BIEN']]);
-
-                            while ($cat = sqlsrv_fetch_array($stmtCat, SQLSRV_FETCH_ASSOC)) {
-                                $itemsSIGA[] = [
-                                    "pedido_siga" => $pedidoSiga,
-                                    "NRO_ORDEN" => $orden['NRO_ORDEN'] ?? 'N.A.',
-                                    "TIPO_BIEN" => $orden['TIPO_BIEN'] ?? 'N.A.',
-                                    "PROVEEDOR" => $orden['PROVEEDOR'] ?? 'N.A.',
-                                    "MES" => $orden['MES_CALEND'] ?? 'N.A.',
-                                    "CONCEPTO" => $orden['CONCEPTO'] ?? 'N.A.',
-                                    "TOTAL" => $orden['TOTAL_FACT_SOLES'] ?? 'N.A.',
-                                    "FECHA" => ($orden['FECHA_REG'] instanceof DateTime) ? $orden['FECHA_REG']->format('d/m/Y') : 'N.A.',
-                                    "CODIGO_ITEM" => $cat['CODIGO_ITEM'],
-                                    "CANTIDAD" => $cantidad,
-                                    "NOMBRE_ITEM" => $cat['NOMBRE_ITEM']
-                                ];
-                            }
-                        }
-                    }
-                }
-            } else {
-                $stmtCat = sqlsrv_query($sigaConn,
-                    "SELECT NOMBRE_ITEM, TIPO_BIEN FROM CATALOGO_BIEN_SERV WHERE CODIGO_ITEM = ?",
-                    [$codigoItem]);
-
-                if ($stmtCat && $cat = sqlsrv_fetch_array($stmtCat, SQLSRV_FETCH_ASSOC)) {
-                    $itemsSIGA[] = [
-                        "pedido_siga" => "N.A.",
-                        "NRO_ORDEN" => "N.A.",
-                        "TIPO_BIEN" => $cat['TIPO_BIEN'] ?? 'N.A.',
-                        "PROVEEDOR" => "N.A.",
-                        "MES" => "N.A.",
-                        "CONCEPTO" => "N.A.",
-                        "TOTAL" => "N.A.",
-                        "FECHA" => "N.A.",
-                        "CODIGO_ITEM" => $codigoItem,
-                        "CANTIDAD" => $cantidad,
-                        "NOMBRE_ITEM" => $cat['NOMBRE_ITEM'] ?? 'N.A.'
-                    ];
-                }
-            }
-        }
-    }
-} else {
-
-$sqlSIGA = "SELECT P.pedido_siga, P.codigo_item, P.cantidad 
-            FROM Tra_M_Tramite_Extension E
-            JOIN Tra_M_Tramite_SIGA_Pedido P ON E.iCodTramiteSIGAPedido = P.iCodTramiteSIGAPedido
-            WHERE E.iCodTramite = ? AND E.nro_extension = ?";
-$stmtSIGA = sqlsrv_query($cnx, $sqlSIGA, [$iCodTramite, $extension]);
+$expediente = $infoInicial['expediente'];
+$sqlSIGA = "SELECT pedido_siga, codigo_item, cantidad FROM Tra_M_Tramite_SIGA_Pedido WHERE EXPEDIENTE = ?";
+$stmtSIGA = sqlsrv_query($cnx, $sqlSIGA, [$expediente]);
 
 while ($pedido = sqlsrv_fetch_array($stmtSIGA, SQLSRV_FETCH_ASSOC)) {
     $pedidoSiga = $pedido['pedido_siga'];
     $codigoItem = $pedido['codigo_item'];
     $cantidad = $pedido['cantidad'];
 
+    // Si tiene pedido SIGA, buscamos información adicional del pedido
     if ($pedidoSiga) {
         $stmtOrden = sqlsrv_query($sigaConn,
             "SELECT NRO_ORDEN, TIPO_BIEN, PROVEEDOR, MES_CALEND, CONCEPTO, TOTAL_FACT_SOLES, FECHA_REG
-             FROM SIG_ORDEN_ADQUISICION WHERE ANO_EJE = 2025 AND EXP_SIGA = ?", [$pedidoSiga]);
+             FROM SIG_ORDEN_ADQUISICION
+             WHERE ANO_EJE = 2025 AND EXP_SIGA = ?", [$pedidoSiga]);
 
-        if ($stmtOrden) {
-            while ($orden = sqlsrv_fetch_array($stmtOrden, SQLSRV_FETCH_ASSOC)) {
-                $stmtItems = sqlsrv_query($sigaConn,
-                    "SELECT GRUPO_BIEN, CLASE_BIEN, FAMILIA_BIEN, ITEM_BIEN
-                     FROM SIG_ORDEN_ITEM WHERE ANO_EJE = 2025 AND NRO_ORDEN = ? AND TIPO_BIEN = ?",
-                    [$orden['NRO_ORDEN'], $orden['TIPO_BIEN']]);
+        if ($stmtOrden && $orden = sqlsrv_fetch_array($stmtOrden, SQLSRV_FETCH_ASSOC)) {
+            // Buscamos el nombre del código de ítem exacto
+            $stmtCat = sqlsrv_query($sigaConn,
+                "SELECT NOMBRE_ITEM, TIPO_BIEN
+                 FROM CATALOGO_BIEN_SERV
+                 WHERE CODIGO_ITEM = ?", [$codigoItem]);
 
-                while ($item = sqlsrv_fetch_array($stmtItems, SQLSRV_FETCH_ASSOC)) {
-                    $stmtCat = sqlsrv_query($sigaConn,
-                        "SELECT CODIGO_ITEM, NOMBRE_ITEM FROM CATALOGO_BIEN_SERV
-                         WHERE GRUPO_BIEN = ? AND CLASE_BIEN = ? AND FAMILIA_BIEN = ? AND ITEM_BIEN = ? AND TIPO_BIEN = ?",
-                        [$item['GRUPO_BIEN'], $item['CLASE_BIEN'], $item['FAMILIA_BIEN'], $item['ITEM_BIEN'], $orden['TIPO_BIEN']]);
+            echo "<script>console.log('🔍 Procesando PEDIDO {$pedidoSiga}, ITEM {$codigoItem}');</script>";
 
-                    while ($cat = sqlsrv_fetch_array($stmtCat, SQLSRV_FETCH_ASSOC)) {
-                        $itemsSIGA[] = [
-                            "pedido_siga" => $pedidoSiga,
-                            "NRO_ORDEN" => $orden['NRO_ORDEN'] ?? 'N.A.',
-                            "TIPO_BIEN" => $orden['TIPO_BIEN'] ?? 'N.A.',
-                            "PROVEEDOR" => $orden['PROVEEDOR'] ?? 'N.A.',
-                            "MES" => $orden['MES_CALEND'] ?? 'N.A.',
-                            "CONCEPTO" => $orden['CONCEPTO'] ?? 'N.A.',
-                            "TOTAL" => $orden['TOTAL_FACT_SOLES'] ?? 'N.A.',
-                            "FECHA" => ($orden['FECHA_REG'] instanceof DateTime) ? $orden['FECHA_REG']->format('d/m/Y') : 'N.A.',
-                            "CODIGO_ITEM" => $cat['CODIGO_ITEM'],
-                            "CANTIDAD" => $cantidad,
-                            "NOMBRE_ITEM" => $cat['NOMBRE_ITEM']
-                        ];
-                    }
-                }
+            if ($stmtCat && $cat = sqlsrv_fetch_array($stmtCat, SQLSRV_FETCH_ASSOC)) {
+                $itemsSIGA[] = [
+                    "pedido_siga" => $pedidoSiga,
+                 
+                    "TIPO_BIEN" => $cat['TIPO_BIEN'] ?? $orden['TIPO_BIEN'] ?? 'N.A.',
+             
+          
+            
+                     "CODIGO_ITEM" => $codigoItem,
+                    "CANTIDAD" => $cantidad,
+                    "NOMBRE_ITEM" => $cat['NOMBRE_ITEM'] ?? 'N.A.'
+                ];
+            } else {
+                echo "<script>console.warn('⚠️ No se encontró nombre para código $codigoItem en PEDIDO $pedidoSiga');</script>";
             }
+        } else {
+            echo "<script>console.warn('⚠️ No se encontró orden para PEDIDO $pedidoSiga');</script>";
         }
     } else {
+        // Sin pedido SIGA: buscar solo el nombre del ítem
         $stmtCat = sqlsrv_query($sigaConn,
             "SELECT NOMBRE_ITEM, TIPO_BIEN FROM CATALOGO_BIEN_SERV WHERE CODIGO_ITEM = ?",
             [$codigoItem]);
 
+        echo "<script>console.log('📦 Item sin pedido SIGA → código: {$codigoItem}');</script>";
+
         if ($stmtCat && $cat = sqlsrv_fetch_array($stmtCat, SQLSRV_FETCH_ASSOC)) {
             $itemsSIGA[] = [
                 "pedido_siga" => "N.A.",
-                "NRO_ORDEN" => "N.A.",
+                 
                 "TIPO_BIEN" => $cat['TIPO_BIEN'] ?? 'N.A.',
-                "PROVEEDOR" => "N.A.",
-                "MES" => "N.A.",
-                "CONCEPTO" => "N.A.",
-                "TOTAL" => "N.A.",
-                "FECHA" => "N.A.",
+              
+                
+             
+               
                 "CODIGO_ITEM" => $codigoItem,
                 "CANTIDAD" => $cantidad,
                 "NOMBRE_ITEM" => $cat['NOMBRE_ITEM'] ?? 'N.A.'
             ];
+        } else {
+            echo "<script>console.warn('⚠️ No se encontró nombre para código sin pedido: {$codigoItem}');</script>";
         }
     }
 }
-}
-    
-?>
 
+?>
 <!-- Material Icons -->
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
@@ -281,26 +198,112 @@ while ($pedido = sqlsrv_fetch_array($stmtSIGA, SQLSRV_FETCH_ASSOC)) {
     display: inline-block;
     max-width: 180px;
 }
+.detail-content {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  font-family: 'Segoe UI', sans-serif;
+  overflow: hidden;
+}
+
+.detail-content summary {
+  background: #f7f9fc;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+  transition: background 0.2s ease;
+}
+
+.detail-content summary:hover {
+  background: #eef2f7;
+}
+
+
+.detail-content div {
+  line-height: 1.6;
+  font-size: 14px;
+  color: #333;
+}
+
+.detail-content div > b {
+  color: #1a1a1a;
+  display: inline-block;
+  min-width: 140px;
+}
+.detail-header {
+  background: #f7f9fc;
+  padding: 12px 16px;
+  font-weight: 600;
+  font-size: 15px;
+  border-bottom: 1px solid #eee;
+} 
+.detail-body {
+  padding: 1rem;
+  line-height: 1.6;
+  font-size: 14px;
+  color: #333;
+}
+.detail-body > b { /* si lo usas */
+  color: #1a1a1a;
+  display: inline-block;
+  min-width: 140px;
+}
+table {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+/* separador vertical extra entre secciones clave */
+.section { margin-top: 1.25rem; }
+table thead {
+  background: #f1f5f9;
+  font-weight: bold;
+}
+
+table th, table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e6e6e6;
+  text-align: left;
+}
+
+table tbody tr:hover {
+  background-color: #f9fbfd;
+}
+
+table td {
+  font-size: 13px;
+  color: #444;
+}
+h3 {
+  font-size: 18px;
+  color: #0c2d5d;
+  margin: 1.5rem 0 0.75rem 0;
+  font-family: 'Segoe UI', sans-serif;
+  border-left: 4px solid #0072CE;
+  padding-left: 10px;
+}
+
 </style>
 
-<!-- DATOS GENERALES -->
-<h3>DETALLE DE MOVIMIENTOS</h3>
-<details class="detail-content" open>
-<summary>DATOS GENERALES</summary>
-<div style="padding: 1rem;">
+<!-- DATOS GENERALES: INICIO -->
+ 
+<h3>DETALLES DEL EXPEDIENTE: <?= htmlspecialchars($infoInicial['expediente']) ?></h3>
+
+<div class="detail-content">
+<div class="detail-header">DATOS GENERALES</div>
+<div class="detail-body">
     <div><b>Expediente:</b> <?= htmlspecialchars($infoInicial['expediente']) ?></div>
     <div><b>Extensión:</b> <?= $extension ?></div>
-    <!-- <div><b>Fecha de creación de la extensión:</b> 
-        <?php if ($extension > 1 && $infoExtension && $infoExtension['fFecCreacion'] instanceof DateTime): ?>
-            <?= $infoExtension['fFecCreacion']->format("d/m/Y H:i:s") ?>
-        <?php else: ?>
-            <?= $infoInicial['fFecRegistro']->format("d/m/Y H:i:s") ?>
-        <?php endif; ?>
-    </div> -->
     <div><b>Tipo de Documento:</b> <?= $infoInicial['cDescTipoDoc'] ?></div>
     <div><b>Asunto:</b> <?= $infoInicial['cAsunto'] ?></div>
     <div><b>Fecha Registro:</b> <?= $infoInicial['fFecRegistro']->format("d/m/Y H:i:s") ?></div>
     <div><b>Observaciones:</b> <?= $infoInicial['cObservaciones'] ?></div>
+
     <div><b>Doc. Principal:</b> 
     <?php if (!empty($infoInicial['documentoElectronico'])): ?>
         <a href="./cDocumentosFirmados/<?= urlencode($infoInicial['documentoElectronico']) ?>" class="chip-adjunto" target="_blank" title="<?= htmlspecialchars($infoInicial['documentoElectronico']) ?>">
@@ -312,39 +315,60 @@ while ($pedido = sqlsrv_fetch_array($stmtSIGA, SQLSRV_FETCH_ASSOC)) {
     <?php endif; ?>
     </div>
 
-    <?php if (!empty($itemsSIGA)): ?>
-    <div style="margin-top: 1rem;">
-        <h3>Ítems SIGA Asociados</h3>
-        <table style="width:100%; border-collapse: collapse; font-size: 14px;">
-            <thead style="background:#f5f5f5;">
-                <tr>
-                    <th>PEDIDO SIGA</th><th>N° ORDEN</th><th>TIPO BIEN</th><th>PROVEEDOR</th><th>MES</th>
-                    <th>CONCEPTO</th><th>TOTAL</th><th>FECHA</th><th>CÓDIGO ITEM</th><th>NOMBRE ITEM</th><th>CANTIDAD</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($itemsSIGA as $item): ?>
-                <tr>
-                    <td><?= $item['pedido_siga'] ?></td>
-                    <td><?= $item['NRO_ORDEN'] ?></td>
-                    <td><?= $item['TIPO_BIEN'] === 'S' ? 'SERVICIO' : 'BIEN' ?></td>
-                    <td><?= $item['PROVEEDOR'] ?></td>
-                    <td><?= $item['MES'] ?></td>
-                    <td><?= $item['CONCEPTO'] ?></td>
-                    <td><?= $item['TOTAL'] ?></td>
-                    <td><?= $item['FECHA'] ?></td>
-                    <td><?= $item['CODIGO_ITEM'] ?></td>
-                    <td><?= $item['NOMBRE_ITEM'] ?></td>
-                    <td><?= $item['CANTIDAD'] ?></td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+    <!-- Botón para exportar a PDF -->
+    <div style="margin-top: 10px;">
+        <a href="exportarFlujoPDF.php?iCodTramite=<?= $iCodTramite ?>&extension=<?= $extension ?>" 
+            target="_blank"
+            style="background-color:#005a86; color:white; padding:6px 14px; border-radius:20px; font-size:13px; text-decoration:none; display:inline-block; margin-top:6px;">
+            <span class="material-icons" style="vertical-align:middle; font-size:17px; margin-right:4px;">download</span>
+            Exportar Flujo a PDF
+        </a>
+        </div>
+  </div>
+</div>
+
+<!-- DATOS GENERALES: FIN -->
+
+<!-- iTEMS SIGA: INICIO -->
+
+<?php if (!empty($itemsSIGA)): ?>
+    <h3>DETALLES DEL REQUERIMIENTO para el EXPEDIENTE <?= htmlspecialchars($infoInicial['expediente']) ?></h3>
+  <div class="detail-content section">
+    <div class="detail-header">ÍTEMS SIGA</div>
+    <div class="detail-body">
+      <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+        <thead style="background:#f5f5f5;">
+          <tr>
+            <th>PEDIDO SIGA</th>
+            <th>TIPO BIEN</th>
+            <th>CÓDIGO ITEM</th>
+            <th>NOMBRE ITEM</th>
+            <th>CANTIDAD</th>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($itemsSIGA as $item): ?>
+            <tr>
+              <td><?= $item['pedido_siga'] ?></td>
+              <td><?= $item['TIPO_BIEN'] === 'S' ? 'SERVICIO' : 'BIEN' ?></td>
+              <td><?= $item['CODIGO_ITEM'] ?></td>
+              <td><?= $item['NOMBRE_ITEM'] ?></td>
+              <td><?= $item['CANTIDAD'] ?></td>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
     </div>
-    <?php endif; ?>
-    <?php
- 
-// === FUNCIONES PARA ÁRBOL DE MOVIMIENTOS ===
+  </div>
+<?php endif; ?>
+
+<!-- iTEMS SIGA: FIN -->
+
+
+<!-- FLUJO DE TODAS LAS EXTENSIONES -->
+<?php
+// === FUNCIONES PARA CONSTRUIR Y MOSTRAR EL FLUJO ===
+
 function construirArbolMovimientos($movimientos) {
     $movPorId = [];
     foreach ($movimientos as $mov) {
@@ -367,10 +391,12 @@ function construirArbolMovimientos($movimientos) {
 
 function obtenerDatosTramite($cnx, $iCodTramite) {
     $doc = ['principal'=>null,'codificacion'=>null,'asunto'=>null,'fecha'=>null,'anexos'=>[], 'tipo'=>null];
+
     $stmt = sqlsrv_query($cnx, "SELECT t.documentoElectronico, td.cDescTipoDoc, t.cCodificacion, t.cAsunto, t.fFecRegistro 
         FROM Tra_M_Tramite t 
         JOIN Tra_M_Tipo_Documento td ON t.cCodTipoDoc = td.cCodTipoDoc 
         WHERE t.iCodTramite = ?", [$iCodTramite]);
+
     if ($r = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
         $doc['principal'] = $r['documentoElectronico'];
         $doc['codificacion'] = "{$r['cDescTipoDoc']} Nº " . str_pad($r['cCodificacion'], 5, '0', STR_PAD_LEFT);
@@ -378,12 +404,30 @@ function obtenerDatosTramite($cnx, $iCodTramite) {
         $doc['fecha'] = $r['fFecRegistro'] ? $r['fFecRegistro']->format("d/m/Y H:i:s") : '';
         $doc['tipo'] = $r['cCodTipoDoc'];
     }
+
     $stmtAnexos = sqlsrv_query($cnx, "SELECT cDescripcion FROM Tra_M_Tramite_Digitales WHERE iCodTramite = ?", [$iCodTramite]);
     while ($r = sqlsrv_fetch_array($stmtAnexos, SQLSRV_FETCH_ASSOC)) {
         $doc['anexos'][] = $r['cDescripcion'];
     }
+
     return $doc;
 }
+ 
+
+ foreach ($movimientosPorExtension as $ext => $lista): 
+ 
+    if (empty($lista)) continue;
+    $estructuraJerarquica = construirArbolMovimientos($lista);
+    ?>
+    <details class="detail-content" open>
+    <summary>FLUJO DEL EXPEDIENTE - EXTENSIÓN <?= $ext ?></summary>
+    <div style="padding: 1rem;">
+        <?php foreach ($estructuraJerarquica as $mov): ?>
+            <?php renderizarMovimiento($mov); ?>
+        <?php endforeach; ?>
+    </div>
+    </details>
+<?php endforeach; 
 function renderizarMovimiento($mov, $nivel = 0) {
     $doc = obtenerDatosTramite($GLOBALS['cnx'], $mov["iCodTramiteDerivar"] ?: $GLOBALS['iCodTramite']);
     $sangria = str_repeat("&nbsp;&nbsp;&nbsp;&nbsp;", $nivel);
@@ -408,8 +452,18 @@ function renderizarMovimiento($mov, $nivel = 0) {
         echo "<div><b>Fase:</b> " . ($fases[$mov['fase']] ?? 'No definida') . "</div>";
     }
 
-    echo "<div><b>Fecha de Envío:</b> " . ($mov['fFecDerivar'] instanceof DateTime ? $mov['fFecDerivar']->format("d/m/Y H:i:s") : 'N/A') . "</div>";
-    echo "<div><b>Fecha de Recepción:</b> " . ($mov['fFecRecepcion'] instanceof DateTime ? $mov['fFecRecepcion']->format("d/m/Y H:i:s") : '—') . "</div>";
+      $fechaEnvio = ($mov['fFecEnvio'] instanceof DateTime) 
+    ? $mov['fFecEnvio']->format("d/m/Y H:i:s") 
+    : '—';
+
+$fechaRecep = ($mov['nEstadoMovimiento'] == 0) 
+    ? '—' 
+    : (($mov['fFecRecepcion'] instanceof DateTime) 
+        ? $mov['fFecRecepcion']->format("d/m/Y H:i:s") 
+        : '—');
+
+echo "<div><b>Fecha de Envío:</b> {$fechaEnvio}</div>";
+echo "<div><b>Fecha de Recepción:</b> {$fechaRecep}</div>";
     echo "<div><b>Dirigido a:</b> " . htmlspecialchars($mov["JefeDestino"]) . "</div>";
 
     $estadoTexto = 'Enviado';
@@ -420,26 +474,29 @@ function renderizarMovimiento($mov, $nivel = 0) {
 
     echo "<div><b>Estado:</b> " . $estadoTexto . "</div>";
 
+    // Datos de delegación
     if (!empty($mov['iCodTrabajadorDelegado']) || !empty($mov['iCodIndicacionDelegado']) || !empty($mov['cObservacionesDelegado'])) {
         echo "<hr>";
         echo "<div><b>Delegado a:</b> " . htmlspecialchars($mov["NombreDelegado"] ?? 'N/A') . "</div>";
         if (!empty($mov["cIndicacionDelegado"])) echo "<div><b>Indicación / Fase:</b> " . htmlspecialchars($mov["cIndicacionDelegado"]) . "</div>";
         if (!empty($mov["cObservacionesDelegado"])) echo "<div><b>Observaciones:</b> " . htmlspecialchars($mov["cObservacionesDelegado"]) . "</div>";
         if (!empty($mov["fFecDelegado"])) echo "<div><b>Fecha de Delegación:</b> " . $mov["fFecDelegado"]->format("d/m/Y H:i:s") . "</div>";
-        if (!empty($mov["fFecDelegadoRecepción"])) echo "<div><b>Recepción Delegación:</b> " . $mov["fFecDelegadoRecepción"]->format("d/m/Y H:i:s") . "</div>";
+        if (!empty($mov["fFecDelegadoRecepcion"])) echo "<div><b>Recepción Delegación:</b> " . $mov["fFecDelegadoRecepcion"]->format("d/m/Y H:i:s") . "</div>";
     }
 
+    // Documento principal
     echo "<div><b>Documento principal:</b><br>";
-        if ($doc['tipo'] === '97') {
-            // No mostrar nada, ni chip ni texto
-        } elseif (!empty($doc['principal'])) {
-            echo "<a href='./cDocumentosFirmados/" . urlencode($doc['principal']) . "' class='chip-adjunto' target='_blank'>";
-            echo "<span class='material-icons chip-icon'>picture_as_pdf</span><span class='chip-text'>" . htmlspecialchars($doc['principal']) . "</span></a>";
-        } else {
-            echo "<span style='color:#888;'>No hay documento principal</span>";
-        }
-        echo "</div>";
+    if ($doc['tipo'] === '97') {
+        // Tipo "proveído", se oculta
+    } elseif (!empty($doc['principal'])) {
+        echo "<a href='./cDocumentosFirmados/" . urlencode($doc['principal']) . "' class='chip-adjunto' target='_blank'>";
+        echo "<span class='material-icons chip-icon'>picture_as_pdf</span><span class='chip-text'>" . htmlspecialchars($doc['principal']) . "</span></a>";
+    } else {
+        echo "<span style='color:#888;'>No hay documento principal</span>";
+    }
+    echo "</div>";
 
+    // Documentos complementarios
     echo "<div><b>Documentos complementarios:</b><br>";
     if (!empty($doc['anexos'])) {
         foreach ($doc['anexos'] as $anexo) {
@@ -449,30 +506,16 @@ function renderizarMovimiento($mov, $nivel = 0) {
     } else {
         echo "<span style='color: #888;'>No hay documentos complementarios</span>";
     }
-    echo "</div></div></details>";
+    echo "</div>";
 
+    echo "</div></details>";
+    echo "</div>";
+
+    // Mostrar hijos (movimientos derivados de este)
     foreach ($mov['hijos'] as $hijo) {
         renderizarMovimiento($hijo, $nivel + 1);
     }
-
-    echo "</div>";
 }
+
+
 ?>
-
- 
-
-<!-- FLUJO DE TODAS LAS EXTENSIONES -->
-<?php foreach ($movimientosPorExtension as $ext => $lista): ?>
-    <?php
-    if (empty($lista)) continue;
-    $estructuraJerarquica = construirArbolMovimientos($lista);
-    ?>
-    <details class="detail-content" open>
-    <summary>FLUJO DEL EXPEDIENTE - EXTENSIÓN <?= $ext ?></summary>
-    <div style="padding: 1rem;">
-        <?php foreach ($estructuraJerarquica as $mov): ?>
-            <?php renderizarMovimiento($mov); ?>
-        <?php endforeach; ?>
-    </div>
-    </details>
-<?php endforeach; ?>

@@ -62,7 +62,7 @@ $docPrincipal = $data['documentoElectronico'];
 
     <div style="margin-bottom: 1.5rem;">
       <label for="archivoFinal">Subir Documento Final (PDF):</label><br>
-      <input type="file" name="archivoFinal" accept="application/pdf" required style="width: 100%; padding: 0.5rem;">
+      <input type="file" name="archivoFinal" accept="application/pdf"  style="width: 100%; padding: 0.5rem;">
     </div>
 
     <div style="display: flex; justify-content: flex-end; gap: 1rem;">

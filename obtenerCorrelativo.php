@@ -1,31 +1,23 @@
 <?php
+// Redirigir logs a un archivo específico
+ini_set("log_errors", 1);
+ini_set("error_log", $_SERVER["DOCUMENT_ROOT"] . "/SGD/error_correlativo.log");
 include_once("conexion/conexion.php");
 session_start();
 global $cnx;
 
-if (!isset($_SESSION['CODIGO_TRABAJADOR'])) {
-    echo json_encode(['status' => 'error', 'message' => 'No hay sesión de trabajador']);
-    exit();
-}
+error_log("== obtenerCorrelativo.php iniciado ==");
 
-// Si no hay CODIGO_OFICINA, lo obtenemos
-if (!isset($_SESSION['CODIGO_OFICINA'])) {
-    $iCodTrabajador = $_SESSION['CODIGO_TRABAJADOR'];
-    $sqlOf = "SELECT TOP 1 iCodOficina FROM Tra_M_Perfil_Ususario WHERE iCodTrabajador = ?";
-    $stmtOf = sqlsrv_query($cnx, $sqlOf, [$iCodTrabajador]);
-    if ($stmtOf && $of = sqlsrv_fetch_array($stmtOf, SQLSRV_FETCH_ASSOC)) {
-        $_SESSION['CODIGO_OFICINA'] = $of['iCodOficina'];
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'No se pudo obtener oficina del trabajador']);
-        exit();
-    }
-}
-
+ 
 $tipoDocumento = $_POST['tipoDocumento'] ?? $_GET['cCodTipoDoc'] ?? null;
 $anio = date("Y");
-$oficina = $_SESSION['CODIGO_OFICINA'];
+$oficina = $_SESSION['iCodOficinaLogin'];
+error_log("Tipo de documento: " . $tipoDocumento);
+error_log("Año: " . $anio);
+error_log("Oficina: " . $oficina);
 
 if (!$tipoDocumento) {
+    error_log("Error: Tipo de documento no proporcionado");
     echo json_encode(['status' => 'error', 'message' => 'Tipo de documento no proporcionado']);
     exit();
 }
@@ -39,7 +31,7 @@ $params = [$tipoDocumento, $oficina, $anio];
 $stmt = sqlsrv_query($cnx, $sql, $params);
 
 if ($stmt && $row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
-        // Ya existe: devolver correlativo
+    error_log("Correlativo encontrado: " . $row['nCorrelativo']);
     echo json_encode([
         'status' => 'success', 
         'correlativo' => str_pad($row['nCorrelativo'], 5, "0", STR_PAD_LEFT) . '-' . $anio . '/' . $row["cSiglaOficina"]
@@ -47,7 +39,10 @@ if ($stmt && $row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
      exit();
     }
     
+    error_log("No existe correlativo, se procederá a crear uno nuevo");
+
     // Si no existe, crear uno nuevo con nCorrelativo = 1
+    // Insertar nuevo correlativo
     $sqlInsert = "INSERT INTO Tra_M_Correlativo_Oficina (cCodTipoDoc, iCodOficina, nNumAno, nCorrelativo)
                   VALUES (?, ?, ?, 1)";
     $paramsInsert = [$tipoDocumento, $oficina, $anio];
@@ -60,16 +55,19 @@ if ($stmt && $row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
                 WHERE o.iCodOficina = ?";
         $stmt2 = sqlsrv_query($cnx, $sql, [$oficina]);
         if ($stmt2 && $row2 = sqlsrv_fetch_array($stmt2, SQLSRV_FETCH_ASSOC)) {
+            error_log("Nuevo correlativo creado correctamente");
             echo json_encode([
                 'status' => 'success',
                 'correlativo' => str_pad(1, 5, "0", STR_PAD_LEFT) . '-' . $anio . '/' . $row2["cSiglaOficina"]
             ]);
             exit();
         } else {
+            error_log("Error: No se pudo obtener sigla de oficina tras insertar");
             echo json_encode(['status' => 'error', 'message' => 'Correlativo creado, pero no se pudo obtener sigla de oficina.']);
             exit();
         }
     } else {
+        error_log("Error al insertar nuevo correlativo: " . print_r(sqlsrv_errors(), true));
         echo json_encode(['status' => 'error', 'message' => 'Error al insertar correlativo nuevo.']);
         exit();
     }

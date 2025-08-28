@@ -183,7 +183,7 @@ document.querySelectorAll(".firmarBtn").forEach(btn => {
             if (data.success) {
                 console.log("✅ ZIP generado:", data.archivo);
                 const nombreZip = data.archivo.replace('.7z', '');
-                const param_url = `https://tramite.heves.gob.pe/sgd/getFpParamsVB.php?nombreZip=${nombreZip}&iCodFirma=${iCodFirma}`;
+                const param_url = `https://tramite.heves.gob.pe/STDD_marchablanca/getFpParamsVB.php?nombreZip=${nombreZip}&iCodFirma=${iCodFirma}`;
 
                 const paramPrev = {
                     param_url: param_url,

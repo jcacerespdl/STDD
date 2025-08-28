@@ -69,6 +69,18 @@ try {
     if ($stmt === false) throw new Exception(print_r(sqlsrv_errors(), true));
     $row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
     $iCodTramiteNuevo = $row['iCodTramite'];
+
+
+    // Actualizar nCorrelativo en la tabla Tra_M_Correlativo_Oficina
+$sqlUpdateCorrelativo = "UPDATE Tra_M_Correlativo_Oficina 
+SET nCorrelativo = nCorrelativo + 1 
+WHERE cCodTipoDoc = ? AND iCodOficina = ? AND nNumAno = ?";
+$paramsUpdate = [$tipoDocumento, $iCodOficinaOrigen, $nNumAno];
+$stmtUpdateCorrelativo = sqlsrv_query($cnx, $sqlUpdateCorrelativo, $paramsUpdate);
+
+if ($stmtUpdateCorrelativo === false) {
+throw new Exception("Error al actualizar correlativo: " . print_r(sqlsrv_errors(), true));
+}
     //AGREGANDO CVV
     // Generar cPassword alfanumérico de 10 caracteres
     $semilla = "SGD2025";
@@ -81,30 +93,32 @@ try {
     // Guardar en la tabla
     $sqlUpdateClave = "UPDATE Tra_M_Tramite SET cPassword = ? WHERE iCodTramite = ?";
     $stmtClave = sqlsrv_query($cnx, $sqlUpdateClave, [$cPassword, $iCodTramiteNuevo]);
-    // Insertar cada pedido SIGA asociado
-foreach ($pedidosSiga as $pedidoCompleto) {
-    $pedidoParts = explode("_", $pedidoCompleto);
-    $pedidoSiga = $pedidoParts[0] ?? null;
-    if ($pedidoSiga) {
-        $sqlSiga = "INSERT INTO Tra_M_Tramite_SIGA_Pedido (iCodTramite, pedido_siga, extension) VALUES (?, ?, 1)";
-        $stmtSiga = sqlsrv_query($cnx, $sqlSiga, [$iCodTramiteNuevo, $pedidoSiga]);
+    
+    // Insertar ítems CON pedido SIGA asociado
+foreach ($pedidosSiga as $registro) {
+    // esperado: nroPedido_tipoBien_codigoItem_cantidad
+    list($nroPedido, $tipoBien, $codigoItem, $cantidad) = explode("_", $registro);
+    
+        $sqlSiga = "INSERT INTO Tra_M_Tramite_SIGA_Pedido 
+        (iCodTramite, pedido_siga, codigo_item, cantidad, extension, EXPEDIENTE) 
+        VALUES (?, ?, ?, ?, 1, ?)";
+        $stmtSiga = sqlsrv_query($cnx, $sqlSiga, [$iCodTramiteNuevo, $nroPedido, $codigoItem, $cantidad, $expediente]);
         if ($stmtSiga === false) {
             echo json_encode(["status" => "error", "message" => "Error al registrar pedido SIGA: " . print_r(sqlsrv_errors(), true)]);
             exit();
-        }
     }
 }
 
-// Insertar ítems SIN pedido SIGA (catálogo manual)
+// Insertar ítems SIN pedido SIGA  
 $itemsManual = $_POST['itemsSigaManual'] ?? [];
 foreach ($itemsManual as $registro) {
     $parts = explode("_", $registro);
     $codigoItem = $parts[0] ?? null;
     $cantidad = isset($parts[1]) ? intval($parts[1]) : null;
     if ($codigoItem && $cantidad) {
-        $sqlManual = "INSERT INTO Tra_M_Tramite_SIGA_Pedido (iCodTramite, pedido_siga, codigo_item, cantidad, extension)
-                      VALUES (?, NULL, ?, ?, 1)";
-        $stmtManual = sqlsrv_query($cnx, $sqlManual, [$iCodTramiteNuevo, $codigoItem, $cantidad]);
+        $sqlManual = "INSERT INTO Tra_M_Tramite_SIGA_Pedido (iCodTramite, pedido_siga, codigo_item, cantidad, extension, EXPEDIENTE)
+                      VALUES (?, NULL, ?, ?, 1, ?)";
+        $stmtManual = sqlsrv_query($cnx, $sqlManual, [$iCodTramiteNuevo, $codigoItem, $cantidad, $expediente]);
         if ($stmtManual === false) {
             echo json_encode(["status" => "error", "message" => "Error al registrar ítem manual: " . print_r(sqlsrv_errors(), true)]);
             exit();
@@ -114,15 +128,20 @@ foreach ($itemsManual as $registro) {
 
     // Obtener el movimiento original para derivación
     $iCodMovimientoDerivo = $_POST['iCodMovimiento'] ?? null;
+    // Obtener el trámite raíz desde el movimiento que se está derivando
+        $sqlRaiz = "SELECT iCodTramite FROM Tra_M_Tramite_Movimientos WHERE iCodMovimiento = ?";
+        $stmtRaiz = sqlsrv_query($cnx, $sqlRaiz, [$iCodMovimientoDerivo]);
+        $rowRaiz = sqlsrv_fetch_array($stmtRaiz, SQLSRV_FETCH_ASSOC);
+        $iCodTramiteRaiz = $rowRaiz['iCodTramite'] ?? $iCodTramiteAnterior;
     
 
     // Insertar en tra_M_tramite_movimientos    
     foreach ($destinos as $key => $destino) {
         $prev = explode("_", $destino);
-        $iCodOficinaDerivar = is_numeric($prev[0]) ? (int)$prev[0] : null; //ok 
-        $iCodTrabajadorDerivar = is_numeric($prev[1]) ? (int)$prev[1] : null; //ok
-        $iCodIndicacionDerivar = is_numeric($prev[2]) ? (int)$prev[2] : null; //ok
-        $cPrioridadDerivar = $prev[3] ?? ''; //ok
+        $iCodOficinaDerivar = is_numeric($prev[0]) ? (int)$prev[0] : null;  
+        $iCodTrabajadorDerivar = is_numeric($prev[1]) ? (int)$prev[1] : null;  
+        $iCodIndicacionDerivar = is_numeric($prev[2]) ? (int)$prev[2] : null;  
+        $cPrioridadDerivar = $prev[3] ?? '';
         $esCopia = isset($prev[4]) && $prev[4] === '1'; // nuevo campo
 
         $nTiempoRespuesta = 3; // media por defecto
@@ -136,48 +155,76 @@ foreach ($itemsManual as $registro) {
 
                 // Buscar delegado previo
                // Buscar delegado si la oficina actual ya recibió este trámite antes y fue delegado
-$iCodTrabajadorDelegado = null;
-$fFecDelegado = null;
-$iCodIndicacionDelegado = null;
+                $iCodTrabajadorDelegado = null;
+                $fFecDelegado = null;
+                $iCodIndicacionDelegado = null;
 
-$sqlDelegado = "SELECT TOP 1 
-        tm.iCodTrabajadorDelegado,
-        tm.fFecDelegado,
-        tm.iCodIndicacionDelegado
-    FROM Tra_M_Tramite_Movimientos tm
-    JOIN Tra_M_Tramite_Movimientos origen ON tm.iCodMovimiento = origen.iCodMovimientoDerivo
-    WHERE tm.iCodOficinaDerivar = ? -- oficina actual
-      AND origen.iCodMovimiento = ? -- movimiento anterior
-      AND tm.iCodTrabajadorDelegado IS NOT NULL";
+                $sqlDelegado = "SELECT TOP 1 
+                        tm.iCodTrabajadorDelegado,
+                        tm.fFecDelegado,
+                        tm.iCodIndicacionDelegado
+                    FROM Tra_M_Tramite_Movimientos tm
+                    JOIN Tra_M_Tramite_Movimientos origen ON tm.iCodMovimiento = origen.iCodMovimientoDerivo
+                    WHERE tm.iCodOficinaDerivar = ? -- oficina actual
+                    AND origen.iCodMovimiento = ? -- movimiento anterior
+                    AND tm.iCodTrabajadorDelegado IS NOT NULL";
 
-$stmtDelegado = sqlsrv_query($cnx, $sqlDelegado, [$iCodOficinaDerivar, $iCodMovimientoDerivo]);
-$rowDelegado = sqlsrv_fetch_array($stmtDelegado, SQLSRV_FETCH_ASSOC);
+                $stmtDelegado = sqlsrv_query($cnx, $sqlDelegado, [$iCodOficinaDerivar, $iCodMovimientoDerivo]);
+                $rowDelegado = sqlsrv_fetch_array($stmtDelegado, SQLSRV_FETCH_ASSOC);
 
-if ($rowDelegado) {
-    $iCodTrabajadorDelegado = $rowDelegado['iCodTrabajadorDelegado'];
-    $fFecDelegado = date('Y-m-d H:i:s');
-        $iCodIndicacionDelegado = $rowDelegado['iCodIndicacionDelegado'] ?? 1;
-}
+                if ($rowDelegado) {
+                    $iCodTrabajadorDelegado = $rowDelegado['iCodTrabajadorDelegado'];
+                    $fFecDelegado = date('Y-m-d H:i:s');
+                        $iCodIndicacionDelegado = $rowDelegado['iCodIndicacionDelegado'] ?? 1;
+                }
 
                 // fin buscar delegado previo 
 
 
         $sqlMov = "INSERT INTO Tra_M_Tramite_Movimientos (
-            iCodTramite,   iCodOficinaOrigen,    iCodTrabajadorRegistro,     iCodOficinaDerivar,    iCodTrabajadorDerivar,        cAsuntoDerivar, 
-            cObservacionesDerivar,           cPrioridadDerivar,        fFecMovimiento,       nEstadoMovimiento,          cFlgTipoMovimiento,
-            iCodTramiteDerivar,            iCodMovimientoDerivo,          iCodIndicacionDerivar,
-            Expediente,        extension,        iCodTrabajadorDelegado,          iCodIndicacionDelegado,           fFecDelegado
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            iCodTramite,               iCodOficinaOrigen,                  iCodTrabajadorRegistro,                     iCodOficinaDerivar,  
+            iCodTrabajadorDerivar,     cAsuntoDerivar,                     cObservacionesDerivar,                      cPrioridadDerivar,  
+            fFecMovimiento,            nEstadoMovimiento,                  nflgenvio,                                  cFlgTipoMovimiento,
+            iCodTramiteDerivar,        iCodMovimientoDerivo,               iCodIndicacionDerivar,                      Expediente,     
+            extension,                 iCodTrabajadorDelegado,             iCodIndicacionDelegado,                     fFecDelegado
+            ) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?,?, ?, ?)";
 
         $paramsMov = [
-            $iCodTramiteAnterior, $iCodOficinaOrigen, $iCodTrabajadorOrigen,  $iCodOficinaDerivar, $iCodTrabajadorDerivar,    $asunto, 
-            $observaciones, $cPrioridadDerivar,        $fFecRegistro,     $cFlgTipoMovimiento   , 
-            $iCodTramiteNuevo, $iCodMovimientoDerivo, $iCodIndicacionDerivar,
-            $expediente, $extension,       $iCodTrabajadorDelegado, ($iCodTrabajadorDelegado ? 1 : null), $fFecDelegado
+            $iCodTramiteRaiz,          $iCodOficinaOrigen,                 $iCodTrabajadorOrigen,                      $iCodOficinaDerivar, 
+            $iCodTrabajadorDerivar,    $asunto,                            $observaciones,                             $cPrioridadDerivar,  
+            $fFecRegistro,             1,                                  1,                                          $cFlgTipoMovimiento,     // cFlgTipoMovimiento ('1' normal, '4' copia)
+            $iCodTramiteNuevo,         $iCodMovimientoDerivo,              $iCodIndicacionDerivar,                     $expediente,
+            $extension,                $iCodTrabajadorDelegado,            ($iCodTrabajadorDelegado ? 1 : null),       $fFecDelegado
         ];
         $stmtMov = sqlsrv_query($cnx, $sqlMov, $paramsMov);
         if ($stmtMov === false) throw new Exception(print_r(sqlsrv_errors(), true));
     }
+
+
+ // Cerrar (sacar de mi bandeja) el movimiento que estoy derivando
+if (!empty($iCodMovimientoDerivo)) {
+    $sqlCerrar = "
+        UPDATE Tra_M_Tramite_Movimientos
+           SET nEstadoMovimiento = 2
+         WHERE iCodMovimiento = ?
+          "; // opcional, evita updates innecesarios
+    $okCerrar = sqlsrv_query($cnx, $sqlCerrar, [$iCodMovimientoDerivo]);
+
+    if ($okCerrar === false) {
+        echo json_encode([
+            "status"  => "error",
+            "message" => "Error al cerrar el movimiento origen: " . print_r(sqlsrv_errors(), true)
+        ]);
+        exit;
+    }
+}
+
+
+
+
+
+
 
     echo json_encode([
         "status" => "success", 

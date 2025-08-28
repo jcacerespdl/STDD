@@ -268,7 +268,7 @@ async function firmarVB(iCodFirma, tipoDoc){
         if(zipData.status == "error"){
             throw new Error(dataPos.message);
         }
-        const param_url = "https://app2.inr.gob.pe/sgd/getFpParamsVB.php?iCodFirma="+iCodFirma+"&pos="+dataPos.message+"&tipo="+zipData.message;
+        const param_url = "https://app2.inr.gob.pe/STDD_marchablanca/getFpParamsVB.php?iCodFirma="+iCodFirma+"&pos="+dataPos.message+"&tipo="+zipData.message;
         const paramPrev = {
             "param_url": param_url,
             "param_token": "16262369571",

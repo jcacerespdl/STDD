@@ -57,13 +57,13 @@ $paramsInsert = array(
     $fechaRegistro, 
     $icodTrabajadorRegistro,
     2, // nFlgTipoDoc
-    0, // nFlgEnvio
-    0, // nFlgEstado
+    1, // nFlgEnvio
+    1, // nFlgEstado
     0, // nFlgFirma
     1, // extension
     $cTipoBien, 
     $nNumFolio, 
-    0,
+    null,
     $nTienePedidoSiga
 );
 
@@ -103,41 +103,40 @@ $resultUpdate = sqlsrv_query($cnx, $sqlUpdateCorrelativo, $paramsUpdate);
     // Generar cPassword alfanumérico de 10 caracteres
     $semilla = "SGD2025";
     $raw = $iCodTramite . date('YmdHis') . $semilla;
-
     // Convertir a hash base36 (letras y números)
-    $hash = base_convert(crc32($raw), 10, 36); // ejemplo: '1z141r'
-
+    $hash = base_convert(crc32($raw), 10, 36);  
     // Asegurar 10 caracteres (relleno con hash md5 si es necesario)
-    $cPassword = strtoupper(substr($hash . md5($raw), 0, 10)); // siempre alfanumérico
+    $cPassword = strtoupper(substr($hash . md5($raw), 0, 10));  
 
     // Guardar en la tabla
     $sqlUpdateClave = "UPDATE Tra_M_Tramite SET cPassword = ? WHERE iCodTramite = ?";
     $stmtClave = sqlsrv_query($cnx, $sqlUpdateClave, [$cPassword, $iCodTramite]);
 
-// Insertar cada pedido SIGA asociado
-foreach ($pedidosSiga as $pedidoCompleto) {
-    $pedidoParts = explode("_", $pedidoCompleto);
-    $pedidoSiga = $pedidoParts[0] ?? null;
-    if ($pedidoSiga) {
-        $sqlSiga = "INSERT INTO Tra_M_Tramite_SIGA_Pedido (iCodTramite, pedido_siga, extension) VALUES (?, ?, 1)";
-        $stmtSiga = sqlsrv_query($cnx, $sqlSiga, [$iCodTramite, $pedidoSiga]);
-        if ($stmtSiga === false) {
-            echo json_encode(["status" => "error", "message" => "Error al registrar pedido SIGA: " . print_r(sqlsrv_errors(), true)]);
-            exit();
-        }
+    // Insertar ítems CON pedido SIGA asociado
+foreach ($pedidosSiga as $registro) {
+    // esperado: nroPedido_tipoBien_codigoItem_cantidad
+    list($nroPedido, $tipoBien, $codigoItem, $cantidad) = explode("_", $registro);
+
+    $sql = "INSERT INTO Tra_M_Tramite_SIGA_Pedido 
+            (iCodTramite, pedido_siga, codigo_item, cantidad, extension, EXPEDIENTE)
+            VALUES (?, ?, ?, ?, 1, ?)";
+    $stmt = sqlsrv_query($cnx, $sql, [$iCodTramite, $nroPedido, $codigoItem, $cantidad, $expediente]);
+    if ($stmt === false) {
+        echo json_encode(["status" => "error", "message" => "Error al registrar pedido SIGA: " . print_r(sqlsrv_errors(), true)]);
+        exit();
     }
 }
 
-// Insertar ítems SIN pedido SIGA (catálogo manual)
+// Insertar ítems SIN pedido SIGA  
 $itemsManual = $_POST['itemsSigaManual'] ?? [];
 foreach ($itemsManual as $registro) {
     $parts = explode("_", $registro);
     $codigoItem = $parts[0] ?? null;
     $cantidad = isset($parts[1]) ? intval($parts[1]) : null;
     if ($codigoItem && $cantidad) {
-        $sqlManual = "INSERT INTO Tra_M_Tramite_SIGA_Pedido (iCodTramite, pedido_siga, codigo_item, cantidad, extension)
-                      VALUES (?, NULL, ?, ?, 1)";
-        $stmtManual = sqlsrv_query($cnx, $sqlManual, [$iCodTramite, $codigoItem, $cantidad]);
+        $sqlManual = "INSERT INTO Tra_M_Tramite_SIGA_Pedido (iCodTramite, pedido_siga, codigo_item, cantidad, extension, EXPEDIENTE)
+                      VALUES (?, NULL, ?, ?, 1, ?)";
+        $stmtManual = sqlsrv_query($cnx, $sqlManual, [$iCodTramite, $codigoItem, $cantidad, $expediente]);
         if ($stmtManual === false) {
             echo json_encode(["status" => "error", "message" => "Error al registrar ítem manual: " . print_r(sqlsrv_errors(), true)]);
             exit();
@@ -171,9 +170,9 @@ foreach ($destinos as $key => $destino) {
         $cFlgTipoMovimiento = $esCopia ? '4' : '1'; // 4 para copia, 1 para normal
 
         $sqlGenMov = "INSERT INTO Tra_M_Tramite_Movimientos
-         (iCodtramite, iCodTrabajadorRegistro, iCodOficinaOrigen, iCodOficinaDerivar, iCodTrabajadorDerivar, iCodIndicacionDerivar, cPrioridadDerivar,   EXPEDIENTE, nEstadoMovimiento, cFlgTipoMovimiento, extension,nTiempoRespuesta)
+         (iCodtramite, iCodTrabajadorRegistro, iCodOficinaOrigen, iCodOficinaDerivar, iCodTrabajadorDerivar, iCodIndicacionDerivar, cPrioridadDerivar,   EXPEDIENTE, nEstadoMovimiento, cFlgTipoMovimiento, extension,nTiempoRespuesta,nflgenvio, nFlgTipoDoc)
                         OUTPUT INSERTED.iCodMovimiento  
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,  ?,?)";
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,  ?,?,?,?)";
 
         $paramsGenMov = array(
             $iCodTramite, 
@@ -185,10 +184,12 @@ foreach ($destinos as $key => $destino) {
                 $cPrioridadDerivar, 
               
                 substr($expediente, 0, 10),
-                0, // nEstadoMovimiento
+                1, // nEstadoMovimiento
                 $cFlgTipoMovimiento,
                 1,
-                $nTiempoRespuesta
+                $nTiempoRespuesta,
+                1, //nflgenvio
+                2
             );
 
         $stmtGenMov = sqlsrv_query($cnx, $sqlGenMov, $paramsGenMov);

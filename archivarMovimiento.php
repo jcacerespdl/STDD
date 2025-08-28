@@ -14,23 +14,21 @@ if (!$iCodMovimiento || !$iCodTrabajador) {
     exit;
 }
 
-// Validar archivo
-if (!isset($_FILES['archivoFinal']) || $_FILES['archivoFinal']['error'] !== UPLOAD_ERR_OK) {
-    echo json_encode(['status' => 'error', 'message' => 'Debe adjuntar un documento PDF']);
-    exit;
-}
+$nombreFinal = null;
 
-// Guardar el archivo en /cAlmacenArchivos/
-$archivo = $_FILES['archivoFinal'];
-$nombreOriginal = $archivo['name'];
-$extension = pathinfo($nombreOriginal, PATHINFO_EXTENSION);
-$nombreLimpio = preg_replace('/\s+/', '_', pathinfo($nombreOriginal, PATHINFO_FILENAME));
-$nombreFinal = $iCodMovimiento . '-' . $nombreLimpio . '.' . $extension;
-$rutaDestino = __DIR__ . "/cAlmacenArchivos/" . $nombreFinal;
+// Verificar si hay archivo subido
+if (isset($_FILES['archivoFinal']) && $_FILES['archivoFinal']['error'] === UPLOAD_ERR_OK) {
+    $archivo = $_FILES['archivoFinal'];
+    $nombreOriginal = $archivo['name'];
+    $extension = pathinfo($nombreOriginal, PATHINFO_EXTENSION);
+    $nombreLimpio = preg_replace('/\s+/', '_', pathinfo($nombreOriginal, PATHINFO_FILENAME));
+    $nombreFinal = $iCodMovimiento . '-' . $nombreLimpio . '.' . $extension;
+    $rutaDestino = __DIR__ . "/cAlmacenArchivos/" . $nombreFinal;
 
-if (!move_uploaded_file($archivo['tmp_name'], $rutaDestino)) {
-    echo json_encode(['status' => 'error', 'message' => 'No se pudo guardar el archivo']);
-    exit;
+    if (!move_uploaded_file($archivo['tmp_name'], $rutaDestino)) {
+        echo json_encode(['status' => 'error', 'message' => 'No se pudo guardar el archivo']);
+        exit;
+    }
 }
 
 // Actualizar movimiento

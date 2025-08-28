@@ -51,7 +51,7 @@ $params = new stdClass();
 $params->signatureFormat = "PAdES";
 $params->signatureLevel = "B";
 $params->signaturePackaging = "enveloped";
-$params->documentToSign = "https://tramite.heves.gob.pe/sgd/$nombreZIP.7z";
+$params->documentToSign = "https://tramite.heves.gob.pe/STDD_marchablanca/$nombreZIP.7z";
 $params->certificateFilter = ".*FIR.*.*";
 $params->theme = "claro";
 $params->visiblePosition = false;
@@ -62,14 +62,14 @@ $params->bachtOperation = true;
 $params->oneByOne = false;
 $params->signatureStyle = 1;
 $params->imageToStamp = $tipoFirma == 1 
-    ? "https://tramite.heves.gob.pe/SGD/img/isotipo.png"
-    : "https://tramite.heves.gob.pe/SGD/img/VB.png";
+    ? "https://tramite.heves.gob.pe/STDD_marchablanca/img/isotipo.png"
+    : "https://tramite.heves.gob.pe/STDD_marchablanca/img/VB.png";
 $params->stampTextSize = 15;
 $params->stampWordWrap = 37;
 $params->stampPage = 1;
 $params->positionx = $positionx;
 $params->positiony = $positiony;
-$params->uploadDocumentSigned = "https://tramite.heves.gob.pe/sgd/uploadFileMasivoRevision.php?nombreZip=$nombreZIP";
+$params->uploadDocumentSigned = "https://tramite.heves.gob.pe/STDD_marchablanca/uploadFileMasivoRevision.php?nombreZip=$nombreZIP";
 $params->token = $token;
 
 echo base64_encode(json_encode($params));

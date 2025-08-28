@@ -4,7 +4,7 @@ header('Content-Type: application/x-www-form-urlencoded');
 $nombreZIP = $_GET["nombreZip"] ?? '';
 $iCodTramite = $_GET["iCodTramite"] ?? '';
 
-$documentToSign = "https://tramite.heves.gob.pe/sgd/$nombreZIP.7z";
+$documentToSign = "https://tramite.heves.gob.pe/STDD_marchablanca/$nombreZIP.7z";
 
 // Firma en posición A
 $positionx = 465;
@@ -36,12 +36,12 @@ $params->signatureReason = "Firma documento principal";
 $params->bachtOperation = true;
 $params->oneByOne = false;
 $params->signatureStyle = 1;
-$params->imageToStamp = "https://tramite.heves.gob.pe/SGD/img/isotipo.png";
+$params->imageToStamp = "https://tramite.heves.gob.pe/STDD_marchablanca/img/isotipo.png";
 $params->stampTextSize = 15;
 $params->stampPage = 1;
 $params->positionx = $positionx;
 $params->positiony = $positiony;
-$params->uploadDocumentSigned = "https://tramite.heves.gob.pe/sgd/uploadFilePrincipal.php?nombreZip=$nombreZIP&iCodTramite=$iCodTramite";
+$params->uploadDocumentSigned = "https://tramite.heves.gob.pe/STDD_marchablanca/uploadFilePrincipal.php?nombreZip=$nombreZIP&iCodTramite=$iCodTramite";
 $params->token = $token;
 
 echo base64_encode(json_encode($params));

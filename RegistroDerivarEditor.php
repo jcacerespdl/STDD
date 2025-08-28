@@ -15,13 +15,69 @@ $movimientoDerivo = $_GET['iCodMovimiento'] ?? null;
 if (!$iCodTramite) {
     die("Error: Código de trámite no proporcionado.");
 }
-// Tipos de documentos
-$sqlTiposDoc = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgInterno = 1 ORDER BY cDescTipoDoc ASC";
+
+// INICIO: ITEMS SIGA SEGUN EXPEDIENTE
+$expediente = '';
+$tieneItemsSIGA = false;
+
+if ($iCodTramite) {
+    // Obtener el EXPEDIENTE del trámite
+    $sqlExp = "SELECT EXPEDIENTE FROM Tra_M_Tramite WHERE iCodTramite = ?";
+    $stmtExp = sqlsrv_query($cnx, $sqlExp, [$iCodTramite]);
+    if ($rowExp = sqlsrv_fetch_array($stmtExp, SQLSRV_FETCH_ASSOC)) {
+        $expediente = $rowExp['EXPEDIENTE'];
+        echo "<script>console.log('EXPEDIENTE OBTENIDO: $expediente');</script>";
+    }
+
+    // Verificar si existen ítems SIGA en el expediente (con o sin pedido)
+    $sqlCheckItems = "SELECT COUNT(*) as total FROM Tra_M_Tramite_SIGA_Pedido WHERE EXPEDIENTE = ?";
+    $stmtCheck = sqlsrv_query($cnx, $sqlCheckItems, [$expediente]);
+    if ($row = sqlsrv_fetch_array($stmtCheck, SQLSRV_FETCH_ASSOC)) {
+        $tieneItemsSIGA = $row['total'] > 0;
+        if ($tieneItemsSIGA) {
+          echo "<script>console.log('\u00cdtems SIGA encontrados exitosamente');</script>";
+        }
+    }
+}
+
+// FIN: ITEMS SIGA SEGUN EXPEDIENTE
+
+//----** Restricciones por tipo de documento : INICIO
+// Solo 68 puede 110; solo 46 puede 111
+$iCodOficina = (int)($_SESSION['iCodOficinaLogin'] ?? 0);
+
+if ($iCodOficina === 68) {
+    // Admin (68): ver todo menos 111
+    $whereExtra = "AND cCodTipoDoc <> 111";
+} elseif ($iCodOficina === 46) {
+    // Dirección/Admin (46): ver todo menos 110
+    $whereExtra = "AND cCodTipoDoc <> 110";
+} else {
+    // Otras oficinas: ocultar 110 y 111
+    $whereExtra = "AND cCodTipoDoc NOT IN (110,111)";
+}
+
+$sqlTiposDoc = "
+  SELECT cCodTipoDoc, cDescTipoDoc
+  FROM Tra_M_Tipo_Documento
+  WHERE nFlgInterno = 1
+    $whereExtra
+  ORDER BY cDescTipoDoc ASC
+";
 $resultTiposDoc = sqlsrv_query($cnx, $sqlTiposDoc);
 $tiposDoc = [];
 while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
-    $tiposDoc[] = $row;
+  $tiposDoc[] = $row;
 }
+
+// // Tipos de documentos
+//         $sqlTiposDoc = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgInterno = 1 ORDER BY cDescTipoDoc ASC";
+//         $resultTiposDoc = sqlsrv_query($cnx, $sqlTiposDoc);
+//         $tiposDoc = [];
+//         while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
+//             $tiposDoc[] = $row;
+//         }
+//----** Restricciones por tipo de documento : FIN
 
 // Oficinas
 $sqlOficinas = "SELECT iCodOficina, cNomOficina, cSiglaOficina  FROM Tra_M_Oficinas";
@@ -435,6 +491,63 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
   </div>
 </div>
 <!-- FIN: GRUPO REQUERIMIENTO -->
+
+<!-- INICIO: GRUPO REQUERIMIENTOS DEL EXPEDIENTE -->
+<?php if ($tieneItemsSIGA): ?>
+<div id="grupoRequerimientoExpediente" style="margin-top: 20px;">
+  <div class="form-row">
+    <div class="input-container" style="width: 100%; overflow-x: auto;">
+      <h3 style="color:#005a86;">Items SIGA del expediente</h3>
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <thead style="background: #f5f5f5;">
+          <tr>
+            <th>Pedido</th>
+            <th>Código</th>
+            <th>Nombre del Ítem</th>
+            <th>Cantidad</th>
+          </tr>
+        </thead>
+        <tbody>
+        <?php
+            $sigaConn = sqlsrv_connect("192.168.32.135", [
+              "Database" => "SIGA_1670",
+              "Uid" => "fapaza",
+              "PWD" => "2780Fach",
+              "CharacterSet" => "UTF-8"
+            ]);
+
+            $sqlItems = "SELECT pedido_siga, codigo_item, cantidad FROM Tra_M_Tramite_SIGA_Pedido WHERE EXPEDIENTE = ?";
+            $stmtItems = sqlsrv_query($cnx, $sqlItems, [$expediente]);
+
+            if ($stmtItems && sqlsrv_has_rows($stmtItems)) {
+                while ($row = sqlsrv_fetch_array($stmtItems, SQLSRV_FETCH_ASSOC)) {
+                    $pedido = $row['pedido_siga'] ?: '-';
+                    $codigo = $row['codigo_item'];
+                    $cantidad = $row['cantidad'];
+                    $nombre = '(No encontrado)';
+
+                    if ($sigaConn) {
+                        $sqlNombre = "SELECT NOMBRE_ITEM FROM CATALOGO_BIEN_SERV WHERE CODIGO_ITEM = ?";
+                        $stmtNombre = sqlsrv_query($sigaConn, $sqlNombre, [$codigo]);
+                        if ($stmtNombre && $rowNombre = sqlsrv_fetch_array($stmtNombre, SQLSRV_FETCH_ASSOC)) {
+                            $nombre = $rowNombre['NOMBRE_ITEM'];
+                        }
+                    }
+
+                    echo "<tr><td>$pedido</td><td>$codigo</td><td>$nombre</td><td>$cantidad</td></tr>";
+                }
+            } else {
+                echo "<tr><td colspan='4' style='text-align:center; color:gray;'>No se encontraron ítems SIGA</td></tr>";
+            }
+        ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+<!-- FIN: GRUPO REQUERIMIENTOS DEL EXPEDIENTE -->
+
 <div class="form-row">
   <div class="input-container" style="flex: 1; position: relative;">
     <textarea name="asunto" id="asunto" class="form-textarea relleno" required><?= htmlspecialchars($tramite['cAsunto']) ?></textarea>
@@ -457,10 +570,12 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
       <option value="" disabled hidden <?= is_null($tramite['fase']) ? 'selected' : '' ?>></option>
       <option value="0" <?= $tramite['fase'] === 0 ? 'selected' : '' ?>>No Corresponde</option>
       <option value="2" <?= $tramite['fase'] === 2 ? 'selected' : '' ?>>Validación</option>
-      <option value="3" <?= $tramite['fase'] === 3 ? 'selected' : '' ?>>Reformulación</option>
+      
       <?php if ($_SESSION['iCodOficinaLogin'] == 112): ?>
-        <option value="4" <?= $tramite['fase'] === 4 ? 'selected' : '' ?>>Disponibilidad Presupuestal</option>
-        <option value="5" <?= $tramite['fase'] === 5 ? 'selected' : '' ?>>Notificación</option>
+        <option value="3" <?= $tramite['fase'] === 3 ? 'selected' : '' ?>>Certificación</option>
+        <option value="4" <?= $tramite['fase'] === 4 ? 'selected' : '' ?>>Reformulación</option>
+        <option value="5" <?= $tramite['fase'] === 5 ? 'selected' : '' ?>>Disponibilidad Presupuestal</option>
+        <option value="6" <?= $tramite['fase'] === 6 ? 'selected' : '' ?>>Notificación</option>
       <?php endif; ?>
     </select>
     <label for="fase">Fase</label>
@@ -716,9 +831,9 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
                     <a href="#" onclick="abrirPopupFirmantes(<?= $iCodTramite ?>, <?= $iCodDigital ?>, '<?= htmlspecialchars($doc['archivo']) ?>')" style="color: var(--primary);">
                     <i class="material-icons" title="Visar Complementario">person_add</i>
                      </a>
-                     <a href="#" onclick="abrirTipoComplementario(<?= $iCodTramite ?>, <?= $iCodDigital ?>, '<?= htmlspecialchars($doc['archivo']) ?>')" style="color: var(--primary);">
+                     <!-- <a href="#" onclick="abrirTipoComplementario(<?= $iCodTramite ?>, <?= $iCodDigital ?>, '<?= htmlspecialchars($doc['archivo']) ?>')" style="color: var(--primary);">
                      <i class="material-icons" title="Designar Tipo de Complementario">assignment</i>
-                     </a>
+                     </a> -->
                                         <?php endif; ?>
                                     </td>
                                       <!-- <td>
@@ -753,6 +868,29 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="./scripts/jquery.blockUI.js"></script>
     <script>
+             const tieneItemsSIGA = <?= $tieneItemsSIGA ? 'true' : 'false' ?>;
+             $(document).ready(function () {
+  if (tieneItemsSIGA) {
+    console.log("🔒 EXPEDIENTE con ítems SIGA: solo vista permitida");
+
+    // Ocultar secciones de búsqueda y edición
+    $('#grupoRequerimiento').hide();
+    $('#seccionPedidoSiga').hide();
+    $('#resultadoBusqueda').hide();
+    $('#busquedaItemSinPedido').hide();
+    $('#resultadoAgregado').hide();
+
+    // Opcional: limpiar valores
+    $('#tipoBien, #pedidoSiga').val('');
+    $('#buscarItemTextoNombre, #buscarItemCodigo, #expedienteSIGA').val('');
+    $('#tablaSiga tbody, #tablaSigaAgregados tbody, #tablaItemsSinPedido tbody, #tablaItemsEncontrados tbody').empty();
+
+    // Mostrar solo los ítems del expediente (ya lo haces en PHP)
+    $('#grupoRequerimientoExpediente').show();
+  }
+});
+
+
          if (typeof tinymce === "undefined") {
         console.error("❌ TinyMCE no se ha cargado. Revisa la ruta del archivo JS.");
     } else {
@@ -812,7 +950,7 @@ document.getElementById('formularioEditor').addEventListener('submit', function(
                     documento = res.filename;
                     const btnDescargar = document.getElementById('descargarBtn');
 
-                    btnDescargar.href = `https://tramite.heves.gob.pe/SGD/cDocumentosFirmados/${res.filename}`;
+                    btnDescargar.href = `https://tramite.heves.gob.pe/STDD_marchablanca/cDocumentosFirmados/${res.filename}`;
                     btnDescargar.style.backgroundColor = '';
                     btnDescargar.style.color = '';
                     btnDescargar.style.cursor = '';
@@ -917,7 +1055,7 @@ let documento = <?= json_encode($documentoElectronico) ?>;
 console.log("🧾 Documento principal:", documento);
 if (documento) {
     const btnDescargar = document.getElementById('descargarBtn');
-    btnDescargar.href = `https://tramite.heves.gob.pe/SGD/cDocumentosFirmados/${documento}`;
+    btnDescargar.href = `https://tramite.heves.gob.pe/STDD_marchablanca/cDocumentosFirmados/${documento}`;
     btnDescargar.style.backgroundColor = '';
     btnDescargar.style.color = '';
     btnDescargar.style.cursor = '';
@@ -961,7 +1099,7 @@ if (btnFirmar) {
                 console.log("✅ ZIP generado:", data.archivo);
                 const nombreZip = data.archivo.replace('.7z', '');
                 const zipSinExtension = nombreZip.replace('.7z', '');
-const param_url = `https://tramite.heves.gob.pe/sgd/getFpParamsPrincipal.php?nombreZip=${zipSinExtension}&iCodTramite=${<?= json_encode($iCodTramite) ?>}`; 
+const param_url = `https://tramite.heves.gob.pe/STDD_marchablanca/getFpParamsPrincipal.php?nombreZip=${zipSinExtension}&iCodTramite=${<?= json_encode($iCodTramite) ?>}`; 
 
                 const paramPrev = {
                     param_url: param_url,
@@ -1019,7 +1157,7 @@ document.getElementById('formAdjuntoPrincipal').addEventListener('submit', async
             documento = result.filename;
 
             const btnDescargar = document.getElementById('descargarBtn');
-            btnDescargar.href = `https://tramite.heves.gob.pe/SGD/cDocumentosFirmados/${result.filename}`;
+            btnDescargar.href = `https://tramite.heves.gob.pe/STDD_marchablanca/cDocumentosFirmados/${result.filename}`;
             btnDescargar.style.backgroundColor = '';
             btnDescargar.style.color = '';
             btnDescargar.style.cursor = '';
@@ -1502,27 +1640,30 @@ $('#pedidoSiga').on('change', function () {
 $('#tipoDocumento').on('change', function () {
   const tipo = $(this).val();
 
-  if (tipo === '109') {
+  if ((tipo === '108' || tipo === '109') && !tieneItemsSIGA) {
     $('#grupoRequerimiento').show();
   } else {
-    if (confirm('⚠️ Al cambiar de tipo se eliminarán todos los ítems SIGA. ¿Desea continuar?')) {
-      fetch('eliminarItemsSigaTramite.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `iCodTramite=${iCodTramite}`
-      })
-      .then(res => res.json())
-      .then(() => {
-        $('#grupoRequerimiento, #seccionPedidoSiga, #resultadoBusqueda, #resultadoAgregado, #busquedaItemSinPedido').hide();
-        $('#tipoBien, #pedidoSiga').val('');
-        $('#expedienteSIGA, #buscarItemTexto, #buscarItemCodigo').val('');
-        $('#tablaSiga tbody, #tablaSigaAgregados tbody, #tablaItemsSinPedido tbody, #tablaItemsEncontrados tbody').empty();
-      });
-    } else {
-      $('#tipoDocumento').val('109');
+    // Ocultar secciones de edición
+    $('#grupoRequerimiento, #seccionPedidoSiga, #resultadoBusqueda, #resultadoAgregado, #busquedaItemSinPedido').hide();
+    $('#tipoBien, #pedidoSiga').val('');
+    $('#expedienteSIGA, #buscarItemTexto, #buscarItemCodigo').val('');
+    $('#tablaSiga tbody, #tablaSigaAgregados tbody, #tablaItemsSinPedido tbody, #tablaItemsEncontrados tbody').empty();
+
+    // Solo si cambió a tipo distinto de 108 o 109
+    if (tipo !== '108' && tipo !== '109') {
+      if (confirm('⚠️ Al cambiar de tipo se eliminarán todos los ítems SIGA. ¿Desea continuar?')) {
+        fetch('eliminarItemsSigaTramite.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `iCodTramite=${iCodTramite}`
+        });
+      } else {
+        $('#tipoDocumento').val('109');
+      }
     }
   }
 });
+
 // 🔍 Evaluar tipo de documento al cargar (caso al pasar desde registroOficina)
 $(document).ready(function () {
   const tipoInicial = $('#tipoDocumento').val();

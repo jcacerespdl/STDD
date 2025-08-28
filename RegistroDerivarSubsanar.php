@@ -15,13 +15,42 @@ $movimientoDerivo = $_GET['iCodMovimiento'] ?? null;
 if (!$iCodTramite) {
     die("Error: Código de trámite no proporcionado.");
 }
-// Tipos de documentos
-$sqlTiposDoc = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgInterno = 1 ORDER BY cDescTipoDoc ASC";
+//----** Restricciones por tipo de documento : INICIO
+// Solo 68 puede 110; solo 46 puede 111
+$iCodOficina = (int)($_SESSION['iCodOficinaLogin'] ?? 0);
+
+if ($iCodOficina === 68) {
+    // Admin (68): ver todo menos 111
+    $whereExtra = "AND cCodTipoDoc <> 111";
+} elseif ($iCodOficina === 46) {
+    // Dirección/Admin (46): ver todo menos 110
+    $whereExtra = "AND cCodTipoDoc <> 110";
+} else {
+    // Otras oficinas: ocultar 110 y 111
+    $whereExtra = "AND cCodTipoDoc NOT IN (110,111)";
+}
+
+$sqlTiposDoc = "
+  SELECT cCodTipoDoc, cDescTipoDoc
+  FROM Tra_M_Tipo_Documento
+  WHERE nFlgInterno = 1
+    $whereExtra
+  ORDER BY cDescTipoDoc ASC
+";
 $resultTiposDoc = sqlsrv_query($cnx, $sqlTiposDoc);
 $tiposDoc = [];
 while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
-    $tiposDoc[] = $row;
+  $tiposDoc[] = $row;
 }
+
+// // Tipos de documentos
+//         $sqlTiposDoc = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgInterno = 1 ORDER BY cDescTipoDoc ASC";
+//         $resultTiposDoc = sqlsrv_query($cnx, $sqlTiposDoc);
+//         $tiposDoc = [];
+//         while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
+//             $tiposDoc[] = $row;
+//         }
+//----** Restricciones por tipo de documento : FIN
 
 // Oficinas
 $sqlOficinas = "SELECT iCodOficina, cNomOficina, cSiglaOficina  FROM Tra_M_Oficinas";
@@ -701,9 +730,9 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
                     <a href="#" onclick="abrirPopupFirmantes(<?= $iCodTramite ?>, <?= $iCodDigital ?>, '<?= htmlspecialchars($doc['archivo']) ?>')" style="color: var(--primary);">
                     <i class="material-icons" title="Visar Complementario">person_add</i>
                      </a>
-                     <a href="#" onclick="abrirTipoComplementario(<?= $iCodTramite ?>, <?= $iCodDigital ?>, '<?= htmlspecialchars($doc['archivo']) ?>')" style="color: var(--primary);">
+                     <!-- <a href="#" onclick="abrirTipoComplementario(<?= $iCodTramite ?>, <?= $iCodDigital ?>, '<?= htmlspecialchars($doc['archivo']) ?>')" style="color: var(--primary);">
                      <i class="material-icons" title="Designar Tipo de Complementario">assignment</i>
-                     </a>
+                     </a> -->
                                         <?php endif; ?>
                                     </td>
                                       <!-- <td>
@@ -797,7 +826,7 @@ document.getElementById('formularioEditor').addEventListener('submit', function(
                     documento = res.filename;
                     const btnDescargar = document.getElementById('descargarBtn');
 
-                    btnDescargar.href = `https://tramite.heves.gob.pe/SGD/cDocumentosFirmados/${res.filename}`;
+                    btnDescargar.href = `https://tramite.heves.gob.pe/STDD_marchablanca/cDocumentosFirmados/${res.filename}`;
                     btnDescargar.style.backgroundColor = '';
                     btnDescargar.style.color = '';
                     btnDescargar.style.cursor = '';
@@ -884,7 +913,7 @@ let documento = <?= json_encode($documentoElectronico) ?>;
 console.log("🧾 Documento principal:", documento);
 if (documento) {
     const btnDescargar = document.getElementById('descargarBtn');
-    btnDescargar.href = `https://tramite.heves.gob.pe/SGD/cDocumentosFirmados/${documento}`;
+    btnDescargar.href = `https://tramite.heves.gob.pe/STDD_marchablanca/cDocumentosFirmados/${documento}`;
     btnDescargar.style.backgroundColor = '';
     btnDescargar.style.color = '';
     btnDescargar.style.cursor = '';
@@ -928,7 +957,7 @@ if (btnFirmar) {
                 console.log("✅ ZIP generado:", data.archivo);
                 const nombreZip = data.archivo.replace('.7z', '');
                 const zipSinExtension = nombreZip.replace('.7z', '');
-const param_url = `https://tramite.heves.gob.pe/sgd/getFpParamsPrincipal.php?nombreZip=${zipSinExtension}&iCodTramite=${<?= json_encode($iCodTramite) ?>}`; 
+const param_url = `https://tramite.heves.gob.pe/STDD_marchablanca/getFpParamsPrincipal.php?nombreZip=${zipSinExtension}&iCodTramite=${<?= json_encode($iCodTramite) ?>}`; 
 
                 const paramPrev = {
                     param_url: param_url,
@@ -979,7 +1008,7 @@ document.getElementById('formAdjuntoPrincipal').addEventListener('submit', async
             documento = result.filename;
 
             const btnDescargar = document.getElementById('descargarBtn');
-            btnDescargar.href = `https://tramite.heves.gob.pe/SGD/cDocumentosFirmados/${result.filename}`;
+            btnDescargar.href = `https://tramite.heves.gob.pe/STDD_marchablanca/cDocumentosFirmados/${result.filename}`;
             btnDescargar.style.backgroundColor = '';
             btnDescargar.style.color = '';
             btnDescargar.style.cursor = '';

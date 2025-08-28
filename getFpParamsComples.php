@@ -33,7 +33,7 @@
     $params->signatureFormat = "PAdES";
     $params->signatureLevel = "B";
     $params->signaturePackaging = "enveloped";
-    $params->documentToSign =  "https://app2.inr.gob.pe/sgd/$zip";
+    $params->documentToSign =  "https://app2.inr.gob.pe/STDD_marchablanca/$zip";
     $params->certificateFilter = ".*FIR.*.*";
     $params->webTsa = "";
     $params->userTsa = "";
@@ -45,14 +45,14 @@
     $params->bachtOperation = true;
     $params->oneByOne = false;
     $params->signatureStyle = 1;
-    $params->imageToStamp = "https://app2.inr.gob.pe/sgd/isotipo.png";
+    $params->imageToStamp = "https://app2.inr.gob.pe/STDD_marchablanca/isotipo.png";
     $params->stampTextSize = 15;
     $params->stampWordWrap = 37;
     $params->role = "";
     $params->stampPage = 1;
     $params->positionx = 465;
     $params->positiony = 10;
-    $params->uploadDocumentSigned = "https://app2.inr.gob.pe/sgd/uploadComplesFiles.php?mode=$mode&zip=$zip"; 
+    $params->uploadDocumentSigned = "https://app2.inr.gob.pe/STDD_marchablanca/uploadComplesFiles.php?mode=$mode&zip=$zip"; 
     $params->token = $token;
 
     echo base64_encode(json_encode($params));

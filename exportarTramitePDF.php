@@ -190,8 +190,8 @@ $bloqueReferencias = $referencias ? "
 // Fecha
 setlocale(LC_TIME, 'es_PE.UTF-8', 'es_PE', 'Spanish_Peru', 'es');
 $fecha = strftime("%d de %B de %Y", $tramite["fFecRegistro"]->getTimestamp());
-$hora = $tramite["fFecRegistro"]->format("H:i");
-$fechaCompleta = "$fecha  $hora";
+// $hora = $tramite["fFecRegistro"]->format("H:i");
+$fechaCompleta = "$fecha";
 
 // Crear PDF
 $pdf = new MYPDF();
@@ -215,7 +215,7 @@ $destinosHTML
 <tr><td colspan="3"><br></td></tr>
 <tr><td style="width:17%"><b>ASUNTO</b></td><td style="width:3%">:</td><td style="width:80%">{$tramite["cAsunto"]}</td></tr>
 $bloqueReferencias
- 
+<br>
 <tr><td style="width:17%"><b>FECHA</b></td><td style="width:3%">:</td><td style="width:80%">$fechaCompleta</td></tr>
 <tr><td colspan="3"><br></td></tr>
 </table>

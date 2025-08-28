@@ -222,3 +222,94 @@
 [2025-07-10 15:36:17] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 158023 bytes (155 KiB) |  | Creating archive: C:\AppServ\www\SGD\principal_561533_.7z |  | Add new data to archive: 1 file, 158023 bytes (155 KiB) |  |  | Files read from disk: 1 | Archive size: 141276 bytes (138 KiB) | Everything is Ok
 [2025-07-10 15:36:17] 🔁 Código salida: 0
 [2025-07-10 15:36:17] ✅ ZIP generado correctamente: C:\AppServ\www\SGD\principal_561533_.7z
+[2025-07-15 12:13:19] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_561547_.7z" "C:\Windows\TEMP/firma_principal_68768c2fd5635\NOTA-INFORMATIVA-REQUERIMIENTO-00001-2025_DAADYT_HEVES(E).pdf"
+[2025-07-15 12:13:19] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 158168 bytes (155 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_561547_.7z |  | Add new data to archive: 1 file, 158168 bytes (155 KiB) |  |  | Files read from disk: 1 | Archive size: 141266 bytes (138 KiB) | Everything is Ok
+[2025-07-15 12:13:19] 🔁 Código salida: 0
+[2025-07-15 12:13:19] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_561547_.7z
+[2025-07-22 12:01:13] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_561568_.7z" "C:\Windows\TEMP/firma_principal_687fc3d9bb4fd\NOTA-INFORMATIVA-REQUERIMIENTO-00009-2025_UTI_HEVES(e).pdf"
+[2025-07-22 12:01:13] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 157384 bytes (154 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_561568_.7z |  | Add new data to archive: 1 file, 157384 bytes (154 KiB) |  |  | Files read from disk: 1 | Archive size: 140226 bytes (137 KiB) | Everything is Ok
+[2025-07-22 12:01:13] 🔁 Código salida: 0
+[2025-07-22 12:01:13] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_561568_.7z
+[2025-07-24 14:24:33] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_561570_.7z" "C:\Windows\TEMP/firma_principal_68828871222d3\MEMORANDO-CIRCULAR-00001-2025_UTI_HEVES(e).pdf"
+[2025-07-24 14:24:33] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 156681 bytes (154 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_561570_.7z |  | Add new data to archive: 1 file, 156681 bytes (154 KiB) |  |  | Files read from disk: 1 | Archive size: 139260 bytes (136 KiB) | Everything is Ok
+[2025-07-24 14:24:33] 🔁 Código salida: 0
+[2025-07-24 14:24:33] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_561570_.7z
+[2025-07-30 16:01:39] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562546_.7z" "C:\Windows\TEMP/firma_principal_688a88333a95c\NOTA-INFORMATIVA-REQUERIMIENTO-00001-2025_UF_SAT_DAADYT_HEVES(E).pdf"
+[2025-07-30 16:01:39] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 231849 bytes (227 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562546_.7z |  | Add new data to archive: 1 file, 231849 bytes (227 KiB) |  |  | Files read from disk: 1 | Archive size: 214759 bytes (210 KiB) | Everything is Ok
+[2025-07-30 16:01:39] 🔁 Código salida: 0
+[2025-07-30 16:01:39] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562546_.7z
+[2025-07-30 16:07:05] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562548_.7z" "C:\Windows\TEMP/firma_principal_688a89796d1cb\NOTA-INFORMATIVA-00001-2025_DAADYT_HEVES(E).pdf"
+[2025-07-30 16:07:05] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 158081 bytes (155 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562548_.7z |  | Add new data to archive: 1 file, 158081 bytes (155 KiB) |  |  | Files read from disk: 1 | Archive size: 141166 bytes (138 KiB) | Everything is Ok
+[2025-07-30 16:07:05] 🔁 Código salida: 0
+[2025-07-30 16:07:05] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562548_.7z
+[2025-07-31 13:02:33] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562554_.7z" "C:\Windows\TEMP/firma_principal_688bafb9dd144\NOTA-INFORMATIVA-REQUERIMIENTO-00013-2025_UTI_HEVES(e).pdf"
+[2025-07-31 13:02:33] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 157531 bytes (154 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562554_.7z |  | Add new data to archive: 1 file, 157531 bytes (154 KiB) |  |  | Files read from disk: 1 | Archive size: 140378 bytes (138 KiB) | Everything is Ok
+[2025-07-31 13:02:33] 🔁 Código salida: 0
+[2025-07-31 13:02:33] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562554_.7z
+[2025-08-01 12:34:16] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562560_.7z" "C:\Windows\TEMP/firma_principal_688cfa986a907\NOTA-INFORMATIVA-REQUERIMIENTO-00006-2025_AAF_UF_SAT_DAADYT_HEVES(E).pdf"
+[2025-08-01 12:34:16] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 159977 bytes (157 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562560_.7z |  | Add new data to archive: 1 file, 159977 bytes (157 KiB) |  |  | Files read from disk: 1 | Archive size: 142459 bytes (140 KiB) | Everything is Ok
+[2025-08-01 12:34:16] 🔁 Código salida: 0
+[2025-08-01 12:34:16] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562560_.7z
+[2025-08-01 12:36:35] 🧹 ZIP anterior eliminado: C:\AppServ\www\STDD_marchablanca\principal_562560_.7z
+[2025-08-01 12:36:35] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562560_.7z" "C:\Windows\TEMP/firma_principal_688cfb234b11c\NOTA-INFORMATIVA-REQUERIMIENTO-00006-2025_AAF_UF_SAT_DAADYT_HEVES(E).pdf"
+[2025-08-01 12:36:35] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 160043 bytes (157 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562560_.7z |  | Add new data to archive: 1 file, 160043 bytes (157 KiB) |  |  | Files read from disk: 1 | Archive size: 142476 bytes (140 KiB) | Everything is Ok
+[2025-08-01 12:36:35] 🔁 Código salida: 0
+[2025-08-01 12:36:35] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562560_.7z
+[2025-08-01 12:40:10] 🧹 ZIP anterior eliminado: C:\AppServ\www\STDD_marchablanca\principal_562560_.7z
+[2025-08-01 12:40:10] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562560_.7z" "C:\Windows\TEMP/firma_principal_688cfbfa8669d\NOTA-INFORMATIVA-REQUERIMIENTO-00006-2025_AAF_UF_SAT_DAADYT_HEVES(E).pdf"
+[2025-08-01 12:40:10] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 160043 bytes (157 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562560_.7z |  | Add new data to archive: 1 file, 160043 bytes (157 KiB) |  |  | Files read from disk: 1 | Archive size: 142476 bytes (140 KiB) | Everything is Ok
+[2025-08-01 12:40:10] 🔁 Código salida: 0
+[2025-08-01 12:40:10] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562560_.7z
+[2025-08-01 12:42:17] 🧹 ZIP anterior eliminado: C:\AppServ\www\STDD_marchablanca\principal_562560_.7z
+[2025-08-01 12:42:17] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562560_.7z" "C:\Windows\TEMP/firma_principal_688cfc799a2cc\NOTA-INFORMATIVA-REQUERIMIENTO-00006-2025_AAF_UF_SAT_DAADYT_HEVES(E).pdf"
+[2025-08-01 12:42:17] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 160043 bytes (157 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562560_.7z |  | Add new data to archive: 1 file, 160043 bytes (157 KiB) |  |  | Files read from disk: 1 | Archive size: 142476 bytes (140 KiB) | Everything is Ok
+[2025-08-01 12:42:17] 🔁 Código salida: 0
+[2025-08-01 12:42:17] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562560_.7z
+[2025-08-05 15:02:30] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562576_.7z" "C:\Windows\TEMP/firma_principal_6892635601587\NOTA-INFORMATIVA-00042-2025_UTI_HEVES(e).pdf"
+[2025-08-05 15:02:30] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 153731 bytes (151 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562576_.7z |  | Add new data to archive: 1 file, 153731 bytes (151 KiB) |  |  | Files read from disk: 1 | Archive size: 137067 bytes (134 KiB) | Everything is Ok
+[2025-08-05 15:02:30] 🔁 Código salida: 0
+[2025-08-05 15:02:30] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562576_.7z
+[2025-08-13 14:11:29] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562576_.7z" "C:\Windows\TEMP/firma_principal_689ce360e341f\NOTA-INFORMATIVA-00042-2025_UTI_HEVES(e).pdf"
+[2025-08-13 14:11:29] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 369211 bytes (361 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562576_.7z |  | Add new data to archive: 1 file, 369211 bytes (361 KiB) |  |  | Files read from disk: 1 | Archive size: 308137 bytes (301 KiB) | Everything is Ok
+[2025-08-13 14:11:29] 🔁 Código salida: 0
+[2025-08-13 14:11:29] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562576_.7z
+[2025-08-13 14:12:04] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562593_.7z" "C:\Windows\TEMP/firma_principal_689ce38477d5f\NOTA-INFORMATIVA-00043-2025_UTI_HEVES(e).pdf"
+[2025-08-13 14:12:04] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 154512 bytes (151 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562593_.7z |  | Add new data to archive: 1 file, 154512 bytes (151 KiB) |  |  | Files read from disk: 1 | Archive size: 137765 bytes (135 KiB) | Everything is Ok
+[2025-08-13 14:12:04] 🔁 Código salida: 0
+[2025-08-13 14:12:04] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562593_.7z
+[2025-08-13 14:12:36] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562595_.7z" "C:\Windows\TEMP/firma_principal_689ce3a4807b1\NOTA-INFORMATIVA-00044-2025_UTI_HEVES(e).pdf"
+[2025-08-13 14:12:36] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 355707 bytes (348 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562595_.7z |  | Add new data to archive: 1 file, 355707 bytes (348 KiB) |  |  | Files read from disk: 1 | Archive size: 339947 bytes (332 KiB) | Everything is Ok
+[2025-08-13 14:12:36] 🔁 Código salida: 0
+[2025-08-13 14:12:36] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562595_.7z
+[2025-08-15 14:46:20] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562595_.7z" "C:\Windows\TEMP/firma_principal_689f8e8c884b0\NOTA-INFORMATIVA-00044-2025_UTI_HEVES(e).pdf"
+[2025-08-15 14:46:20] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 155219 bytes (152 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562595_.7z |  | Add new data to archive: 1 file, 155219 bytes (152 KiB) |  |  | Files read from disk: 1 | Archive size: 138525 bytes (136 KiB) | Everything is Ok
+[2025-08-15 14:46:20] 🔁 Código salida: 0
+[2025-08-15 14:46:20] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562595_.7z
+[2025-08-26 16:29:55] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562631_.7z" "C:\Windows\TEMP/firma_principal_68ae2753297bf\NOTA-INFORMATIVA-REQUERIMIENTO-00016-2025_UTI_HEVES(e).pdf"
+[2025-08-26 16:29:55] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 424627 bytes (415 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562631_.7z |  | Add new data to archive: 1 file, 424627 bytes (415 KiB) |  |  | Files read from disk: 1 | Archive size: 407574 bytes (399 KiB) | Everything is Ok
+[2025-08-26 16:29:55] 🔁 Código salida: 0
+[2025-08-26 16:29:55] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562631_.7z
+[2025-08-27 10:20:14] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562634_.7z" "C:\Windows\TEMP/firma_principal_68af222ee0989\.PROVEIDO-00001-2025_SAT_DAADYT_HEVES(e).pdf"
+[2025-08-27 10:20:15] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 234037 bytes (229 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562634_.7z |  | Add new data to archive: 1 file, 234037 bytes (229 KiB) |  |  | Files read from disk: 1 | Archive size: 216925 bytes (212 KiB) | Everything is Ok
+[2025-08-27 10:20:15] 🔁 Código salida: 0
+[2025-08-27 10:20:15] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562634_.7z
+[2025-08-27 15:15:55] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562632_.7z" "C:\Windows\TEMP/firma_principal_68af677bab1e4\MEMORANDO-CIRCULAR-00009-2025_UTI_HEVES(e).pdf"
+[2025-08-27 15:15:55] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 157367 bytes (154 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562632_.7z |  | Add new data to archive: 1 file, 157367 bytes (154 KiB) |  |  | Files read from disk: 1 | Archive size: 140146 bytes (137 KiB) | Everything is Ok
+[2025-08-27 15:15:55] 🔁 Código salida: 0
+[2025-08-27 15:15:55] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562632_.7z
+[2025-08-27 15:16:24] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_562630_.7z" "C:\Windows\TEMP/firma_principal_68af67989262b\MEMORANDO-CIRCULAR-00002-2025_UTI_HEVES(e).pdf"
+[2025-08-27 15:16:24] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 157539 bytes (154 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_562630_.7z |  | Add new data to archive: 1 file, 157539 bytes (154 KiB) |  |  | Files read from disk: 1 | Archive size: 140392 bytes (138 KiB) | Everything is Ok
+[2025-08-27 15:16:24] 🔁 Código salida: 0
+[2025-08-27 15:16:24] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_562630_.7z
+[2025-08-27 16:47:47] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_656309_.7z" "C:\Windows\TEMP/firma_principal_68af7d0311c06\NOTA-INFORMATIVA-00085-2025_UTI_HEVES(e).pdf"
+[2025-08-27 16:47:47] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 86045 bytes (85 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_656309_.7z |  | Add new data to archive: 1 file, 86045 bytes (85 KiB) |  |  | Files read from disk: 1 | Archive size: 74067 bytes (73 KiB) | Everything is Ok
+[2025-08-27 16:47:47] 🔁 Código salida: 0
+[2025-08-27 16:47:47] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_656309_.7z
+[2025-08-27 17:02:01] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_656310_.7z" "C:\Windows\TEMP/firma_principal_68af805938fac\NOTA-INFORMATIVA-00086-2025_UTI_HEVES(e).pdf"
+[2025-08-27 17:02:01] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 86049 bytes (85 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_656310_.7z |  | Add new data to archive: 1 file, 86049 bytes (85 KiB) |  |  | Files read from disk: 1 | Archive size: 74069 bytes (73 KiB) | Everything is Ok
+[2025-08-27 17:02:01] 🔁 Código salida: 0
+[2025-08-27 17:02:01] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_656310_.7z
+[2025-08-27 17:08:51] 📦 Ejecutando: "C:/7-Zip/7z.exe" a "C:\AppServ\www\STDD_marchablanca\principal_656311_.7z" "C:\Windows\TEMP/firma_principal_68af81f3a1e51\NOTA-INFORMATIVA-00087-2025_UTI_HEVES(e).pdf"
+[2025-08-27 17:08:51] 📤 Salida ZIP:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive: | 1 file, 86045 bytes (85 KiB) |  | Creating archive: C:\AppServ\www\STDD_marchablanca\principal_656311_.7z |  | Add new data to archive: 1 file, 86045 bytes (85 KiB) |  |  | Files read from disk: 1 | Archive size: 74064 bytes (73 KiB) | Everything is Ok
+[2025-08-27 17:08:51] 🔁 Código salida: 0
+[2025-08-27 17:08:51] ✅ ZIP generado correctamente: C:\AppServ\www\STDD_marchablanca\principal_656311_.7z

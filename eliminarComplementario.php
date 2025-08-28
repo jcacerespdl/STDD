@@ -16,7 +16,14 @@ if (file_exists($ruta)) {
     unlink($ruta);
 }
 
-// Borrar registro de la base de datos
+// Eliminar firmas asociadas al documento digital (complementario)
+$sqlFirma = "DELETE FROM Tra_M_Tramite_Firma WHERE iCodDigital IN (
+    SELECT iCodDigital FROM Tra_M_Tramite_Digitales WHERE iCodTramite = ? AND cDescripcion = ?
+)";
+$paramsFirma = [$iCodTramite, $archivo];
+sqlsrv_query($cnx, $sqlFirma, $paramsFirma);
+
+// Borrar registro del documento digital
 $sql = "DELETE FROM Tra_M_Tramite_Digitales WHERE iCodTramite = ? AND cDescripcion = ?";
 $params = [$iCodTramite, $archivo];
 $stmt = sqlsrv_query($cnx, $sql, $params);

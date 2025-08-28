@@ -133,7 +133,7 @@ $stmt = sqlsrv_query($cnx, $sql, $params);
             .then(data => {
                 if (data.status === 'ok') {
                     const nombreZip = data.zipPath.replace('.7z', '');
-                    const param_url = `https://tramite.heves.gob.pe/sgd/getFpParamsMasivoPorAprobar.php?iCodTramite=${nombreZip}`;
+                    const param_url = `https://tramite.heves.gob.pe/STDD_uat/getFpParamsMasivoPorAprobar.php?iCodTramite=${nombreZip}`;
 
                     const paramPrev = {
                         param_url: param_url,

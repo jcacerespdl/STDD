@@ -2,7 +2,7 @@
 header('Content-Type: application/x-www-form-urlencoded');
 $nombreZIP = $_GET["nombreZip"] ?? '';
 $iCodFirma = $_GET["iCodFirma"] ?? '';
-$documentToSign = "https://tramite.heves.gob.pe/SGD/{$nombreZIP}.7z";
+$documentToSign = "https://tramite.heves.gob.pe/STDD_marchablanca/{$nombreZIP}.7z";
 
 if (!$nombreZIP || !$iCodFirma) die("Faltan parámetros");
 
@@ -50,12 +50,12 @@ $params->signatureReason = "Doy visto bueno del documento principal";
 $params->bachtOperation = true;
 $params->oneByOne = false;
 $params->signatureStyle = 1;
-$params->imageToStamp = "https://tramite.heves.gob.pe/SGD/img/VB.png";
+$params->imageToStamp = "https://tramite.heves.gob.pe/STDD_marchablanca/img/VB.png";
 $params->stampTextSize = 15;
 $params->stampPage = 1;
 $params->positionx = $positionx;
 $params->positiony = $positiony;
-$params->uploadDocumentSigned = "https://tramite.heves.gob.pe/SGD/uploadFileVBprincipal.php?nombreZip=$nombreZIP&iCodFirma=$iCodFirma";
+$params->uploadDocumentSigned = "https://tramite.heves.gob.pe/STDD_marchablanca/uploadFileVBprincipal.php?nombreZip=$nombreZIP&iCodFirma=$iCodFirma";
 $params->token = $token;
 
 echo base64_encode(json_encode($params));

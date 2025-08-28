@@ -110,17 +110,13 @@ if ($iCodTramite > 0) {
 
 <div class="contenedor">
   <div class="logos">
-    <img src="img/logo_minsa.jpg" alt="Logo MINSA">
-    <img src="img/logo-horizontal.png" alt="Logo INR">
+    
   </div>
 
-  <img src="img/exito_files.svg" alt="Éxito" class="imagen-exito">
-
+ 
   <h1>¡Documento Aceptado con Éxito!</h1>
 
-  <p>
-    Estimado ciudadano, el documento fue recepcionado en nuestra mesa de partes virtual correctamente, el cual tiene los siguientes datos:
-  </p>
+  
 
   <div class="datos">
   <div class="dato">Registro: <?= htmlspecialchars($expediente) ?></div>

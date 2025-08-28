@@ -41,11 +41,22 @@ foreach ($_FILES['archivos']['tmp_name'] as $index => $tmpPath) {
     }
 }
 
+// if ($subidos > 0) {
+//     echo "<script>alert('Se subieron correctamente {$subidos} archivos.'); window.history.back();</script>";
+    
+// } else {
+//     echo "<script>alert('No se pudo subir ningún archivo.'); window.history.back();</script>";
+// }
+
 if ($subidos > 0) {
-    echo "<script>alert('Se subieron correctamente {$subidos} archivos.'); window.history.back();</script>";
+    echo "<script>  window.history.back();</script>";
+    
 } else {
-    echo "<script>alert('No se pudo subir ningún archivo.'); window.history.back();</script>";
+    echo "<script>  window.history.back();</script>";
 }
+
+
+
 
 if (!empty($errores)) {
     foreach ($errores as $err) {

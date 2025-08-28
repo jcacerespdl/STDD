@@ -1,5 +1,5 @@
 <?
-$cnx = sqlsrv_connect("TRAMITE-DIGI",array( "Database"=>"BD_QA", "UID"=>"sa", "PWD"=>"sa", "CharacterSet"=>"UTF-8"));
+$cnx = sqlsrv_connect("TRAMITE-DIGI",array( "Database"=>"BD_STDD_marchablanca", "UID"=>"sa", "PWD"=>"sa", "CharacterSet"=>"UTF-8"));
 
 if ($cnx === false) {
     die(print_r(sqlsrv_errors(), true));

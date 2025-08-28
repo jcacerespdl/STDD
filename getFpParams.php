@@ -27,7 +27,7 @@
     $params->signatureFormat = "PAdES";
     $params->signatureLevel = "B";
     $params->signaturePackaging = "enveloped";
-    $params->documentToSign =  "https://app2.inr.gob.pe/sgd/$iCodTramite.7z";
+    $params->documentToSign =  "https://app2.inr.gob.pe/STDD_marchablanca/$iCodTramite.7z";
     $params->certificateFilter = ".*FIR.*.*";
     $params->webTsa = "";
     $params->userTsa = "";
@@ -39,14 +39,14 @@
     $params->bachtOperation = true;
     $params->oneByOne = false;
     $params->signatureStyle = 1;
-    $params->imageToStamp = "https://app2.inr.gob.pe/sgd/isotipo.png";
+    $params->imageToStamp = "https://app2.inr.gob.pe/STDD_marchablanca/isotipo.png";
     $params->stampTextSize = 15;
     $params->stampWordWrap = 37;
     $params->role = "";
     $params->stampPage = 1;
     $params->positionx = 465;
     $params->positiony = 10;
-    $params->uploadDocumentSigned = $tipoOperacion == "crearmasivo" ? "https://app2.inr.gob.pe/sgd/uploadMulitpleFile.php?batch={$iCodTramite}" : "https://app2.inr.gob.pe/sgd/uploadFile.php?iCodTramite=$iCodTramite&tipo=$tipoOperacion";
+    $params->uploadDocumentSigned = $tipoOperacion == "crearmasivo" ? "https://app2.inr.gob.pe/STDD_marchablanca/uploadMulitpleFile.php?batch={$iCodTramite}" : "https://app2.inr.gob.pe/STDD_marchablanca/uploadFile.php?iCodTramite=$iCodTramite&tipo=$tipoOperacion";
     $params->token = $token;
 
     echo base64_encode(json_encode($params));

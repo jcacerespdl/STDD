@@ -3,6 +3,17 @@ include("head.php");
 include("conexion/conexion.php");
 global $cnx;
 
+define('ENCRYPTION_KEY', 'Heves');
+define('ENCRYPTION_METHOD', 'AES-256-CBC');
+define('FIXED_IV', substr(hash('sha256', 'Heves-IV'), 0, 16));
+
+function encrypt_password($password) {
+    $key = hash('sha256', ENCRYPTION_KEY, true);
+    $iv = FIXED_IV;
+    $encrypted = openssl_encrypt($password, ENCRYPTION_METHOD, $key, OPENSSL_RAW_DATA, $iv);
+    return base64_encode($encrypted);
+}
+
 $id = isset($_GET['iCodTrabajador']) ? intval($_GET['iCodTrabajador']) : 0;
 
 if ($id <= 0) {
@@ -20,7 +31,16 @@ if (!$trabajador) {
     exit;
 }
 
-$cNumDocIdentidad = $trabajador['cNumDocIdentidad'];
+function decrypt_password($encrypted_password) {
+  $key = hash('sha256', 'Heves', true);
+  $iv = substr(hash('sha256', 'Heves-IV'), 0, 16);
+  $decoded = base64_decode($encrypted_password);
+  return openssl_decrypt($decoded, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+}
+
+$claveTextoPlano = decrypt_password($trabajador['cPassword']);
+
+$cNumDocIdentidad = $trabajador['cNumDocIdentidad'] ?? '';
 $tieneDNI = !empty($cNumDocIdentidad);
 
 // Obtener oficinas y perfiles
@@ -50,8 +70,21 @@ while ($row = sqlsrv_fetch_array($rsAsignados, SQLSRV_FETCH_ASSOC)) {
     $perfilesAsignados[] = $row;
 }
 ?>
+<style>
+  .titulo-principal{font-size:20px;font-weight:700;margin-bottom:10px}
+  .input-container{position:relative}
+  .input-container input,
+  .input-container select{width:100%;padding:10px 40px 10px 12px;border:1px solid #ccc;border-radius:8px;outline:none;background:#fff}
+  .input-container label{position:absolute;left:12px;top:-9px;background:#fff;padding:0 6px;font-size:12px;color:#666}
+  .toggle-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;display:inline-flex;align-items:center;gap:6px;color:#555}
+  .badge-estado{display:inline-block;border-radius:999px;padding:4px 10px;font-size:12px;border:1px solid #ddd}
+  .badge-activo{background:#e6f4ea;color:#137333;border-color:#cce9d6}
+  .badge-inactivo{background:#fce8e6;color:#c5221f;border-color:#fad2cf}
+</style>
+
 <div class="container" style="margin: 120px auto 60px auto; max-width: 700px; background: white; border: 1px solid #ccc; border-radius: 10px; padding: 30px;">
   <div class="titulo-principal">EDICIÓN DE USUARIO</div>
+
   <form method="post" action="actualizarTrabajador.php">
     <input type="hidden" name="id" value="<?= $id ?>">
 
@@ -88,22 +121,48 @@ while ($row = sqlsrv_fetch_array($rsAsignados, SQLSRV_FETCH_ASSOC)) {
     <?php endif; ?>
 
     <div class="input-container" style="margin-bottom: 20px;">
-      <input type="text" name="usuario" value="<?= htmlspecialchars($trabajador['cUsuario']) ?>" required placeholder=" " style="text-transform: lowercase;">
+      <input type="text" name="usuario" value="<?= htmlspecialchars($trabajador['cUsuario']) ?>" required placeholder=" " style="text-transform: uppercase;">
       <label>Usuario</label>
     </div>
 
-    <div class="input-container" style="margin-bottom: 20px; position: relative;">
+    <!-- Estado del usuario -->
+    <div class="input-container select-flotante" style="margin-bottom: 20px;">
+      <select name="nFlgEstado" required>
+        <option value="" disabled <?= ($trabajador['nFlgEstado'] !== 0 && $trabajador['nFlgEstado'] !== 1) ? 'selected' : '' ?>>Seleccione estado</option>
+        <option value="1" <?= (intval($trabajador['nFlgEstado']) === 1 ? 'selected' : '') ?>>ACTIVO</option>
+        <option value="0" <?= (intval($trabajador['nFlgEstado']) === 0 ? 'selected' : '') ?>>INACTIVO</option>
+      </select>
+      <label>Estado</label>
+    </div>
+
+    <!-- Contraseña actual (SOLO con toggle de visibilidad, readonly) -->
+    <div class="input-container" style="margin-bottom: 20px;">
+      <input id="claveActual" type="password" value="<?= htmlspecialchars($claveTextoPlano) ?>" readonly placeholder=" ">
+      <label>Contraseña Actual</label>
+      <span id="btnToggleClaveActual" class="toggle-eye" title="Mostrar/Ocultar">
+        <span class="material-icons" id="iconClaveActual">visibility</span>
+      </span>
+    </div>
+
+    <!-- Nueva contraseña (SIN toggle) -->
+    <div class="input-container" style="margin-bottom: 20px;">
       <input id="nuevaClave" type="password" name="clave" placeholder=" ">
       <label for="nuevaClave">Nueva Contraseña (opcional)</label>
-      <span class="material-icons toggle-password"
-            style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer;">
-        visibility_off
-      </span>
+    </div>
+
+    <div style="margin-bottom: 30px; text-align: right;">
+      <button type="submit" class="btn btn-primary">
+        <span class="material-icons">save</span> Actualizar Datos
+      </button>
     </div>
 
     <hr>
     <h5>PERFILES POR OFICINA</h5>
     <div style="margin-bottom: 10px;">
+      <?php if (count($perfilesAsignados) === 0): ?>
+        <div style="color:#777; font-size:14px; margin-bottom:6px;">Sin perfiles asignados.</div>
+      <?php endif; ?>
+
       <?php foreach ($perfilesAsignados as $asignado): ?>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
           <div><?= htmlspecialchars($asignado['cDescPerfil']) ?> - <?= htmlspecialchars($asignado['cNomOficina']) ?></div>
@@ -118,8 +177,7 @@ while ($row = sqlsrv_fetch_array($rsAsignados, SQLSRV_FETCH_ASSOC)) {
 
     <br>
     <div style="display: flex; justify-content: flex-end; gap: 10px;">
-      <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-      <a href="mantenimientoTrabajadores.php" class="btn btn-secondary" style="text-decoration: none;">Cancelar</a>
+      <a href="mantenimientoTrabajadores.php" class="btn btn-secondary" style="text-decoration: none;">Volver</a>
     </div>
   </form>
 </div>
@@ -130,7 +188,7 @@ while ($row = sqlsrv_fetch_array($rsAsignados, SQLSRV_FETCH_ASSOC)) {
     <form method="post" action="agregarPerfilUsuario.php">
       <input type="hidden" name="idTrabajador" value="<?= $id ?>">
       <h5>Agregar Perfil</h5>
-      <div class="input-container select-flotante">
+      <div class="input-container select-flotante" style="margin-bottom: 14px;">
         <select name="perfil" required>
           <option value="" disabled selected>Seleccione perfil</option>
           <?php foreach ($perfiles as $per): ?>
@@ -139,7 +197,7 @@ while ($row = sqlsrv_fetch_array($rsAsignados, SQLSRV_FETCH_ASSOC)) {
         </select>
         <label>Perfil</label>
       </div>
-      <div class="input-container select-flotante">
+      <div class="input-container select-flotante" style="margin-bottom: 6px;">
         <select name="oficina" required>
           <option value="" disabled selected>Seleccione oficina</option>
           <?php foreach ($oficinas as $ofi): ?>
@@ -158,8 +216,27 @@ while ($row = sqlsrv_fetch_array($rsAsignados, SQLSRV_FETCH_ASSOC)) {
 
 <script>
 function eliminarPerfil(idPerfilUsuario) {
-  if (confirm('Deseas eliminar este perfil asignado?')) {
+  if (confirm('¿Deseas eliminar este perfil asignado?')) {
     window.location.href = 'eliminarPerfilUsuario.php?id=' + idPerfilUsuario;
   }
 }
+
+// Toggle SOLO para "Contraseña Actual"
+(function(){
+  var input = document.getElementById('claveActual');
+  var btn = document.getElementById('btnToggleClaveActual');
+  var icon = document.getElementById('iconClaveActual');
+
+  if (btn && input && icon) {
+    btn.addEventListener('click', function(){
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = 'visibility_off';
+      } else {
+        input.type = 'password';
+        icon.textContent = 'visibility';
+      }
+    });
+  }
+})();
 </script>

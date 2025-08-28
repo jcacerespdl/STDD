@@ -4,7 +4,7 @@ header('Content-Type: application/x-www-form-urlencoded');
 $nombreZIP = $_GET["nombreZip"] ?? '';
 $iCodFirma = $_GET["iCodFirma"] ?? '';
 
-$documentToSign = "https://tramite.heves.gob.pe/sgd/$nombreZIP.7z";
+$documentToSign = "https://tramite.heves.gob.pe/STDD_marchablanca/$nombreZIP.7z";
 
 if (!$nombreZIP || !$iCodFirma) {
     die("Faltan parámetros");
@@ -24,13 +24,22 @@ if ($stmtTipo && $row = sqlsrv_fetch_array($stmtTipo, SQLSRV_FETCH_ASSOC)) {
     $posicionLetra = trim($row["posicion"]);
 }
 
-// Coordenadas XY según posición
+// Coordenadas XY según posición: a,j,k firma principal, b,c,d,e,f,g,h,i vb  o,p,q OS  r,s pre certi t,u aprob certi  w,x,y,z ordenes 
+// sin asignar l,m,n
 $coords = [
-    "A" => [465, 10], "B" => [10, 720], "C" => [10, 680], "D" => [10, 640],
-    "E" => [10, 600], "F" => [10, 560], "G" => [10, 520], "H" => [10, 480],
-    "I" => [10, 440], "J" => [10, 400], "K" => [10, 360],
-    "P" => [105, 350], "Q" => [360, 350], "R" => [225, 250], "S" => [225, 500],
-    "T" => [420, 550], "U" => [320, 550], "V" => [245, 650],
+    "A" => [465, 10], "J" => [465, 50], "K" => [465, 90],
+    
+    "B" => [10, 720], "C" => [10, 680], "D" => [10, 640],"E" => [10, 600], "F" => [10, 560], "G" => [10, 520], "H" => [10, 480],  "I" => [10, 440], 
+  
+
+    "P" => [105, 350], "Q" => [360, 350],  "O" => [235, 350],
+    
+    "R" => [225, 250], "S" => [225, 500],
+
+    "T" => [420, 550], "U" => [320, 550], 
+
+    "V" => [245, 650],
+
     "W" => [25, 700], "X" => [140, 700], "Y" => [275, 700], "Z" => [415, 700]
 ];
 $positionx = $coords[$posicionLetra][0] ?? 10;
@@ -56,8 +65,8 @@ $signatureReason = ($tipoFirma == 1)
     : "Doy visto bueno del documento";
 
 $imageToStamp = ($tipoFirma == 1)
-    ? "https://tramite.heves.gob.pe/SGD/img/isotipo.png"
-    : "https://tramite.heves.gob.pe/SGD/img/VB.png";
+    ? "https://tramite.heves.gob.pe/STDD_marchablanca/img/isotipo.png"
+    : "https://tramite.heves.gob.pe/STDD_marchablanca/img/VB.png";
 
 // Construcción final
 $params = new stdClass();
@@ -77,7 +86,7 @@ $params->stampTextSize = 15;
 $params->stampPage = 1;
 $params->positionx = $positionx;
 $params->positiony = $positiony;
-$params->uploadDocumentSigned = "https://tramite.heves.gob.pe/sgd/uploadFileVB.php?nombreZip=$nombreZIP&iCodFirma=$iCodFirma";
+$params->uploadDocumentSigned = "https://tramite.heves.gob.pe/STDD_marchablanca/uploadFileVB.php?nombreZip=$nombreZIP&iCodFirma=$iCodFirma";
 $params->token = $token;
 
 echo base64_encode(json_encode($params));

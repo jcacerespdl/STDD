@@ -40,6 +40,7 @@ $sql = "
         t.nFlgEnvio,
         t.nFlgTipoDerivo,
         t.extension,
+        t.nFlgTipoDoc, 
         m.iCodMovimiento,
         m.iCodTramite AS iCodTramitePadre,
         m.iCodTramiteDerivar,
@@ -152,6 +153,7 @@ while ($doc = sqlsrv_fetch_array($stmt_docs, SQLSRV_FETCH_ASSOC)) {
     margin-top: 0;
     margin-bottom: 20px;
 }
+
 </style>
 
 <div class="container" style="margin: 120px auto; max-width: 1500px; background: white; border: 1px solid #ccc; border-radius: 10px; padding: 30px;">
@@ -242,9 +244,9 @@ while ($doc = sqlsrv_fetch_array($stmt_docs, SQLSRV_FETCH_ASSOC)) {
                 <button type="button" class="btn btn-secondary" onclick="window.location.href='bandejaEnviados.php'">
                     <span class="material-icons">autorenew</span> Reestablecer
                 </button>
-                <button type="button" class="btn btn-primary" onclick="exportarExcel()">
+                <!-- <button type="button" class="btn btn-primary" onclick="exportarExcel()">
                     <span class="material-icons">grid_on</span> Exportar Excel
-                </button>
+                </button> -->
             </div>
         </form>
     </div>
@@ -326,9 +328,13 @@ while ($doc = sqlsrv_fetch_array($stmt_docs, SQLSRV_FETCH_ASSOC)) {
                     <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 10px;">
                             <!-- Ícono de Editar -->
                                     <?php
-                                    $archivoEditar = ($tram['nFlgTipoDerivo'] == 1)
-                                        ? 'registroDerivarSubsanar.php'
-                                        : 'registroOficinaSubsanar.php';
+                                    if ($tram['nFlgTipoDoc'] == 1) {
+                                        $archivoEditar = 'registroEditarMP.php';
+                                    } else {
+                                        $archivoEditar = ($tram['nFlgTipoDerivo'] == 1)
+                                            ? 'registroDerivarSubsanar.php'
+                                            : 'registroOficinaSubsanar.php';
+                                    }
                                     ?>
 
                                     <a href="<?= $archivoEditar ?>?iCodTramite=<?= $tram['iCodTramite'] ?>"
@@ -337,22 +343,17 @@ while ($doc = sqlsrv_fetch_array($stmt_docs, SQLSRV_FETCH_ASSOC)) {
                                         <span class="material-icons" style="font-size: 22px;">edit</span>
                                     </a>
 
-                            <!-- Ícono de Flujo -->
-                            <?php if (intval($tram['extension']) === 1): ?>
-                                    <a href="bandejaFlujoraiz.php?iCodTramite=<?= $tram['iCodTramitePadre'] ?>"
-                                    title="Ver flujo raíz"
-                                    target="_blank"
-                                    style="color: #6c757d; text-decoration: none;">
-                                        <span class="material-icons" style="font-size: 22px;">device_hub</span>
-                                    </a>
-                                <?php else: ?>
-                                    <a href="bandejaFlujo.php?iCodTramite=<?= $tram['iCodTramitePadre'] ?>&extension=<?= $tram['extension'] ?>"
-                                    title="Ver flujo"
-                                    target="_blank"
-                                    style="color: #6c757d; text-decoration: none;">
-                                        <span class="material-icons" style="font-size: 22px;">device_hub</span>
-                                    </a>
-                                <?php endif; ?>
+                            
+
+                            <a href="#" 
+                                class="ver-flujo-btn" 
+                                data-id="<?= $tram['nFlgTipoDoc'] == 1 ? $tram['iCodTramite'] : $tram['iCodTramitePadre'] ?>" 
+                                data-extension="<?= $tram['extension'] ?>" 
+                                data-url="<?= $tram['nFlgTipoDoc'] == 1 ? 'bandejaFlujoMesaDePartes.php' : ($tram['extension'] == 1 ? 'bandejaFlujo.php' : 'bandejaFlujo.php') ?>"
+                                title="Ver flujo" 
+                                style="color: #6c757d; text-decoration: none;">
+                                <span class="material-icons" style="font-size: 22px;">device_hub</span>
+                            </a>
                             
                             <!-- Ícono de Eliminar -->
                             <a href="#" title="Eliminar"
@@ -368,6 +369,19 @@ while ($doc = sqlsrv_fetch_array($stmt_docs, SQLSRV_FETCH_ASSOC)) {
                     </td>
                 </tr>
             <?php endforeach; ?>
+
+
+<!-- MODAL FLUJO -->
+<link rel="stylesheet" href="modal-flujo.css">
+
+<div id="modalFlujo">
+  <div class="contenido">
+    <span class="cerrar" onclick="cerrarModalFlujo()">&times;</span>
+    <iframe id="iframeFlujo" src=""></iframe>
+  </div>
+</div>
+<!-- MODAL FLUJO -->
+
         </tbody>
     </table>
 </div>
@@ -391,14 +405,7 @@ function exportarExcel() {
     window.open('exportarExcelEnviados.php?' + params.toString(), '_blank');
 }
 
-document.querySelectorAll('.ver-flujo-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-        e.preventDefault();
-        const id = this.dataset.id;
-        const extension = this.dataset.extension ?? 1;
-        window.open('bandejaFlujo.php?iCodTramite=' + id + '&extension=' + extension, '_blank');
-    });
-});
+ 
 
 // Autocompletado oficinas
 const inputOficina = document.getElementById('nombreOficinaInput');
@@ -456,6 +463,27 @@ function confirmarEliminar(iCodTramite, nFlgTipoDerivo) {
     .catch(err => alert('Error de red: ' + err));
 }
 
+
+// JS PARA MODAL DE FLUJO
+
+function cerrarModalFlujo() {
+  document.getElementById('modalFlujo').classList.remove('activo');
+  document.getElementById('iframeFlujo').src = '';
+}
+
+document.querySelectorAll('.ver-flujo-btn').forEach(btn => {
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    const id = this.dataset.id;
+    const extension = this.dataset.extension ?? 1;
+    const url = this.dataset.url;
+
+    const iframe = document.getElementById('iframeFlujo');
+    iframe.src = `${url}?iCodTramite=${id}&extension=${extension}`;
+
+    document.getElementById('modalFlujo').classList.add('activo');
+  });
+});
 </script>
 
 <!-- Modal Firmantes -->

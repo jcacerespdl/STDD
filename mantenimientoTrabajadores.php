@@ -14,7 +14,7 @@ $pag = isset($_GET['pag']) && is_numeric($_GET['pag']) ? intval($_GET['pag']) : 
 $reg1 = ($pag - 1) * $tampag;
 
 // Consulta al SP
-$sql = "{CALL SP_TRABAJADORES_LISTA (?, ?, ?)}";
+$sql = "{CALL SP_TRABAJADORES_LISTA_NUEVA (?, ?, ?)}";
 $params = [$nombres ?: null, $apellidos ?: null, $estado !== '' ? intval($estado) : null];
 $stmt = sqlsrv_query($cnx, $sql, $params);
 
@@ -94,12 +94,7 @@ $trabajadores = array_slice($trabajadores, $reg1, $tampag);
                  <span class="material-icons">edit</span> Editar
               </a>
 
-              <a href="asignarClaveTrabajador.php?iCodTrabajador=<?= $t['iCodTrabajador'] ?>"
-                 class="btn btn-primary"
-                 style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; font-size: 14px;"
-                 title="Contraseña">
-                 <span class="material-icons">key</span> Contraseña
-              </a>
+              
             </td>
           </tr>
         <?php endforeach; ?>

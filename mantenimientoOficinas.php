@@ -14,7 +14,7 @@ $pag = isset($_GET['pag']) && is_numeric($_GET['pag']) ? intval($_GET['pag']) : 
 $reg1 = ($pag - 1) * $tampag;
 
 // Llamar al SP (sin ordenamiento ni tipo de oficina)
-$sql = "{CALL SP_OFICINA_LISTA (?, ?, ?)}";
+$sql = "{CALL SP_OFICINA_LISTA_NUEVA (?, ?, ?)}";
 $params = [$nombre ?: null, $sigla ?: null, $estado !== '' ? intval($estado) : null];
 $stmt = sqlsrv_query($cnx, $sql, $params);
 
@@ -86,7 +86,14 @@ $oficinas = array_slice($oficinas, $reg1, $tampag);
                 style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; font-size: 14px;"
                 title="Editar">
                 <span class="material-icons" style="font-size: 18px;">edit</span> Editar
-                </a>         
+                </a>   
+              <a href="mantenimientoOficinasLista.php?iCodOficina=<?= $of['iCodOficina'] ?>" 
+              class="btn btn-secondary"
+              style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; padding: 6px 12px; font-size: 14px; margin-left: 8px;"
+              title="Ver Lista de Usuarios">
+              <span class="material-icons" style="font-size: 18px;">list</span> Lista
+            </a>
+                
             </td>
           </tr>
         <?php endforeach; ?>

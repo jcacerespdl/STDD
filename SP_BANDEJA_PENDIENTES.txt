@@ -1,0 +1,260 @@
+USE [BD_STDD_UAT]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+CREATE OR ALTER PROCEDURE [dbo].[SP_BANDEJA_PENDIENTES] 
+	@i_fDesde					datetime,
+    @i_fHasta					datetime,
+	@i_Entrada					int,
+	@i_Interno					int,
+	@i_Anexo					int,	
+    @i_cCodificacion			varchar(150) ,
+	@i_cAsunto					varchar(4000)	='',
+	@i_cCodTipoDoc				int,
+	@i_iCodTrabajadorResponsable	int,
+	@i_iCodTrabajadorDelegado	int,
+	@i_iCodTema					int,
+	@i_EstadoMov				int,
+	@i_Aceptado					int,
+	@i_SAceptado				int,
+	@i_iCodOficinaLogin			int,
+	@i_columna					varchar(10),
+	@i_dir						varchar(10),
+	@i_remitente				int,
+	@i_nSIGA					varchar(20) = '',
+	@i_indicacion				int = 0
+--	,	@i_cCodificacionI			char(150)
+AS
+	SET NOCOUNT ON;
+	DECLARE @SQLQuery AS NVarchar ( 4000 )
+    DECLARE @ParamDefinition AS nvarchar (2000)
+	IF @i_cCodificacion = '%%' SET @i_cCodificacion = ''
+	IF @i_cAsunto = '%%'	   SET @i_cAsunto = ''	
+	IF @i_nSIGA = '%%'	   SET @i_nSIGA = ''
+	--IF @i_cCodificacionI = '%%' SET @i_cCodificacionI = ''
+
+	SET @SQLQuery = 
+	'SELECT	FechaPlazoFinal,
+			nTiempoRespuesta,
+			cPrioridadDerivar,
+			flg_libreblanco,
+			fFecRecepcion,
+			iCodMovimiento,
+			Tra_M_Tramite.iCodTramite,
+			Tra_M_Tramite_Movimientos.nFlgTipoDoc,
+			Tra_M_Tramite.cCodificacion,
+			Tra_M_Tramite_Movimientos.iCodTramiteRel,
+			fFecRegistro,
+			cFlgTipoMovimiento,
+			Tra_M_Tramite_Movimientos.iCodTrabajadorRegistro,
+			cDescTipoDoc,
+			cNroDocumento,
+			iCodRemitente,
+			cAsunto,											
+			iCodTupa,
+			iCodOficinaOrigen,
+			iCodTramiteDerivar,
+			iCodIndicacionDerivar,
+			fFecDerivar,
+			iCodTrabajadorDerivar,
+			iCodTrabajadorDelegado,
+			cast(fFecDelegadoRecepcion as char) fFecDelegadoRecepcion,
+			nEstadoMovimiento,
+			cFlgTipoMovimiento,
+			iCodTupa,
+			fFecDocumento,
+			Tra_M_Tramite.cCodificacionI,
+			Tra_M_Tramite.nFlgEstado,
+			Tra_M_Tramite.nFlgTipoDerivo,
+			T2.cCodificacionPrincipal,
+			cOrdenSIGA,
+			Tra_M_Tramite.nFlgNew
+	FROM	Tra_M_Tramite
+			LEFT OUTER JOIN Tra_M_Tipo_Documento ON Tra_M_Tramite.cCodTipoDoc=Tra_M_Tipo_Documento.cCodTipoDoc
+			LEFT OUTER join Tra_M_Tramite_Movimientos  ON Tra_M_Tramite.iCodTramite=Tra_M_Tramite_Movimientos.iCodTramite
+			LEFT OUTER JOIN (SELECT T.nFlgEnvio nFlgEnvioDerivar, T.iCodTramite, T.cCodificacion cCodificacionPrincipal, T.cCodTipoDoc cCodTipoDocPrincipal FROM Tra_M_Tramite T) T2
+				ON T2.iCodTramite=Tra_M_Tramite_Movimientos.iCodTramiteDerivar
+    WHERE Tra_M_Tramite.iCodTramite=Tra_M_Tramite_Movimientos.iCodTramite AND Tra_M_Tramite.nFlgEnvio=1 AND Tra_M_Tramite.nFlgTipoDerivo IS NULL '
+     If (@i_fDesde <> '' ) AND (@i_fHasta <> '' )
+     SET @SQLQuery = @SQLQuery + ' And fFecDerivar BETWEEN @i_fDesde AND @i_fHasta '
+     
+     If (@i_fDesde <> '' ) AND (@i_fHasta = '' )
+     SET @SQLQuery = @SQLQuery + ' And fFecDerivar>=@i_fDesde '
+     
+     If (@i_fDesde = '' ) AND (@i_fHasta <> '' )
+     SET @SQLQuery = @SQLQuery + ' And fFecDerivar<@i_fHasta '
+     
+     If (@i_Entrada='1' AND @i_Interno ='' AND @i_Anexo ='')
+     SET @SQLQuery = @SQLQuery + ' And Tra_M_Tramite.nFlgTipoDoc=1 '
+     
+     If (@i_Entrada='' AND @i_Interno ='1' AND @i_Anexo ='')
+     SET @SQLQuery = @SQLQuery + ' And Tra_M_Tramite.nFlgTipoDoc=2 '
+     
+     If (@i_Entrada='' AND @i_Interno ='' AND @i_Anexo ='1')
+     SET @SQLQuery = @SQLQuery + ' And Tra_M_Tramite.nFlgTipoDoc=4 '
+     
+     If (@i_Entrada='1' AND @i_Interno ='1' AND @i_Anexo ='1')
+     SET @SQLQuery = @SQLQuery + ' And Tra_M_Tramite.nFlgTipoDoc=1 OR Tra_M_Tramite.nFlgTipoDoc=2  OR Tra_M_Tramite.nFlgTipoDoc=4 ' 
+     
+     If (@i_Entrada='1' AND @i_Interno ='1' AND @i_Anexo ='')
+     SET @SQLQuery = @SQLQuery + ' And Tra_M_Tramite.nFlgTipoDoc=1 OR Tra_M_Tramite.nFlgTipoDoc=2 ' 
+     
+     If (@i_Entrada='1' AND @i_Interno ='' AND @i_Anexo ='1')
+     SET @SQLQuery = @SQLQuery + ' And Tra_M_Tramite.nFlgTipoDoc=1 OR Tra_M_Tramite.nFlgTipoDoc=4 ' 
+     
+     If (@i_Entrada='' AND @i_Interno ='1' AND @i_Anexo ='1')
+     SET @SQLQuery = @SQLQuery + ' And Tra_M_Tramite.nFlgTipoDoc=2 OR Tra_M_Tramite.nFlgTipoDoc=4 ' 
+        
+     If @i_cCodificacion <> '' 
+     SET @SQLQuery = @SQLQuery + ' And (Tra_M_Tramite.cCodificacion LIKE @i_cCodificacion OR T2.cCodificacionPrincipal LIKE @i_cCodificacion)' 
+
+	  --If @i_cCodificacionI <> ''
+	--  SET @SQLQuery = @SQLQuery + ' And (Tra_M_Tramite.cCodificacionI LIKE @i_cCodificacionI)'
+ 
+     If @i_cAsunto <> ''
+     SET @SQLQuery = @SQLQuery + ' And Tra_M_Tramite.cAsunto LIKE  @i_cAsunto ' 
+    
+     If @i_cCodTipoDoc <> ''
+     SET @SQLQuery = @SQLQuery + ' And (Tra_M_Tramite.cCodTipoDoc = @i_cCodTipoDoc OR T2.cCodTipoDocPrincipal = @i_cCodTipoDoc) '
+     
+     --If @i_iCodTrabajadorResponsable <> ''
+     --SET @SQLQuery = @SQLQuery + ' AND (Tra_M_Tramite_Movimientos.iCodTrabajadorDerivar = @i_iCodTrabajadorResponsable) '
+     
+     -- ▸ Filtrado delegado / no delegado (uso del mismo parámetro)
+		-- ▸ Delegación
+			IF @i_iCodTrabajadorDelegado = -1          -- NO DELEGADOS  (solo estado 1)
+				SET @SQLQuery = @SQLQuery + '
+					AND Tra_M_Tramite_Movimientos.nEstadoMovimiento = 1'
+
+			ELSE IF @i_iCodTrabajadorDelegado = -2     -- TODOS los delegados (3 y 4)
+				SET @SQLQuery = @SQLQuery + '
+					AND Tra_M_Tramite_Movimientos.nEstadoMovimiento IN (3,4)'
+
+			ELSE IF @i_iCodTrabajadorDelegado <> ''    -- persona específica
+				SET @SQLQuery = @SQLQuery + '
+					AND Tra_M_Tramite_Movimientos.iCodTrabajadorDelegado = @i_iCodTrabajadorDelegado
+					AND Tra_M_Tramite_Movimientos.nEstadoMovimiento      IN (3,4)'
+	-- fin modificacion delegado
+
+	 If @i_remitente <> ''
+     SET @SQLQuery = @SQLQuery + ' And Tra_M_Tramite.iCodRemitente= @i_remitente '
+     
+	 If @i_iCodTema <> ''
+     SET @SQLQuery = @SQLQuery + ' And Tra_M_Tramite.iCodTema= @i_iCodTema '	
+ /*
+     If @i_EstadoMov = ''
+     SET @SQLQuery = @SQLQuery + ' And (Tra_M_Tramite_Movimientos.nEstadoMovimiento=1 OR Tra_M_Tramite_Movimientos.nEstadoMovimiento=3) '
+  */   
+	 If (@i_Aceptado='1') AND (@i_SAceptado ='' )
+     SET @SQLQuery = @SQLQuery + ' And Tra_M_Tramite_Movimientos.fFecRecepcion!='''' '
+     
+     If (@i_Aceptado='') AND (@i_SAceptado ='1' )
+     SET @SQLQuery = @SQLQuery + ' And (Tra_M_Tramite_Movimientos.fFecRecepcion='''' OR Tra_M_Tramite_Movimientos.fFecRecepcion is null) '
+    
+     If (@i_Aceptado='1') AND (@i_SAceptado ='1')
+     SET @SQLQuery = @SQLQuery + ' And (Tra_M_Tramite_Movimientos.fFecRecepcion!='''' OR Tra_M_Tramite_Movimientos.fFecRecepcion='''' OR Tra_M_Tramite_Movimientos.fFecRecepcion is null ) '
+
+	 if (@i_nSIGA <> '')
+	 SET @SQLQuery = @SQLQuery + ' And Tra_M_Tramite.cOrdenSIGA LIKE @i_nSIGA '	
+
+	 If  @i_indicacion <> 0
+     SET @SQLQuery = @SQLQuery + ' AND Tra_M_Tramite_Movimientos.iCodIndicacionDerivar = @i_indicacion '
+
+     SET @SQLQuery = @SQLQuery + ' And Tra_M_Tramite_Movimientos.iCodOficinaDerivar= @i_iCodOficinaLogin
+		   						   And Tra_M_Tramite.nFlgEnvio=1
+		   						   And nEstadoMovimiento!=2
+									AND (CASE WHEN Tra_M_Tramite_Movimientos.iCodTramiteDerivar IS NULL OR Tra_M_Tramite_Movimientos.iCodTramiteDerivar = 0 THEN 0 ELSE 1 END)
+									=
+										(CASE
+											WHEN T2.nFlgEnvioDerivar IS NULL OR T2.nFlgEnvioDerivar = 0 THEN 0
+											ELSE T2.nFlgEnvioDerivar
+										END)
+									And (Tra_M_Tramite_Movimientos.nEstadoMovimiento=1 OR Tra_M_Tramite_Movimientos.nEstadoMovimiento=3 OR Tra_M_Tramite_Movimientos.nEstadoMovimiento=4)
+									And (Tra_M_Tramite_Movimientos.cFlgTipoMovimiento!=5 AND Tra_M_Tramite_Movimientos.cFlgTipoMovimiento!=6) '
+									   
+	 SET @SQLQuery =  @SQLQuery +  
+		 ' ORDER BY
+         CASE @i_dir
+              WHEN ''DESC'' THEN
+                 CASE  @i_columna
+				 WHEN ''Fecha'' THEN ROW_NUMBER() OVER (ORDER BY Tra_M_Tramite_Movimientos.fFecDerivar)
+                 WHEN ''Codigo'' THEN ROW_NUMBER() OVER (ORDER BY Tra_M_Tramite.cCodificacion)
+                 WHEN ''Documento'' THEN ROW_NUMBER() OVER (ORDER BY cDescTipoDoc)             
+                 WHEN ''Recepcion''	THEN ROW_NUMBER() OVER (ORDER BY fFecRecepcion)
+                 WHEN ''Trabajador'' THEN ROW_NUMBER() OVER (ORDER BY iCodTrabajadorDerivar)
+                 WHEN ''Estado'' THEN ROW_NUMBER() OVER (ORDER BY nEstadoMovimiento)
+                 END
+              END
+              DESC,
+         CASE @i_dir
+              WHEN  ''ASC'' THEN
+                 CASE  @i_columna
+				 WHEN ''Fecha'' THEN ROW_NUMBER() OVER (ORDER BY Tra_M_Tramite_Movimientos.fFecDerivar)
+                 WHEN ''Codigo'' THEN ROW_NUMBER() OVER (ORDER BY Tra_M_Tramite.cCodificacion)
+                 WHEN ''Documento''	THEN ROW_NUMBER() OVER (ORDER BY cDescTipoDoc)
+                 WHEN ''Recepcion''	THEN ROW_NUMBER() OVER (ORDER BY fFecRecepcion)
+                 WHEN ''Trabajador'' THEN ROW_NUMBER() OVER (ORDER BY iCodTrabajadorDerivar)
+                 WHEN ''Estado'' THEN ROW_NUMBER() OVER (ORDER BY nEstadoMovimiento)
+                 END
+              END'   
+     
+   --print @SQLQuery
+     
+    SET @ParamDefinition = '
+	@i_fDesde					datetime  ,
+    @i_fHasta					datetime  ,
+	@i_Entrada					int,
+	@i_Interno					int,
+	@i_Anexo                    int,	
+    @i_cCodificacion			varchar(150) ,
+	@i_cAsunto					varchar(4000)	='''' ,
+	@i_cCodTipoDoc				int,
+	@i_iCodTrabajadorResponsable int , 
+	@i_iCodTrabajadorDelegado	int,
+	@i_iCodTema					int,
+	@i_EstadoMov				int,
+	@i_Aceptado					int,
+	@i_SAceptado				int,
+	@i_iCodOficinaLogin			int,
+	@i_columna					varchar(10),
+	@i_dir						varchar(10),
+	@i_remitente				int,
+	@i_nSIGA					varchar(20),
+	@i_indicacion				int = 0'
+	--,	@i_cCodificacionI			char(150)'
+	
+	
+Execute sp_Executesql		@SQLQuery, 
+							@ParamDefinition, 
+							@i_fDesde,
+							@i_fHasta,
+							@i_Entrada,
+							@i_Interno,
+							@i_Anexo,							
+							@i_cCodificacion,
+							@i_cAsunto,
+							@i_cCodTipoDoc,
+							@i_iCodTrabajadorResponsable,
+							@i_iCodTrabajadorDelegado,
+							@i_iCodTema,
+							@i_EstadoMov,
+							@i_Aceptado,
+							@i_SAceptado,
+							@i_iCodOficinaLogin,
+							@i_columna,
+							@i_dir,
+							@i_remitente,
+							@i_nSIGA,
+							@i_indicacion
+						--	,@i_cCodificacionI
+GO
+
+
