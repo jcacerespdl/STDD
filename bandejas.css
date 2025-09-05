@@ -1,0 +1,105 @@
+/* ===== BANDEJAS: BASE REUTILIZABLE (sin anchos ni alto de filas) ===== */
+
+/* Colores/offsets comunes (puedes mantenerlos como CSS vars globales en tu head si prefieres) */
+.bandeja { --primary:#005a86; --secondary:#c69157; --stick-top:105px; --panel-h:0px; --panel-gap:110px; }
+
+.bandeja .contenedor-principal{ position:relative; margin-top:var(--stick-top); }
+.bandeja .panel-fijo{ position:fixed; top:var(--stick-top); left:0; right:0; z-index:950; background:#fff; box-shadow:0 2px 0 rgba(0,0,0,.04); }
+.bandeja .lista-scroll{ margin-top:calc(var(--panel-h) + var(--panel-gap)); padding-bottom:24px; overflow-x:hidden; }
+
+.barra-titulo{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; background:var(--primary); color:#fff; padding:10px 20px; font-weight:bold; font-size:15px; width:100%; box-sizing:border-box; margin:0; z-index:910; }
+
+/* Filtros (base) */
+.bandeja .filtros-formulario{ display:flex; gap:30px; background:#fff; border:1px solid #ccc; border-radius:0; padding:20px 20px 10px; width:100%; box-sizing:border-box; flex-wrap:wrap; margin:0; }
+.bandeja .columna-izquierda{ flex:1; max-width:40%; display:flex; flex-direction:column; gap:12px; }
+.bandeja .columna-derecha{ flex:2; display:flex; flex-direction:column; gap:12px; }
+.bandeja .fila{ display:flex; gap:10px; flex-wrap:wrap; }
+.bandeja .input-container{ position:relative; flex:1; min-width:120px; }
+.bandeja .input-container input, .bandeja .input-container select{ width:100%; padding:14px 12px 6px; font-size:14px; border:1px solid #ccc; border-radius:4px; background:#fff; box-sizing:border-box; appearance:none; height:42px; line-height:1.2; }
+.bandeja .input-container select:required:invalid{ color:#aaa; }
+.bandeja .input-container label{ position:absolute; top:50%; left:12px; transform:translateY(-50%); font-size:13px; color:#666; background:#fff; padding:0 4px; pointer-events:none; transition:.2s; }
+.bandeja .input-container input:focus + label,
+.bandeja .input-container input:not(:placeholder-shown) + label,
+.bandeja .input-container select:focus + label,
+.bandeja .input-container select:valid + label{ top:-7px; font-size:11px; color:#333; transform:none; }
+.bandeja .input-container input[type="date"]:not(:placeholder-shown) + label,
+.bandeja .input-container input[type="date"]:valid + label{ top:-7px; font-size:11px; color:#333; transform:none; }
+.bandeja .botones-filtro{ display:flex; gap:10px; align-items:flex-end; margin-left:auto; }
+.bandeja .btn-filtro{ padding:0 16px; font-size:14px; border-radius:4px; min-width:120px; display:flex; align-items:center; justify-content:center; gap:6px; border:none; cursor:pointer; height:42px; box-sizing:border-box; }
+.bandeja .btn-primary{ background:var(--primary); color:#fff; }
+.bandeja .btn-secondary{ background:var(--secondary); color:#fff; }
+
+/* Cabecera tipo tabla: SIN anchos aquí (cada bandeja define su grid) */
+.bandeja .tabla-head-sticky{ width:100%; background:#f6f7f9; border-top:1px solid #e7ebef; border-bottom:1px solid #e7ebef; font-weight:600; font-size:13.5px; color:#2f3a44; box-sizing:border-box; margin-bottom:0; }
+.bandeja .tabla-head-sticky .ths{ display:grid; align-items:center; gap:0; }
+.bandeja .tabla-head-sticky .th{ padding:8px 12px; border-right:1px solid #edf1f4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; }
+.bandeja .tabla-head-sticky .th:last-child{ border-right:none; }
+
+/* Cuerpo: SIN anchos ni alto aquí (cada bandeja define su grid y --row-h) */
+.bandeja .grid-rows{ display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+.bandeja .grid-row{
+  display:grid;
+  align-items:start;               /* alto aumenta con el contenido */
+  gap:0;
+  overflow:hidden;
+  border:1px solid #e9edf1; border-radius:10px; background:#fff;
+  box-shadow:0 2px 8px rgba(7,23,42,.04);
+  transition: box-shadow .15s ease, transform .15s ease;
+}
+.bandeja .grid-row:hover{ box-shadow:0 8px 22px rgba(7,23,42,.10); transform:translateY(-1px); }
+.bandeja .grid-row > *{ width:auto !important; justify-self:stretch !important; }
+
+/* Celdas: permitir WRAP (no ocupar columnas vecinas) */
+.bandeja .grid-row .cell,
+.bandeja .grid-row .grid-cell,
+.bandeja .grid-row .doc-col{
+  display:flex; justify-content:center; align-items:center;
+  padding:12px 14px;
+  white-space:normal;              /* 🔑 permite bajar a más líneas */
+  overflow:hidden; text-overflow:ellipsis;
+  text-align:center; word-break:break-word;
+}
+
+/* Variantes útiles */
+.bandeja .grid-row .cell.expediente-cell{ flex-direction:column; }
+.bandeja .grid-row .doc-col{ flex-direction:column; gap:2px; }
+
+/* Asunto con clamping opcional (si no quieres clamping, quita -webkit-line-clamp) */
+.bandeja .grid-row .cell.asunto{
+  display:-webkit-box !important; -webkit-line-clamp:3; -webkit-box-orient:vertical;
+  overflow:hidden; text-overflow:ellipsis; white-space:normal; line-height:1.25; color:#1b2b3a;
+}
+
+/* Derivado / Estado */
+.bandeja .grid-row .cell.derivado,
+.bandeja .grid-row .cell.estado{ display:flex; flex-direction:column; gap:2px; line-height:1.2; }
+
+/* Paginación */
+.bandeja .badge-registros{ display:inline-block; margin-left:8px; padding:2px 8px; font-size:12px; border-radius:999px; color:#fff; background:#1f2937; vertical-align:baseline; }
+.bandeja .paginacion{ display:flex; align-items:center; gap:6px; }
+.bandeja .paginacion a, .bandeja .paginacion span.current, .bandeja .paginacion span.disabled, .bandeja .paginacion .ellipsis{
+  display:inline-block; min-width:32px; text-align:center; padding:6px 8px; border:1px solid #ddd; border-radius:6px; text-decoration:none; color:#333; font-size:14px; line-height:1;
+}
+.barra-titulo .paginacion a,
+.barra-titulo .paginacion span.current,
+.barra-titulo .paginacion span.disabled,
+.barra-titulo .paginacion .ellipsis{ color:#fff; border-color:rgba(255,255,255,.55); background:transparent; }
+.barra-titulo .paginacion span.current{ background:rgba(255,255,255,.18); border-color:rgba(255,255,255,.85); }
+
+/* Acciones */
+.bandeja .btn.btn-link{ background:none; border:none; padding:4px; cursor:pointer; color:var(--primary); font-size:18px; }
+.bandeja .btn.btn-link:hover{ color:#00496b; }
+
+/* Modales y typeable (igual) */
+.bandeja .modal{ display:none; position:fixed; z-index:1000; inset:0; background:rgba(0,0,0,.5); }
+.bandeja .modal-content.small{ max-width:450px; }
+.bandeja .modal-content{ background:#fff; margin:5% auto; padding:20px; width:90%; max-width:1000px; border-radius:8px; position:relative; }
+.bandeja .modal-close{ position:absolute; top:10px; right:20px; font-size:24px; cursor:pointer; }
+.bandeja .typeable-wrap{ position:relative; }
+.bandeja .typeable-select{ width:100%; }
+.bandeja .typeable-overlay{ position:absolute; left:0; top:0; right:0; height:42px; display:none; border:1px solid #ccc; border-radius:4px; background:#fff; box-sizing:border-box; padding:8px 10px; }
+.bandeja .typeable-dropdown{ position:absolute; left:0; right:0; top:100%; background:#fff; border:1px solid #ddd; border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,.08); max-height:240px; overflow:auto; display:none; z-index:2000; margin-top:4px; }
+.bandeja .typeable-item{ padding:8px 10px; cursor:pointer; }
+.bandeja .typeable-item:hover, .bandeja .typeable-item.active{ background:#f2f6ff; }
+.bandeja .typeable-item.current{ background:#e9f5ff; color:#005a86; font-weight:600; display:flex; align-items:center; justify-content:space-between; }
+.bandeja .typeable-badge{ font-size:11px; padding:2px 6px; border-radius:999px; background:#d0e9ff; }

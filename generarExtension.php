@@ -79,25 +79,122 @@ if ($esLogistica) {
     <meta charset="UTF-8">
     <title>Extensiones por Ítems SIGA</title>
     <style>
-        body { font-family: Arial; padding: 20px; background: #f4f4f4; }
-        h2, h3 { color: #2c3e50; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
-        input, select, textarea {
-            width: 100%;
-            padding: 5px;
-            font-size: 14px;
-        }
-        button {
-            margin-top: 15px;
-            background-color: #2c3e50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-        }
-        button:hover { background-color: #1a242f; }
-    </style>
+  :root{
+    --primary:#005a86;
+    --primary-600:#004c72; /* hover */
+    --primary-700:#003f60; /* active */
+    --text:#2f3a44;
+    --muted:#6b7280;
+    --border:#e5e7eb;
+    --bg:#ffffff; /* fondo blanco */
+  }
+
+  /* Reset de página */
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    font-family: Arial, Helvetica, sans-serif;
+    margin:0;
+    padding:20px;
+    background:var(--bg);   /* blanco */
+    color:var(--text);
+  }
+
+  h2,h3{
+    margin:0 0 10px 0;
+    color:var(--text);
+    font-weight:700;
+  }
+
+  p{ margin:0 0 12px 0; color:var(--muted); }
+
+  /* Contenedores y tablas */
+  .card{
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:16px;
+    box-shadow:0 2px 8px rgba(7,23,42,.04);
+  }
+
+  table{
+    width:100%;
+    border-collapse:separate;
+    border-spacing:0;
+    margin-top:12px;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  thead th{
+    background:#f7f9fb;
+    color:#334155;
+    font-weight:600;
+    border-bottom:1px solid var(--border);
+  }
+  th, td{
+    padding:10px 12px;
+    border-bottom:1px solid var(--border);
+  }
+  tr:last-child td{ border-bottom:none; }
+
+  /* Inputs */
+  input, select, textarea{
+    width:100%;
+    padding:10px 12px;
+    font-size:14px;
+    border:1px solid var(--border);
+    border-radius:8px;
+    background:#fff;
+    color:var(--text);
+    outline:none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  input:focus, select:focus, textarea:focus{
+    border-color:#cfe2ff;
+    box-shadow:0 0 0 3px rgba(0,90,134,.15);
+  }
+
+  /* Botones institucionales */
+  button,
+  .btn,
+  .btn-primary{
+    appearance:none;
+    border:none;
+    border-radius:8px;
+    height:42px;
+    padding:0 18px;
+    font-size:14px;
+    font-weight:600;
+    color:#fff;
+    background:var(--primary);         /* primary institucional */
+    cursor:pointer;
+    transition:transform .05s ease, background .15s ease, box-shadow .15s ease;
+    box-shadow:0 2px 6px rgba(0,90,134,.18);
+  }
+  button:hover,
+  .btn:hover,
+  .btn-primary:hover{
+    background:var(--primary-600);
+  }
+  button:active,
+  .btn:active,
+  .btn-primary:active{
+    background:var(--primary-700);
+    transform:translateY(1px);
+  }
+  .btn-secondary{
+    background:#c69157;
+    color:#fff;
+  }
+
+  /* Separadores suaves entre bloques */
+  .block + .block{ margin-top:18px; }
+
+  /* Espaciado en el “Guardar Asignaciones” */
+  .actions{ margin-top:16px; display:flex; gap:10px; }
+</style>
 </head>
 <body>
 

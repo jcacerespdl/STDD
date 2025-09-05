@@ -41,29 +41,19 @@ try {
     $expediente = $rowExp['expediente'] ?? null;
 
     // Insertar nuevo trámite derivado
-    $sqlInsertTramite = "INSERT INTO Tra_M_Tramite (
-        cCodTipoDoc, cCodificacion, cAsunto, cObservaciones,
-        iCodOficinaRegistro, iCodTrabajadorRegistro,
-         fFecRegistro, fFecDocumento,
-         extension, nFlgTipoDoc, expediente, nFlgTipoDerivo, 
-         nFlgEnvio, nFlgEstado, nFlgFirma, nNumFolio, fase, cTipoBien, nTienePedidoSiga
-    ) OUTPUT INSERTED.iCodTramite VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?,?,?)";
+    $sqlInsertTramite = "INSERT INTO Tra_M_Tramite 
+    (
+        cCodTipoDoc,        cCodificacion,          cAsunto,        cObservaciones,     iCodOficinaRegistro,        iCodTrabajadorRegistro,
+        fFecRegistro,       fFecDocumento,          extension,      nFlgTipoDoc,        expediente,                 nFlgTipoDerivo, 
+        nFlgEnvio,          nFlgEstado,             nFlgFirma,      nNumFolio,          fase,                       cTipoBien, 
+        nTienePedidoSiga,   iCodTramtieDerivo,      nFlgClaseDoc
+    ) OUTPUT INSERTED.iCodTramite VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
     $paramsTramite = [
-        $tipoDocumento, 
-        $correlativo, 
-        $asunto, 
-        $observaciones,
-        $iCodOficinaOrigen,
-         $iCodTrabajadorOrigen,
-          $fFecRegistro, 
-          $fFecRegistro, 
-          $extension, 
-        2, 
-        $expediente, 
-        1, 
-        0, 
-        0, 0, $nNumFolio, $fase, $cTipoBien, $nTienePedidoSiga
+        $tipoDocumento,     $correlativo,           $asunto,        $observaciones,     $iCodOficinaOrigen,         $iCodTrabajadorOrigen,
+        $fFecRegistro,      $fFecRegistro,          $extension,     2,                  $expediente,                1, 
+        0,                  0,                      0,              $nNumFolio,         $fase,                      $cTipoBien, 
+        $nTienePedidoSiga,  $iCodTramiteRaiz,       1
     ];
     $stmt = sqlsrv_query($cnx, $sqlInsertTramite, $paramsTramite);
     if ($stmt === false) throw new Exception(print_r(sqlsrv_errors(), true));
@@ -183,17 +173,22 @@ foreach ($itemsManual as $registro) {
 
         $sqlMov = "INSERT INTO Tra_M_Tramite_Movimientos (
             iCodTramite,               iCodOficinaOrigen,                  iCodTrabajadorRegistro,                     iCodOficinaDerivar,  
-            iCodTrabajadorDerivar,     cAsuntoDerivar,                     cObservacionesDerivar,                      cPrioridadDerivar,  
-            fFecMovimiento,            nEstadoMovimiento,                  nflgenvio,                                  cFlgTipoMovimiento,
+            iCodTrabajadorDerivar,     cAsuntoDerivar,                     cObservacionesDerivar,                      cPrioridadDerivar,           
+ ffecderivar,           fFecMovimiento,            nEstadoMovimiento,                  nflgenvio,                                  cFlgTipoMovimiento,
             iCodTramiteDerivar,        iCodMovimientoDerivo,               iCodIndicacionDerivar,                      Expediente,     
             extension,                 iCodTrabajadorDelegado,             iCodIndicacionDelegado,                     fFecDelegado
             ) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?,?, ?, ?)";
+            VALUES 
+            (?,                         ?,                                  ?,                                          ?, 
+            ?,                          ?,                                  ?,                                          ?, 
+            ?, ?,                         ?,                                  ?,                                          ?, 
+            ?,                          ?,                                  ?,                                          ?, 
+            ?,                          ?,                                  ?,                                          ?)";
 
         $paramsMov = [
             $iCodTramiteRaiz,          $iCodOficinaOrigen,                 $iCodTrabajadorOrigen,                      $iCodOficinaDerivar, 
             $iCodTrabajadorDerivar,    $asunto,                            $observaciones,                             $cPrioridadDerivar,  
-            $fFecRegistro,             1,                                  1,                                          $cFlgTipoMovimiento,     // cFlgTipoMovimiento ('1' normal, '4' copia)
+            $fFecRegistro,  $fFecRegistro,            1,                                  1,                                          $cFlgTipoMovimiento,     // cFlgTipoMovimiento ('1' normal, '4' copia)
             $iCodTramiteNuevo,         $iCodMovimientoDerivo,              $iCodIndicacionDerivar,                     $expediente,
             $extension,                $iCodTrabajadorDelegado,            ($iCodTrabajadorDelegado ? 1 : null),       $fFecDelegado
         ];
@@ -219,12 +214,6 @@ if (!empty($iCodMovimientoDerivo)) {
         exit;
     }
 }
-
-
-
-
-
-
 
     echo json_encode([
         "status" => "success", 

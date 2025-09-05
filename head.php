@@ -34,35 +34,35 @@ if ($resultOficinas && $rowOficina = sqlsrv_fetch_array($resultOficinas, SQLSRV_
 }
 
  // Total de pendientes
-$sqlPendientes = "SELECT COUNT(*) AS total FROM Tra_M_Tramite_Movimientos M
-INNER JOIN Tra_M_Tramite T ON T.iCodTramite = M.iCodTramite
-WHERE M.iCodOficinaDerivar = ? 
-  AND T.nFlgEnvio = 1
-  AND NOT EXISTS (
-      SELECT 1 FROM Tra_M_Tramite_Movimientos M2
-      WHERE M2.iCodMovimientoDerivo = M.iCodMovimiento
-  )";
-$stmtPendientes = sqlsrv_query($cnx, $sqlPendientes, [$iCodOficina]);
-$pendientes = sqlsrv_fetch_array($stmtPendientes)['total'] ?? 0;
+// $sqlPendientes = "SELECT COUNT(*) AS total FROM Tra_M_Tramite_Movimientos M
+// INNER JOIN Tra_M_Tramite T ON T.iCodTramite = M.iCodTramite
+// WHERE M.iCodOficinaDerivar = ? 
+//   AND T.nFlgEnvio = 1
+//   AND NOT EXISTS (
+//       SELECT 1 FROM Tra_M_Tramite_Movimientos M2
+//       WHERE M2.iCodMovimientoDerivo = M.iCodMovimiento
+//   )";
+// $stmtPendientes = sqlsrv_query($cnx, $sqlPendientes, [$iCodOficina]);
+// $pendientes = sqlsrv_fetch_array($stmtPendientes)['total'] ?? 0;
 
 // Total de documentos por aprobar
-$sqlPorAprobar = "SELECT COUNT(*) AS total FROM Tra_M_Tramite 
-WHERE iCodOficinaRegistro = ? 
-  AND (nFlgFirma = 0 OR nFlgFirma IS NULL)
-  AND nFlgEstado = 1
-  AND documentoElectronico IS NOT NULL";
-$stmtPorAprobar = sqlsrv_query($cnx, $sqlPorAprobar, [$iCodOficina]);
-$porAprobar = sqlsrv_fetch_array($stmtPorAprobar)['total'] ?? 0;
+// $sqlPorAprobar = "SELECT COUNT(*) AS total FROM Tra_M_Tramite 
+// WHERE iCodOficinaRegistro = ? 
+//   AND (nFlgFirma = 0 OR nFlgFirma IS NULL)
+//   AND nFlgEstado = 1
+//   AND documentoElectronico IS NOT NULL";
+// $stmtPorAprobar = sqlsrv_query($cnx, $sqlPorAprobar, [$iCodOficina]);
+// $porAprobar = sqlsrv_fetch_array($stmtPorAprobar)['total'] ?? 0;
 
 // Total de documentos para firma
-$sqlParaFirma = "SELECT COUNT(*) AS total FROM Tra_M_Tramite_Firma F
-INNER JOIN Tra_M_Tramite T ON T.iCodTramite = F.iCodTramite
-WHERE F.iCodTrabajador = ? 
-  AND F.nFlgFirma = 0 
-  AND F.nFlgEstado = 1 
-  AND T.nFlgEstado = 1";
-$stmtParaFirma = sqlsrv_query($cnx, $sqlParaFirma, [$iCodTrabajador]);
-$paraFirma = sqlsrv_fetch_array($stmtParaFirma)['total'] ?? 0;
+// $sqlParaFirma = "SELECT COUNT(*) AS total FROM Tra_M_Tramite_Firma F
+// INNER JOIN Tra_M_Tramite T ON T.iCodTramite = F.iCodTramite
+// WHERE F.iCodTrabajador = ? 
+//   AND F.nFlgFirma = 0 
+//   AND F.nFlgEstado = 1 
+//   AND T.nFlgEstado = 1";
+// $stmtParaFirma = sqlsrv_query($cnx, $sqlParaFirma, [$iCodTrabajador]);
+// $paraFirma = sqlsrv_fetch_array($stmtParaFirma)['total'] ?? 0;
 
 
 ?>

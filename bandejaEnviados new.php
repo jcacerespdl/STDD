@@ -92,11 +92,11 @@ $oficinasResult = sqlsrv_query($cnx, $oficinasQuery);
    $items = array();
    while ($r = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
      $items[] = array(
-       'iCodTramite'         =>  (int)$r['iCodTramite']  , // raíz
+       'iCodTramite'         => isset($r['iCodTramite']) ? (int)$r['iCodTramite'] : 0, // raíz
        'cDescTipoDoc'        => $r['cDescTipoDoc'] ?? '',
        'cCodificacion'       => $r['cCodificacion'] ?? '',
        'cNomOficina'         => $r['cNomOficina'] ?? '',            
-    //    'cNomOficinaDerivar'  => $r['cNomOficinaDerivar'] ?? null,   
+       'cNomOficinaDerivar'  => $r['cNomOficinaDerivar'] ?? null,   
        'fFecRegistro'        => $r['fFecRegistro'] ?? null,
        'cAsunto'             => $r['cAsunto'] ?? '',
        'cObservaciones'      => $r['cObservaciones'] ?? '',
@@ -106,18 +106,8 @@ $oficinasResult = sqlsrv_query($cnx, $oficinasQuery);
        'nFlgEnvio'           => isset($r['nFlgEnvio']) ? (int)$r['nFlgEnvio'] : null,
        'nFlgNew'             => isset($r['nFlgNew']) ? (int)$r['nFlgNew'] : null,
        'nFlgTipoDerivo'      => isset($r['nFlgTipoDerivo']) ? (int)$r['nFlgTipoDerivo'] : 0,
-       'nFlgTipoDoc'        => isset($r['nFlgTipoDoc'])    ? (int)$r['nFlgTipoDoc']    : 2, // <= AÑADIR
-
        'iCodTramtieDerivo'   => isset($r['iCodTramtieDerivo']) ? (int)$r['iCodTramtieDerivo'] : 0,
-
-       // NUEVOS (desde el SP)
-    'nDestinos'          => isset($r['nDestinos']) ? (int)$r['nDestinos'] : 0,
-    'destLista'          => $r['cDestinosLista'] ?? '',
-    'destEtiqueta'       => $r['cNomOficinaDerivar'] ?? '', // etiqueta ya viene en esta columna
-
-    'cNomOficinaDerivar' => $r['cNomOficinaDerivar'] ?? null,  // etiqueta: "Varios" o nombre único
-    'cDestinosLista'     => $r['cDestinosLista'] ?? '',        // tooltip con toda la lista
-      );
+     );
    }
    
    /* =========================
@@ -139,22 +129,99 @@ $oficinasResult = sqlsrv_query($cnx, $oficinasQuery);
      $qs = http_build_query($q);
      return 'bandejaEnviados.php?' . $qs;
    }
- 
    
-   function baseDirPorFecha($dt){
-     if ($dt instanceof DateTimeInterface) {
-       return ($dt->format('Y-m-d H:i') >= '2025-08-29 00:00') ? 'STDD_marchablanca' : 'STD';
-     }
-     if (is_array($dt) && isset($dt['date'])) {
-       return (date('Y-m-d H:i', strtotime($dt['date'])) >= '2025-08-29 00:00') ? 'STDD_marchablanca' : 'STD';
-     }
-     if (is_string($dt) && $dt!=='') {
-       return (date('Y-m-d H:i', strtotime($dt)) >= '2025-08-29 00:00') ? 'STDD_marchablanca' : 'STD';
-     }
-     return 'STD';
-   }
-   
-   
+/* =========================
+ /* =========================
+   DESTINOS POR TRÁMITE (PHP) — Derivados y Generados
+   Regla:
+   - Si nFlgTipoDerivo=1 (Derivado)  -> buscar bloque por iCodTramiteDerivar = tramite
+   - Si nFlgTipoDerivo=0 (Generado) -> buscar bloque por iCodTramite       = tramite
+   Siempre: cFlgTipoMovimiento=1 y iCodOficinaOrigen = mi oficina (enviados)
+   ========================= */
+$tramitesListado = [];   // [iCodTramite] => 1|0 (1=Derivado, 0=Generado)
+foreach ($itemsPagina as $it) {
+  $tid = (int)($it['iCodTramite'] ?? 0);
+  if ($tid > 0) {
+    $esDer = ((int)($it['nFlgTipoDerivo'] ?? 0) === 1) ? 1 : 0;
+    $tramitesListado[$tid] = $esDer;
+  }
+}
+
+$destinosByTramite = []; // [iCodTramite] => ['label','title','n']
+
+if (!empty($tramitesListado)) {
+  // Construir VALUES (tramite, isDerivado)
+  $pairs = [];
+  $params = [];
+  foreach ($tramitesListado as $tid => $isDer) {
+    $pairs[] = '(?, ?)';
+    $params[] = (int)$tid;
+    $params[] = (int)$isDer; // 1=Derivado, 0=Generado
+  }
+  $valuesClause = implode(',', $pairs);
+
+  $sqlDest = "
+    WITH K(tramite, isDerivado) AS (
+      VALUES $valuesClause
+    ),
+    bloques AS (
+      SELECT
+        K.tramite,
+        MAX(M.iCodMovimientoDerivo) AS iCodMov
+      FROM K
+      JOIN Tra_M_Tramite_Movimientos M
+        ON M.cFlgTipoMovimiento = 1
+       AND M.iCodOficinaOrigen  = ?
+       AND (
+            (K.isDerivado = 1 AND M.iCodTramiteDerivar = K.tramite)  -- Derivado
+         OR (K.isDerivado = 0 AND M.iCodTramite        = K.tramite)  -- Generado
+       )
+      GROUP BY K.tramite
+    )
+    SELECT
+      b.tramite,
+      COUNT(*)                                        AS n_destinos,
+      STRING_AGG(O.cNomOficina, ', ')                 AS oficinas,
+      CASE WHEN COUNT(*) > 1 THEN 'Varios' ELSE MAX(O.cNomOficina) END AS etiqueta
+    FROM bloques b
+    JOIN Tra_M_Tramite_Movimientos MD
+      ON MD.iCodMovimientoDerivo = b.iCodMov
+    JOIN Tra_M_Oficinas O
+      ON O.iCodOficina = MD.iCodOficinaDerivar
+    WHERE ( ? IS NULL OR ? = 0 OR MD.iCodOficinaDerivar = ? )
+    GROUP BY b.tramite
+  ";
+
+  // Parámetros: (tramite,isDerivado)*N  +  iCodOficinaLogin  +  filtro destino x3
+  $params[] = $iCodOficinaLogin;
+  $params[] = $oficinaDerivarSel;  // 1
+  $params[] = $oficinaDerivarSel;  // 2
+  $params[] = $oficinaDerivarSel;  // 3
+
+  $stDest = sqlsrv_query($cnx, $sqlDest, $params);
+  if ($stDest) {
+    while ($r = sqlsrv_fetch_array($stDest, SQLSRV_FETCH_ASSOC)) {
+      $tid = (int)$r['tramite'];
+      $destinosByTramite[$tid] = [
+        'label' => (string)$r['etiqueta'],
+        'title' => (string)$r['oficinas'],
+        'n'     => (int)$r['n_destinos'],
+      ];
+    }
+  }
+
+  // (Opcional) además filtra la página por destino si se eligió uno:
+  if (!empty($oficinaDerivarSel)) {
+    $itemsPagina = array_values(array_filter($itemsPagina, function($it) use ($destinosByTramite){
+      $tid = (int)($it['iCodTramite'] ?? 0);
+      return $tid > 0 && isset($destinosByTramite[$tid]);
+    }));
+  }
+}
+
+
+
+
 ?>
 <!-- Material Icons y CSS   -->
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -215,7 +282,7 @@ body > .contenedor-principal{ margin-top:var(--stick-top); }
 .tabla-head-sticky .th:last-child{ border-right:none; }
 .grid-row{ 
     display:grid;
-    grid-template-columns: 180px 180px 200px minmax(220px,1fr) 240px 120px;
+    grid-template-columns: 180px 180px 220px minmax(280px,1fr) 240px 100px;
     align-items:center; 
     border:1px solid #e9edf1; 
     border-radius:10px; 
@@ -225,48 +292,10 @@ body > .contenedor-principal{ margin-top:var(--stick-top); }
 .grid-row:hover{ box-shadow:0 8px 22px rgba(7,23,42,.10); transform:translateY(-1px); }
 .grid-row .cell{ padding:14px 16px; min-height:56px; display:flex; align-items:center; gap:10px; }
 .grid-row .cell.center{ justify-content:center; }
-.cell.asunto{
-  white-space: normal;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.2;
-  max-height: calc(1.2em * 3);
-  word-break: break-word;
-  overflow-wrap: anywhere;
-}
 .muted{ color:#6b7280; }
 .badge{ display:inline-block; padding:3px 8px; border-radius:999px; font-size:12px; line-height:1; }
 .badge-ok{ background:#e6ffe6; color:#1b5e20; }
 .badge-warn{ background:#fff3cd; color:#8a6d3b; }
-.por-aprobar{
-    color:#d9534f;           /* rojito */
-    font-size:12px;
-    font-weight:600;
-    line-height:1.1;
-    margin-top:2px;
-  }
-
-  .modal-compl{ position:fixed; inset:0; z-index:9999; }
-.modal-compl[style*="display: none"]{ display:none !important; }
-.modal-compl-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.4); }
-.modal-compl-dialog{
-  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-  width:min(720px, 92vw); max-height:86vh; overflow:hidden;
-  background:#fff; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.25);
-  display:flex; flex-direction:column;
-}
-.modal-compl-head{ background:#005a86; color:#fff; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; }
-.modal-compl-head .modal-compl-close{ background:transparent; border:none; color:#fff; font-size:24px; line-height:1; cursor:pointer; }
-.modal-compl-body{ padding:16px; overflow:auto; }
-.compl-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
-.compl-item{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; border:1px solid #e9edf1; border-radius:10px; }
-.compl-desc{ font-weight:600; }
-.compl-date{ font-size:12px; }
-.compl-link{ display:inline-block; padding:6px 10px; border-radius:8px; background:#f2f6ff; text-decoration:none; }
-
 </style>
 
 <div class="contenedor-principal">
@@ -419,16 +448,6 @@ body > .contenedor-principal{ margin-top:var(--stick-top); }
           $flowId      = isset($it['iCodTramite']) ? (int)$it['iCodTramite'] : 0; // raíz devuelta por el SP
           $scriptPhp   = 'bandejaFlujo.php';
           $_Antecesor  = 0;
-            // Siempre a partir del ítem actual
-  $tramIdActual      = (int)$it['iCodTramite'];
-  $nFlgTipoDocActual = (int)($it['nFlgTipoDoc'] ?? 2);
-
-  // Archivo de edición/subsanación según el ACTUAL
-  if ($nFlgTipoDocActual === 1) {
-    $archivoEditar = 'registroEditarMP.php';
-  } else {
-    $archivoEditar = ($isDer ? 'registroDerivarSubsanar.php' : 'registroOficinaSubsanar.php');
-  }
 
           if ((int)$it['nFlgTipoDerivo'] === 1) {
             // Buscar el trámite antecesor por la relación en movimientos
@@ -471,76 +490,7 @@ body > .contenedor-principal{ margin-top:var(--stick-top); }
           $fechaTxt  = (!empty($it['fFecRegistro']) && ($it['fFecRegistro'] instanceof DateTimeInterface))
                         ? $it['fFecRegistro']->format("d/m/Y H:i") : '';
           $who       = trim(($it['apellidos'] ?? '').' '.($it['nombres'] ?? ''));
-
-           
-  // ...ya tienes $flowLinkId, $isDer y $rowTra calculados arriba...
-  // Asegura el tipo de doc del trámite a editar (1=externo/Mesa de Partes, 2=interno, etc.)
-  $nFlgTipoDocAntecesor = null;
-  if ($rowTra && isset($rowTra['nFlgTipoDoc'])) {
-      $nFlgTipoDocAntecesor = (int)$rowTra['nFlgTipoDoc'];
-  } else {
-      // Fallback por si no vino $rowTra (debería venir)
-      $stTipo = sqlsrv_query($cnx, "SELECT TOP 1 nFlgTipoDoc FROM Tra_M_Tramite WHERE iCodTramite = ?", [$flowLinkId]);
-      $rwTipo = $stTipo ? sqlsrv_fetch_array($stTipo, SQLSRV_FETCH_ASSOC) : null;
-      $nFlgTipoDocAntecesor = $rwTipo ? (int)$rwTipo['nFlgTipoDoc'] : 2; // asume 2 (interno) por defecto
-  }
-
-  // Ruta del archivo de edición/subsanación
-  if ($nFlgTipoDocAntecesor === 1) {
-      $archivoEditar = 'registroEditarMP.php';
-  } else {
-      $archivoEditar = $isDer ? 'registroDerivarSubsanar.php' : 'registroOficinaSubsanar.php';
-  }
-
-
-// IDs y banderas del ítem actual
-$tramIdActual      = (int)$it['iCodTramite'];
-$isDer             = ((int)$it['nFlgTipoDerivo'] === 1);
-$nFlgTipoDocActual = (int)($it['nFlgTipoDoc'] ?? 2);
-
-// Archivo de edición del ACTUAL
-$archivoEditar = ($nFlgTipoDocActual === 1)
-  ? 'registroEditarMP.php'
-  : ($isDer ? 'registroDerivarSubsanar.php' : 'registroOficinaSubsanar.php');
-
-// ---------- (tu lógica de flow/antecesor puede ir aquí si la necesitas para Ver flujo) ----------
-// ... tu cálculo de $flowLinkId ...
-// -----------------------------------------------------------------------------------------------
-
-// ===== Documento principal (del TRÁMITE ACTUAL) =====
-$docPrincipalNom   = '';
-$docPrincipalFecha = null;
-
-$stDoc = sqlsrv_query($cnx,
-  "SELECT documentoElectronico, fFecRegistro
-   FROM Tra_M_Tramite
-   WHERE iCodTramite = ?", [$tramIdActual]);
-
-if ($stDoc && ($rwDoc = sqlsrv_fetch_array($stDoc, SQLSRV_FETCH_ASSOC))) {
-  $docPrincipalNom   = trim((string)($rwDoc['documentoElectronico'] ?? ''));
-  $docPrincipalFecha = $rwDoc['fFecRegistro'] ?? null;
-}
-$dirPrincipal = baseDirPorFecha($docPrincipalFecha);
-
-// ===== Documentos complementarios (del TRÁMITE ACTUAL) =====
-$comps = [];
-$stComp = sqlsrv_query($cnx, "
-  SELECT cNombreNuevo, cDescripcion, fFechaRegistro
-  FROM Tra_M_Tramite_Digitales
-  WHERE iCodTramite = ?
-  ORDER BY fFechaRegistro DESC", [$tramIdActual]);
-
-if ($stComp) {
-  while ($rC = sqlsrv_fetch_array($stComp, SQLSRV_FETCH_ASSOC)) {
-    $comps[] = [
-      'nom'  => trim((string)($rC['cNombreNuevo'] ?? '')),
-      'desc' => trim((string)($rC['cDescripcion'] ?? '')),
-      'fec'  => $rC['fFechaRegistro'] ?? null,
-    ];
-  }
-}
-
-?>
+         ?>
 
         <div class="grid-row" id="fila-<?= (int)$flowId ?>">
           <!-- 1) Expediente / Fecha -->
@@ -567,149 +517,64 @@ if ($stComp) {
           <div class="cell" style="flex-direction:column; align-items:flex-start;">
             <div><?= htmlspecialchars($it['cDescTipoDoc'] ?: '-') ?></div>
             <small class="muted" style="user-select:text;"><?= htmlspecialchars($it['cCodificacion']) ?></small>
-            <?php if ((int)($it['nFlgEnvio'] ?? 1) === 0): ?>
-                <div class="por-aprobar">(Por Aprobar)</div>
-            <?php endif; ?>
-
           </div>
 
-                
-
-
           <!-- 4) Asunto -->
-          <div class="cell asunto">
+          <div class="cell" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
             <?= htmlspecialchars($it['cAsunto']) ?>
           </div>
 
            <!-- 5) Oficina de Destino (según regla icodtramitederivar -> bloque -> destinos) -->
-           <div class="cell">
+<div class="cell">
   <?php
-    $n     = (int)($it['nDestinos'] ?? 0);
-    $etq   = trim((string)($it['cNomOficinaDerivar'] ?? ''));
-    $lista = trim((string)($it['cDestinosLista'] ?? ''));
-
-    if ($n <= 0) {
-      echo '-';
-    } elseif ($n === 1) {
-      echo htmlspecialchars($etq, ENT_QUOTES, 'UTF-8');
+    $tid = (int)($it['iCodTramite'] ?? 0);
+    if (isset($destinosByTramite[$tid])) {
+      $d = $destinosByTramite[$tid];
+      $label = htmlspecialchars($d['label'], ENT_QUOTES, 'UTF-8');
+      $title = htmlspecialchars($d['title'], ENT_QUOTES, 'UTF-8');
+      if ($d['n'] > 1) {
+        echo '<span title="'.$title.'">Varios</span>';
+      } else {
+        echo $label;
+      }
     } else {
-      // Varios + tooltip con la lista de oficinas
-      echo '<span title="'.htmlspecialchars($lista, ENT_QUOTES, 'UTF-8').'">Varios</span>';
+      // Sin info (no hubo envío desde mi oficina o no hay bloque asociado)
+      echo '-';
     }
   ?>
 </div>
 
-         
           <!-- 6) Opciones -->
-<div class="cell" style="justify-content:center; gap:10px;">
-  <!-- Ver flujo -->
-  <a style="color:#0067CE; text-decoration:none;"
-     href="<?= $scriptPhp ?>?iCodTramite=<?= (int)$flowLinkId ?>"
-     target="_blank" title="Detalle del Trámite">
-    <span class="material-icons" style="font-size:20px;vertical-align:middle;">device_hub</span>
-  </a>
+          <div class="cell" style="justify-content:center; gap:10px;">
+            <a style="color:#0067CE; text-decoration:none;"
+               href="<?= $scriptPhp ?>?iCodTramite=<?= (int)$flowLinkId ?>"
+               target="_blank" title="Detalle del Trámite">
+              <span class="material-icons" style="font-size:20px;vertical-align:middle;">device_hub</span>
+            </a>
 
- 
+            <!-- <?php if ($hasPdf): ?>
+              <a href="../STD/cDocumentosFirmados/<?= urlencode($docInfo['documentoElectronico']) ?>"
+                 target="_blank" title="Abrir documento">
+                <img src="./img/pdf.png" alt="PDF" style="width:18px;height:auto;vertical-align:middle;">
+              </a>
+            <?php endif; ?> -->
 
-<!-- Editar: TRÁMITE ACTUAL -->
-<a href="<?= $archivoEditar ?>?iCodTramite=<?= $tramIdActual ?>" ...>
-  <span class="material-icons" style="font-size:22px;">edit</span>
-</a>
-
-<!-- Eliminar: TRÁMITE ACTUAL -->
-<a href="#" onclick="confirmarEliminar(<?= $tramIdActual ?>, <?= (int)$it['nFlgTipoDerivo'] ?>)" ...>
-  <span class="material-icons" style="font-size:22px;">delete</span>
-</a>
-
- <!-- Documento principal (del TRÁMITE ACTUAL) -->
- <?php if ($docPrincipalNom !== ''): ?>
-    <a href="../<?= $dirPrincipal ?>/cDocumentosFirmados/<?= urlencode($docPrincipalNom) ?>"
-       target="_blank" title="Documento principal">
-      <img src="./img/pdf.png" alt="PDF" style="width:18px;height:auto;vertical-align:middle;">
-    </a>
-  <?php endif; ?>
-
-  <!-- Complementarios (modal) -->
-  <?php if (count($comps) > 0): ?>
-    <a href="#" title="Documentos complementarios"
-       onclick="abrirModalComplementarios(<?= $tramIdActual ?>); return false;"
-       style="text-decoration:none;">
-      <span class="material-icons" style="font-size:22px; vertical-align:middle;">attach_file</span>
-    </a>
-  <?php endif; ?>
-
-
-</div>
-
-        </div>
-
-        
-<!-- MODAL COMPLEMENTARIOS (por trámite) -->
-<div class="modal-compl" id="modalComp-<?= $tramIdActual ?>" style="display:none;">
-  <div class="modal-compl-backdrop" onclick="cerrarModalComplementarios(<?= $tramIdActual ?>)"></div>
-  <div class="modal-compl-dialog">
-    <div class="modal-compl-head">
-      <strong>Documentos complementarios — <?= htmlspecialchars($it['cCodificacion']) ?></strong>
-      <button class="modal-compl-close" onclick="cerrarModalComplementarios(<?= $tramIdActual ?>)">&times;</button>
-    </div>
-    <div class="modal-compl-body">
-      <?php if (count($comps) === 0): ?>
-        <div class="muted">Sin documentos complementarios.</div>
-      <?php else: ?>
-        <ul class="compl-list">
-          <?php foreach ($comps as $cx):
-            $nom   = $cx['nom'];
-            $desc  = ($cx['desc'] !== '' ? $cx['desc'] : '(sin descripción)');
-            $fecTxt = '';
-            if ($cx['fec'] instanceof DateTimeInterface)       $fecTxt = $cx['fec']->format('d/m/Y H:i');
-            elseif (is_array($cx['fec']) && isset($cx['fec']['date'])) $fecTxt = date('d/m/Y H:i', strtotime($cx['fec']['date']));
-            elseif (is_string($cx['fec']) && $cx['fec']!=='')   $fecTxt = date('d/m/Y H:i', strtotime($cx['fec']));
-          ?>
-            <li class="compl-item">
-              <div class="compl-left">
-                <div class="compl-desc"><?= htmlspecialchars($desc, ENT_QUOTES, 'UTF-8') ?></div>
-                <?php if ($fecTxt!==''): ?><div class="compl-date muted"><?= htmlspecialchars($fecTxt) ?></div><?php endif; ?>
-              </div>
-              <div class="compl-right">
-                <?php if ($nom !== ''): ?>
-                  <a class="compl-link" target="_blank"
-                     href="./cAlmacenArchivos/<?= urlencode($nom) ?>"
-                     title="<?= htmlspecialchars($nom, ENT_QUOTES, 'UTF-8') ?>">
-                    Abrir
-                  </a>
-                <?php else: ?>
-                  <span class="muted">—</span>
-                <?php endif; ?>
-              </div>
-            </li>
-          <?php endforeach; ?>
-        </ul>
+            <?php if ($hasPdf): ?>
+        <a href="../<?= (
+  ($docInfo['fFecRegistro'] instanceof DateTimeInterface
+    && $docInfo['fFecRegistro']->format('Y-m-d H:i') >= '2025-08-29 00:00'
+  ) ? 'STDD_marchablanca' : 'STD'
+) ?>/cDocumentosFirmados/<?= urlencode($docInfo['documentoElectronico']) ?>"
+   target="_blank" title="Abrir documento">
+          <img src="./img/pdf.png" alt="PDF" style="width:18px;height:auto;vertical-align:middle;">
+        </a>
       <?php endif; ?>
-    </div>
-  </div>
-</div>
-<!-- /MODAL COMPLEMENTARIOS -->
+          </div>
+        </div>
       <?php endforeach; ?>
     </div>
   </div>
 </div>
-
-
-
-
-
-<!-- MODAL FLUJO -->
-<link rel="stylesheet" href="modal-flujo.css">
-
-<div id="modalFlujo">
-  <div class="contenido">
-    <span class="cerrar" onclick="cerrarModalFlujo()">&times;</span>
-    <iframe id="iframeFlujo" src=""></iframe>
-  </div>
-</div>
-<!-- MODAL FLUJO -->
-
-
 
 <script>
 function fixPanelOffset(){
@@ -723,58 +588,5 @@ window.addEventListener('load', fixPanelOffset);
 window.addEventListener('resize', fixPanelOffset);
 if('ResizeObserver' in window){
   new ResizeObserver(fixPanelOffset).observe(document.getElementById('panelFijo'));
-}
-
-function confirmarEliminar(iCodTramite, nFlgTipoDerivo) {
-    const opcion = confirm("¿Desea eliminar este trámite? ");
-
-    if (!opcion) return;
-
-    fetch('eliminarTramite.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `iCodTramite=${iCodTramite}&nFlgTipoDerivo=${nFlgTipoDerivo}`
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.status === 'ok') {
-            alert(data.message || 'Operación exitosa.');
-            location.reload();
-        } else {
-            alert('Error: ' + data.message);
-        }
-    })
-    .catch(err => alert('Error de red: ' + err));
-}
-
-
-// JS PARA MODAL DE FLUJO
-
-function cerrarModalFlujo() {
-  document.getElementById('modalFlujo').classList.remove('activo');
-  document.getElementById('iframeFlujo').src = '';
-}
-
-document.querySelectorAll('.ver-flujo-btn').forEach(btn => {
-  btn.addEventListener('click', function(e) {
-    e.preventDefault();
-    const id = this.dataset.id;
-    const extension = this.dataset.extension ?? 1;
-    const url = this.dataset.url;
-
-    const iframe = document.getElementById('iframeFlujo');
-    iframe.src = `${url}?iCodTramite=${id}&extension=${extension}`;
-
-    document.getElementById('modalFlujo').classList.add('activo');
-  });
-});
-
-function abrirModalComplementarios(id){
-  const m = document.getElementById('modalComp-'+id);
-  if (m) m.style.display = 'block';
-}
-function cerrarModalComplementarios(id){
-  const m = document.getElementById('modalComp-'+id);
-  if (m) m.style.display = 'none';
 }
 </script>

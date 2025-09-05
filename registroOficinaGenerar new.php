@@ -42,15 +42,15 @@ $sigla = sqlsrv_fetch_array($querySigla, SQLSRV_FETCH_ASSOC);
 $sqlInsert = "INSERT INTO Tra_M_Tramite 
 (cCodTipoDoc,           cCodificacion,                  cAsunto,        cObservaciones,      iCodOficinaRegistro,       fFecDocumento,    
  fFecRegistro,          iCodTrabajadorRegistro,         nFlgTipoDoc,    nFlgEnvio,           nFlgEstado,                nFlgFirma, 
- extension,             cTipoBien,                      nNumFolio,      nFlgTipoDerivo,      nTienePedidoSiga,          nFlgClaseDoc
+ extension,             cTipoBien,                      nNumFolio,      nFlgTipoDerivo,      nTienePedidoSiga
  )
                OUTPUT INSERTED.iCodTramite 
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
 $paramsInsert = array(
 $tipoDocumento,         substr($correlativo, 0, 150),    $asunto,       $observaciones,     $icodOficinaRegistro,       $fechaRegistro, 
-$fechaRegistro,         $icodTrabajadorRegistro,        2,              0,                  1,                          0, 
-1,                      $cTipoBien,                     $nNumFolio,     null,               $nTienePedidoSiga,          1
+$fechaRegistro,         $icodTrabajadorRegistro,        2,              1,                  1,                          0, 
+1,                      $cTipoBien,                     $nNumFolio,     null,               $nTienePedidoSiga
 );
 
 $stmtInsert = sqlsrv_query($cnx, $sqlInsert, $paramsInsert);
@@ -137,49 +137,82 @@ $ahora = date('Y-m-d\TH:i:s');
 
 // Insertar en tra_M_tramite_movimientos    
 foreach ($destinos as $key => $destino) {
-        $prev = explode("_", $destino);
-        $iCodOficinaDerivar    = is_numeric($prev[0]) ? (int)$prev[0] : null;
-        $iCodTrabajadorDerivar = is_numeric($prev[1]) ? (int)$prev[1] : null;
-        $iCodIndicacionDerivar = is_numeric($prev[2]) ? (int)$prev[2] : null;
-        $cPrioridadDerivar     = $prev[3] ?? '';
-        $esCopia               = isset($prev[4]) && $prev[4] === '1';
+    $prev = explode("_", $destino);
+    $iCodOficinaDerivar    = is_numeric($prev[0]) ? (int)$prev[0] : null;
+    $iCodTrabajadorDerivar = is_numeric($prev[1]) ? (int)$prev[1] : null;
+    $iCodIndicacionDerivar = is_numeric($prev[2]) ? (int)$prev[2] : null;
+    $cPrioridadDerivar     = $prev[3] ?? '';
+    $esCopia               = isset($prev[4]) && $prev[4] === '1';
 
-        $nTiempoRespuesta = 3;
-            if (strtolower($cPrioridadDerivar) === 'alta') {
-                $nTiempoRespuesta = 1;
-            } elseif (strtolower($cPrioridadDerivar) === 'baja') {
-                $nTiempoRespuesta = 5;
-            }
+    $nTiempoRespuesta = 3;
+    if (strtolower($cPrioridadDerivar) === 'alta') $nTiempoRespuesta = 1;
+    elseif (strtolower($cPrioridadDerivar) === 'baja') $nTiempoRespuesta = 5;
 
-        if ($iCodOficinaDerivar === null || $iCodTrabajadorDerivar === null || $iCodIndicacionDerivar === null) {
-            echo json_encode(["status" => "error", "message" => "No se pudo generar el movimiento #{$key}: datos incompletos o inválidos"]);
-            exit();
-        }
-    
-        $cFlgTipoMovimiento = $esCopia ? '4' : '1'; // 4=copia, 1=normal
-
-        $sqlGenMov = "INSERT INTO Tra_M_Tramite_Movimientos
-
-         (iCodtramite,          iCodTrabajadorRegistro,      iCodOficinaOrigen,         iCodOficinaDerivar,         iCodTrabajadorDerivar, 
-         iCodIndicacionDerivar, cPrioridadDerivar,           EXPEDIENTE,                nEstadoMovimiento,          cFlgTipoMovimiento, 
-         extension,             nTiempoRespuesta,            nflgenvio,                 nFlgTipoDoc,
-         fFecDerivar,           fFecMovimiento,              cAsuntoDerivar,            cObservacionesDerivar)
-                        OUTPUT INSERTED.iCodMovimiento  
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,  ?,?,?,?,?,?,?,?)";
-
-        $paramsGenMov = array(
-        $iCodTramite,           $icodTrabajadorRegistro,     $icodOficinaRegistro,      $iCodOficinaDerivar,        $iCodTrabajadorDerivar,
-        $iCodIndicacionDerivar, $cPrioridadDerivar,          substr($expediente, 0, 10),1,                          $cFlgTipoMovimiento,
-        1,                      $nTiempoRespuesta,           1,                         2,
-        $ahora,                 $ahora,                      $asunto,                   $observaciones                    
-        );
-
-        $stmtGenMov = sqlsrv_query($cnx, $sqlGenMov, $paramsGenMov);
-        if ($stmtGenMov === false) {
-            echo json_encode(["status" => "error", "message" => "No se pudo generar el movimiento #{$key}: " . print_r(sqlsrv_errors(), true)]);
-            exit();
-        }
+    if ($iCodOficinaDerivar === null || $iCodTrabajadorDerivar === null || $iCodIndicacionDerivar === null) {
+        echo json_encode(["status" => "error", "message" => "No se pudo generar el movimiento #{$key}: datos incompletos o inválidos"]);
+        exit();
     }
+
+    $cFlgTipoMovimiento = $esCopia ? '4' : '1'; // 4=copia, 1=normal
+
+    $sqlGenMov = "INSERT INTO Tra_M_Tramite_Movimientos
+    (
+        iCodTramite,
+        iCodTrabajadorRegistro,
+        iCodOficinaOrigen,
+        iCodOficinaDerivar,
+        iCodTrabajadorDerivar,
+        iCodIndicacionDerivar,
+        cPrioridadDerivar,
+        EXPEDIENTE,
+        nEstadoMovimiento,
+        cFlgTipoMovimiento,
+        extension,
+        nTiempoRespuesta,
+        nFlgEnvio,
+        nFlgTipoDoc,
+        fFecDerivar,
+        fFecMovimiento,
+        cAsuntoDerivar,
+        cObservacionesDerivar
+    )
+    OUTPUT INSERTED.iCodMovimiento
+    VALUES
+    (
+        ?,?,?,?,?,?,?,
+        ?,?,?,?,
+        ?,?,?,
+        ?,?,?,
+        ?
+    )";
+
+    $paramsGenMov = [
+        $iCodTramite,
+        $icodTrabajadorRegistro,
+        $icodOficinaRegistro,
+        $iCodOficinaDerivar,
+        $iCodTrabajadorDerivar,
+        $iCodIndicacionDerivar,
+        $cPrioridadDerivar,
+        substr($expediente, 0, 10),
+        1,                 // nEstadoMovimiento
+        $cFlgTipoMovimiento,
+        1,                 // extension
+        $nTiempoRespuesta,
+        1,                 // nFlgEnvio
+        2,                 // nFlgTipoDoc (interno)
+        $ahora,            // fFecDerivar
+        $ahora,            // fFecMovimiento
+        $asunto,           // cAsuntoDerivar
+        $observaciones     // cObservacionesDerivar
+    ];
+
+    $stmtGenMov = sqlsrv_query($cnx, $sqlGenMov, $paramsGenMov);
+    if ($stmtGenMov === false) {
+        echo json_encode(["status" => "error", "message" => "No se pudo generar el movimiento #{$key}: " . print_r(sqlsrv_errors(), true)]);
+        exit();
+    }
+}
     // Respuesta final
     echo json_encode(["status" => "success", "message" => "Trámite registrado correctamente", "iCodTramite" => $iCodTramite]);
     exit();

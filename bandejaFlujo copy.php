@@ -3,8 +3,6 @@ include("headFlujo.php");
 include("conexion/conexion.php");
 
 $iCodTramite = isset($_GET['iCodTramite']) ? intval($_GET['iCodTramite']) : 0;
-$expediente = isset($_GET['EXPEDIENTE']) ? trim($_GET['EXPEDIENTE']) : ($info['EXPEDIENTE'] ?? '');
-
 
 // ─────────────────────────────────────────────────────────────
 // 1) DATOS GENERALES DEL TRÁMITE
@@ -170,66 +168,16 @@ foreach ($nodes as $id => $n) {
 // ─────────────────────────────────────────────────────────────
 // 4) ÍTEMS SIGA (opcional) → No mostrar sección si no hay datos
 // ─────────────────────────────────────────────────────────────
-// === NUEVA LÓGICA: buscar ítems SIGA directamente por EXPEDIENTE y solo los código_item reales ===
 $itemsSIGA = [];
-
-$expediente = $infoInicial['expediente'];
-$sqlSIGA = "SELECT pedido_siga, codigo_item, cantidad FROM Tra_M_Tramite_SIGA_Pedido WHERE EXPEDIENTE = ?";
-$stmtSIGA = sqlsrv_query($cnx, $sqlSIGA, [$expediente]);
-
-while ($pedido = sqlsrv_fetch_array($stmtSIGA, SQLSRV_FETCH_ASSOC)) {
-    $pedidoSiga = $pedido['pedido_siga'];
-    $codigoItem = $pedido['codigo_item'];
-    $cantidad = $pedido['cantidad'];
-
-    // Si tiene pedido SIGA, buscamos información adicional del pedido
-    if ($pedidoSiga) {
-        $stmtOrden = sqlsrv_query($sigaConn,
-            "SELECT NRO_ORDEN, TIPO_BIEN, PROVEEDOR, MES_CALEND, CONCEPTO, TOTAL_FACT_SOLES, FECHA_REG
-             FROM SIG_ORDEN_ADQUISICION
-             WHERE ANO_EJE = 2025 AND EXP_SIGA = ?", [$pedidoSiga]);
-
-        if ($stmtOrden && $orden = sqlsrv_fetch_array($stmtOrden, SQLSRV_FETCH_ASSOC)) {
-            // Buscamos el nombre del código de ítem exacto
-            $stmtCat = sqlsrv_query($sigaConn,
-                "SELECT NOMBRE_ITEM, TIPO_BIEN
-                 FROM CATALOGO_BIEN_SERV
-                 WHERE CODIGO_ITEM = ?", [$codigoItem]);
-
-            echo "<script>console.log('🔍 Procesando PEDIDO {$pedidoSiga}, ITEM {$codigoItem}');</script>";
-
-            if ($stmtCat && $cat = sqlsrv_fetch_array($stmtCat, SQLSRV_FETCH_ASSOC)) {
-                $itemsSIGA[] = [
-                    "pedido_siga" => $pedidoSiga,                
-                    "TIPO_BIEN" => $cat['TIPO_BIEN'] ?? $orden['TIPO_BIEN'] ?? 'N.A.',         
-                     "CODIGO_ITEM" => $codigoItem,
-                    "CANTIDAD" => $cantidad,
-                    "NOMBRE_ITEM" => $cat['NOMBRE_ITEM'] ?? 'N.A.'
-                ];
-            } else {
-                echo "<script>console.warn('⚠️ No se encontró nombre para código $codigoItem en PEDIDO $pedidoSiga');</script>";
-            }
-        } else {
-            echo "<script>console.warn('⚠️ No se encontró orden para PEDIDO $pedidoSiga');</script>";
-        }
-    } else {
-        // Sin pedido SIGA: buscar solo el nombre del ítem
-        $stmtCat = sqlsrv_query($sigaConn,
-            "SELECT NOMBRE_ITEM, TIPO_BIEN FROM CATALOGO_BIEN_SERV WHERE CODIGO_ITEM = ?",
-            [$codigoItem]);
-
-        echo "<script>console.log('📦 Item sin pedido SIGA → código: {$codigoItem}');</script>";
-
-        if ($stmtCat && $cat = sqlsrv_fetch_array($stmtCat, SQLSRV_FETCH_ASSOC)) {
-            $itemsSIGA[] = [
-                "pedido_siga" => "N.A.",
-                "TIPO_BIEN" => $cat['TIPO_BIEN'] ?? 'N.A.',                    
-                "CODIGO_ITEM" => $codigoItem,
-                "CANTIDAD" => $cantidad,
-                "NOMBRE_ITEM" => $cat['NOMBRE_ITEM'] ?? 'N.A.'
-            ];
-        } else {
-            echo "<script>console.warn('⚠️ No se encontró nombre para código sin pedido: {$codigoItem}');</script>";
+$expediente = $info['EXPEDIENTE'] ?? null;
+if (!empty($expediente) && $expediente !== '1') {
+    $sqlSIGA = "SELECT pedido_siga, codigo_item, cantidad, [extension]
+                FROM Tra_M_Tramite_SIGA_Pedido
+                WHERE EXPEDIENTE = ?";
+    $stmtSIGA = sqlsrv_query($cnx, $sqlSIGA, [$expediente]);
+    if ($stmtSIGA) {
+        while ($p = sqlsrv_fetch_array($stmtSIGA, SQLSRV_FETCH_ASSOC)) {
+            $itemsSIGA[] = $p; // si tienes $sigaConn puedes enriquecer como antes
         }
     }
 }
@@ -248,83 +196,36 @@ function renderDocPrincipal($row){
     if ($docFile === '') {
         return '<span class="badge">Sin documento principal</span>';
     }
-
-    $repo = (
-      ($row['fFecDerivar'] instanceof DateTimeInterface
-        && $row['fFecDerivar']->format('Y-m-d H:i') >= '2025-09-04 16:00'
-      ) ? 'STDD_marchablanca' : 'STD'
-    );
-
-    return '<a href="https://tramite.heves.gob.pe/'.$repo.'/cDocumentosFirmados/'.urlencode($docFile).'" class="chip-adjunto" target="_blank" title="'.h($docFile).'">
+    return '<a href="https://tramite.heves.gob.pe/STD/cDocumentosFirmados/'.urlencode($docFile).'" class="chip-adjunto" target="_blank" title="'.h($docFile).'">
               <span class="material-icons chip-icon">picture_as_pdf</span>
               <span class="chip-text">'.h($docFile).'</span>
             </a>';
 }
 
-function renderComplementariosPorTramite($cnx, $iCodTramite){
-  $s = sqlsrv_query($cnx, "SELECT TOP(2) cNombreNuevo, cNombreOriginal, iCodTramite 
-                           FROM Tra_M_Tramite_Digitales 
-                           WHERE iCodTramite = ?
-                           ORDER BY fFechaRegistro DESC", [$iCodTramite]);
-  if(!$s) return '<span class="badge">—</span>';
-  $rows=[]; while($r=sqlsrv_fetch_array($s,SQLSRV_FETCH_ASSOC)){ $rows[]=$r; }
-  $cnt=count($rows);
-  if($cnt===0) return '<span class="badge">Ninguno</span>';
-  if($cnt===1){
-    $uno=$rows[0];
-    $nombre = $uno['cNombreNuevo'] ?: ($uno['iCodTramite'].'-'.preg_replace("/\ /","_",trim($uno["cNombreOriginal"])));
-    return '<a href="https://tramite.heves.gob.pe/STDD_marchablanca/cAlmacenArchivos/'.urlencode($nombre).'"
-              class="chip-adjunto" target="_blank" title="'.h($nombre).'">
+function renderComplementarios($cnx, $row){
+    $cnt   = (int)($row['ComplementariosCount'] ?? 0);
+    $tid   = (int)($row['iCodTramitePDF'] ?? 0);
+
+    if ($cnt === 0) return '<span class="badge">Ninguno</span>';
+
+    if ($cnt === 1) {
+        $s = sqlsrv_query($cnx, "SELECT TOP(1) cNombreNuevo, cNombreOriginal, iCodTramite 
+                                 FROM Tra_M_Tramite_Digitales 
+                                 WHERE iCodTramite = ?", [$tid]);
+        if ($s && ($uno = sqlsrv_fetch_array($s, SQLSRV_FETCH_ASSOC))) {
+            $nombre = $uno['cNombreNuevo'] ?: ($uno['iCodTramite'].'-'.preg_replace("/\ /","_",trim($uno["cNombreOriginal"])));
+            return '<a href="https://tramite.heves.gob.pe/STD/cAlmacenArchivos/'.urlencode($nombre).'" class="chip-adjunto" target="_blank" title="'.h($nombre).'">
+                      <span class="material-icons chip-icon chip-doc">article</span>
+                      <span class="chip-text">'.h($nombre).'</span>
+                    </a>';
+        }
+        return '<span class="badge">1 archivo</span>';
+    }
+
+    return '<a href="detalleComplementarios.php?iCodTramite='.$tid.'" class="chip-adjunto" title="Documentos Complementarios">
               <span class="material-icons chip-icon chip-doc">article</span>
-              <span class="chip-text">'.h($nombre).'</span>
+              <span class="chip-text">'.$cnt.' archivos</span>
             </a>';
-  }
-  // + de 1 → link a modal/lista
-  return '<a href="detalleComplementarios.php?iCodTramite='.$iCodTramite.'"
-            class="chip-adjunto" title="Documentos Complementarios">
-            <span class="material-icons chip-icon chip-doc">article</span>
-            <span class="chip-text">'.$cnt.' archivos</span>
-          </a>';
-}
-
-function renderComplementariosTodos($cnx, $iCodTramite){
-  $s = sqlsrv_query(
-    $cnx,
-    "SELECT cDescripcion, cNombreNuevo, cNombreOriginal, iCodTramite, fFechaRegistro
-     FROM Tra_M_Tramite_Digitales
-     WHERE iCodTramite = ?
-     ORDER BY fFechaRegistro ASC",
-    [$iCodTramite]
-  );
-  if(!$s) return '<span class="badge">—</span>';
-
-  $chips = [];
-  while($r = sqlsrv_fetch_array($s, SQLSRV_FETCH_ASSOC)){
-    // 1) Preferir el nombre FINAL guardado (cDescripcion)
-    $nombre = trim((string)($r['cDescripcion'] ?? ''));
-
-    // 2) Si no hubiera, intentar cNombreNuevo (otros flujos)
-    if($nombre === ''){
-      $nombre = trim((string)($r['cNombreNuevo'] ?? ''));
-    }
-
-    // 3) Fallback a iCodTramite-NOMBRE_ORIGINAL_sin_espacios.pdf
-    if($nombre === ''){
-      $orig   = preg_replace('/\s+/', '_', trim((string)($r['cNombreOriginal'] ?? 'adjunto.pdf')));
-      $nombre = ((int)$r['iCodTramite']).'-'.$orig;
-    }
-
-    // SIEMPRE apuntar a STDD_marchablanca
-    $chips[] =
-      '<a href="https://tramite.heves.gob.pe/STDD_marchablanca/cAlmacenArchivos/'.urlencode($nombre).'"
-          class="chip-adjunto" target="_blank" title="'.htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8').'">
-         <span class="material-icons chip-icon chip-doc">article</span>
-         <span class="chip-text">'.htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8').'</span>
-       </a>';
-  }
-
-  if(empty($chips)) return '<span class="badge">Ninguno</span>';
-  return '<div class="chips-wrap">'.implode('', $chips).'</div>';
 }
 
 // Render recursivo de ramas
@@ -340,9 +241,9 @@ function renderNodo($id, $nodes, $children, $nivel = 0){
     // SUMMARY (línea compacta)
     echo "<details".($nivel===0?' open':'').">";
     echo "<summary style='font-weight:600; padding-left:".($nivel*18)."px'>";
-    echo h($n['OficinaOrigenAbbr'])." → ".h($n['OficinaDestinoAbbr'])."";
-    // echo h($n['cAsuntoDerivar']).$badge." ";
-    // echo "<small style='color:#555;margin-left:8px'>#".(int)$n['iCodMovimiento']."</small>";
+    echo h($n['OficinaOrigenAbbr'])." → ".h($n['OficinaDestinoAbbr'])." — ";
+    echo h($n['cAsuntoDerivar']).$badge." ";
+    echo "<small style='color:#555;margin-left:8px'>#".(int)$n['iCodMovimiento']."</small>";
     echo "</summary>";
 
     // CUERPO DEL NODO
@@ -361,12 +262,11 @@ function renderNodo($id, $nodes, $children, $nivel = 0){
       }
 
       // Documentos
-      
-      echo "<div class='kv'><b>Documento principal:</b> ".renderDocPrincipal($n)."</div>";
-      echo "<div class='kv kv-row'><b>Documentos Complementarios:</b> "
-         . renderComplementariosTodos($GLOBALS['cnx'], (int)($n['iCodTramitePDF'] ?? 0))
-         . "</div>";       
-      
+      echo "<div class='row-flex'>";
+        echo "<div class='kv'><b>Documento principal:</b> ".renderDocPrincipal($n)."</div>";
+        echo "<div class='kv'><b>Complementarios:</b> ".renderComplementarios($GLOBALS['cnx'], $n)."</div>";
+        
+      echo "</div>";
 
       // Hijos
       if (!empty($children[$id])) {
@@ -398,7 +298,6 @@ h3{font-size:18px;color:#0c2d5d;margin:1.25rem 0 .75rem;border-left:4px solid #0
 summary{cursor:pointer;padding:8px 12px}
 details{border:1px solid #eee;border-radius:8px;margin:8px 0}
 details > summary:hover{background:#f8fafc}
-.chips-wrap{display:flex;flex-wrap:wrap;gap:6px}
 </style>
 
 <h3>DETALLES DEL EXPEDIENTE:  </h3>
@@ -411,66 +310,48 @@ details > summary:hover{background:#f8fafc}
       <div class="kv"><b>Codificación:</b> <?= h($info['cCodificacion'] ?? '') ?></div>
     </div>
     <div class="row-flex">
-      <div class="kv">
-        <b>Asunto:</b> <?= h($info['cAsunto'] ?? '') ?>
-      </div>
-    </div>
-    <div class="row-flex">
-    <div class="kv">
-        <b>Fecha Registro:</b> <?= ($info['fFecRegistro'] instanceof DateTimeInterface ? $info['fFecRegistro']->format('d/m/Y H:i:s') : '—') ?>
-      </div>
+      <div class="kv"><b>Asunto:</b> <?= h($info['cAsunto'] ?? '') ?></div>
+      <div class="kv"><b>Fecha Registro:</b> <?= ($info['fFecRegistro'] instanceof DateTimeInterface ? $info['fFecRegistro']->format('d/m/Y H:i:s') : '—') ?></div>
     </div>
     <div class="kv"><b>Observaciones:</b> <?= h($info['cObservaciones'] ?? '') ?></div>
-    <div class="kv" style="margin-top:8px;"><b>Documento Principal:</b>
+    <div class="kv" style="margin-top:8px;"><b>Doc. Principal:</b>
       <?php if (!empty($info['documentoElectronico'])): ?>
-      <?php
-      // Normaliza a 'Y-m-d H:i' aunque venga string
-      $freg = ($info['fFecRegistro'] instanceof DateTimeInterface)
-        ? $info['fFecRegistro']->format('Y-m-d H:i')
-        : date('Y-m-d H:i', strtotime($info['fFecRegistro'] ?? '1970-01-01 00:00'));
-      $repo = ($freg >= '2025-09-04 16:00') ? 'STDD_marchablanca' : 'STD';
-      ?>
-      <a href="https://tramite.heves.gob.pe/<?= $repo ?>/cDocumentosFirmados/<?= urlencode($info['documentoElectronico']) ?>"
-        class="chip-adjunto" target="_blank" title="<?= h($info['documentoElectronico']) ?>">
-        <span class="material-icons chip-icon">picture_as_pdf</span>
-        <span class="chip-text"><?= h($info['documentoElectronico']) ?></span>
-      </a>
-      <div class="kv kv-row" style="margin-top:6px;"><b>Documentos Complementarios:</b>
-        <?= renderComplementariosTodos($cnx, (int)$iCodTramite) ?>
-      </div>
+        <a href="https://tramite.heves.gob.pe/STD/cDocumentosFirmados/<?= urlencode($info['documentoElectronico']) ?>" class="chip-adjunto" target="_blank" title="<?= h($info['documentoElectronico']) ?>">
+          <span class="material-icons chip-icon">picture_as_pdf</span>
+          <span class="chip-text"><?= h($info['documentoElectronico']) ?></span>
+        </a>
       <?php else: ?>
-      <span class="badge">No disponible</span>
+        <span class="badge">No disponible</span>
       <?php endif; ?>
     </div>
   </div>
 </div>
 
-
-<!-- iTEMS SIGA: INICIO -->
-
 <?php if (!empty($itemsSIGA)): ?>
-    <h3>DETALLES DEL REQUERIMIENTO para el EXPEDIENTE <?= htmlspecialchars($infoInicial['expediente']) ?></h3>
-  <div class="detail-content section">
+  <h3>DETALLES DEL REQUERIMIENTO (SIGA)</h3>
+  <div class="detail-content">
     <div class="detail-header">ÍTEMS SIGA</div>
     <div class="detail-body">
-      <table style="width:100%; border-collapse: collapse; font-size: 14px;">
-        <thead style="background:#f5f5f5;">
+      <table style="width:100%;border-collapse:collapse;font-size:14px">
+        <thead style="background:#f5f5f5">
           <tr>
-            <th>PEDIDO SIGA</th>
-            <th>TIPO BIEN</th>
-            <th>CÓDIGO ITEM</th>
-            <th>NOMBRE ITEM</th>
-            <th>CANTIDAD</th>
+            <th style="padding:8px;border-bottom:1px solid #e6e6e6;text-align:left">PEDIDO SIGA</th>
+            <th style="padding:8px;border-bottom:1px solid #e6e6e6;text-align:left">EXTENSIÓN</th>
+            <th style="padding:8px;border-bottom:1px solid #e6e6e6;text-align:left">TIPO BIEN</th>
+            <th style="padding:8px;border-bottom:1px solid #e6e6e6;text-align:left">CÓDIGO ITEM</th>
+            <th style="padding:8px;border-bottom:1px solid #e6e6e6;text-align:left">NOMBRE ITEM</th>
+            <th style="padding:8px;border-bottom:1px solid #e6e6e6;text-align:left">CANTIDAD</th>
           </tr>
         </thead>
         <tbody>
-          <?php foreach ($itemsSIGA as $item): ?>
+          <?php foreach ($itemsSIGA as $it): ?>
             <tr>
-              <td><?= $item['pedido_siga'] ?></td>
-              <td><?= $item['TIPO_BIEN'] === 'S' ? 'SERVICIO' : 'BIEN' ?></td>
-              <td><?= $item['CODIGO_ITEM'] ?></td>
-              <td><?= $item['NOMBRE_ITEM'] ?></td>
-              <td><?= $item['CANTIDAD'] ?></td>
+              <td style="padding:8px;border-bottom:1px solid #eee"><?= h($it['pedido_siga']) ?></td>
+              <td style="padding:8px;border-bottom:1px solid #eee"><?= h($it['extension']) ?></td>
+              <td style="padding:8px;border-bottom:1px solid #eee"><?= h($it['TIPO_BIEN'] ?? '') ?></td>
+              <td style="padding:8px;border-bottom:1px solid #eee"><?= h($it['codigo_item']) ?></td>
+              <td style="padding:8px;border-bottom:1px solid #eee"><?= h($it['NOMBRE_ITEM'] ?? '') ?></td>
+              <td style="padding:8px;border-bottom:1px solid #eee"><?= h($it['cantidad']) ?></td>
             </tr>
           <?php endforeach; ?>
         </tbody>
@@ -478,8 +359,6 @@ details > summary:hover{background:#f8fafc}
     </div>
   </div>
 <?php endif; ?>
-
-<!-- iTEMS SIGA: FIN -->
 
 <h3>FLUJO DEL EXPEDIENTE  </h3>
 <div class="detail-content">

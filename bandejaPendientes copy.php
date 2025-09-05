@@ -196,7 +196,6 @@ if (!empty($tramiteIds)) {
     $ids = array_keys($tramiteIds);
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
     $qDocs = "SELECT t.iCodTramite,
-        t.EXPEDIENTE,
              t.documentoElectronico,
              t.nFlgTipoDoc,
                 t.cCodTipoDoc,
@@ -210,8 +209,6 @@ if (!empty($tramiteIds)) {
     if ($stDocs !== false) {
         while ($d = sqlsrv_fetch_array($stDocs, SQLSRV_FETCH_ASSOC)) {
             $docsByTramite[(int)$d['iCodTramite']] = [
-              'expediente'            => isset($d['EXPEDIENTE']) ? trim($d['EXPEDIENTE']) : '',
-
               'documentoElectronico'  => $d['documentoElectronico'] ?? null,
               'nFlgTipoDoc'           => isset($d['nFlgTipoDoc']) ? (int)$d['nFlgTipoDoc'] : null,
               'cCodTipoDoc'           => $d['cCodTipoDoc'] ?? null,
@@ -352,14 +349,14 @@ function linkPag($p) {
   --col-sel:100px;
   --col-exp:140px;
   --col-ext:120px;
-  --col-doc:240px;
-  --col-asunto-min:280px;  /* Asunto será el más ancho */
+  --col-doc:170px;
+  --col-asunto-min:320px;  /* Asunto será el más ancho */
   --col-der:200px;
   --col-est:110px;
   --col-opt:220px;
 
   /* Alto fijo por registro */
-  --row-h:88px;
+  --row-h:76px;
 }
 
 /* ===== Layout & barras ===== */
@@ -477,6 +474,10 @@ body > .contenedor-principal { margin-top: var(--stick-top); }
 .tabla-head-sticky .th:last-child{ border-right:none; }
 
 /* ===== Cuerpo (grilla de registros) ===== */
+/* Contenedor de filas (reemplaza a .lista-grid) */
+.grid-rows{
+  display:flex; flex-direction:column; gap:10px; margin-top:16px;
+}
 
 .grid-row{
   display:grid;
@@ -524,67 +525,15 @@ body > .contenedor-principal { margin-top: var(--stick-top); }
 .grid-row .doc-col .doc-row{
   overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
 }
-/* Espaciador del contenedor de filas (si usas .grid-rows) */
-/* .grid-rows{ display:flex; flex-direction:column; gap:10px; margin-top:16px; } */
 
-/* ====== 1) ASUNTO: 3 líneas + ellipsis + title ====== */
-/* Las celdas por defecto son flex (centradas). Para clamping multilínea,
-   el elemento que clampa NO puede ser flex. Sobrescribimos para .cell.asunto */
-.grid-row .cell.asunto{
-  display: -webkit-box !important;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: normal;         /* permitir múltiples líneas */
-  line-height: 1.25;           /* cálculo de alto junto a --row-h */
-  text-align: center;          /* sigue centrado horizontalmente */
-  padding: 14px 16px;          /* conserva padding del resto */
-}
-
-/* ====== 2) DERIVADO POR / ESTADO: principal arriba, fecha abajo ====== */
-/* Cambia el eje a columna, centrado, con jerarquía visual clara */
-.grid-row .cell.derivado,
-.grid-row .cell.estado{
-  display: flex;               /* por si vienes de grid-cell */
-  flex-direction: column;
-  justify-content: center;     /* centrado vertical dentro de la fila fija */
-  align-items: center;         /* centrado horizontal */
-  text-align: center;
-  line-height: 1.2;
-  padding: 10px 12px;
-  overflow: hidden;            /* evita desbordes */
-  white-space: nowrap;         /* una línea por cada subtexto */
-  text-overflow: ellipsis;
-}
-.grid-row .cell.derivado strong,
-.grid-row .cell.estado strong{
-  font-weight: 600;
-}
-.grid-row .cell.derivado small,
-.grid-row .cell.estado small{
-  color: #6b7280;              /* gris sutil para la fecha */
-  font-size: 12px;
-}
-
-/* (opcional) si “Documento” necesita clamping de sus subfilas */
-.grid-row .doc-col{
-  flex-direction: column;
-  gap: 2px;
-  padding: 10px 12px;
-  overflow: hidden;
-  text-align: center;
-}
-.grid-row .doc-col .doc-row{
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
 /* Asunto: 1 línea con … (usar title en HTML) */
 .cell.asunto{
   color:#1b2b3a;
   overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
 }
+
+/* Fallback si usas .center en alguna celda */
+.cell.center{ justify-content:center; text-align:center; }
 
 .muted{ color:#6b7280; }
 
@@ -663,7 +612,6 @@ body > .contenedor-principal { margin-top: var(--stick-top); }
   display:flex; align-items:center; justify-content:space-between;
 }
 .typeable-badge{ font-size:11px; padding:2px 6px; border-radius:999px; background:#d0e9ff; }
-
 
 </style>
 
@@ -982,24 +930,22 @@ $extension  = (int)($tramite['extensionMovimiento'] ?? $tramite['extension'] ?? 
       <?php if ($hasPdf): ?>
         <a href="../<?= (
   ($tramite['fFecDocumento'] instanceof DateTimeInterface
-    && $tramite['fFecDocumento']->format('Y-m-d H:i') >= '2025-09-04 16:00'
+    && $tramite['fFecDocumento']->format('Y-m-d H:i') >= '2025-08-28 16:00'
   ) ? 'STDD_marchablanca' : 'STD'
 ) ?>/cDocumentosFirmados/<?= urlencode($tramite['documentoElectronico']) ?>"
    target="_blank" title="Abrir documento">
           <img src="./img/pdf.png" alt="PDF" style="width:18px;height:auto;vertical-align:middle;">
         </a>
       <?php endif; ?>
-
       <a href="#"
-        class="ver-flujo-btn"
-        data-id="<?= htmlspecialchars($flowId) ?>"
-        data-extension="<?= (int)$extension ?>"
-        data-url="<?= $flowUrl ?>"
-        data-expediente="<?= htmlspecialchars($tramite['expediente'] ?: ($docsByTramite[(int)$tramite['iCodTramite']]['expediente'] ?? '')) ?>"
-        title="Ver flujo"
-        style="color:#6c757d;text-decoration:none;">
+         class="ver-flujo-btn"
+         data-id="<?= htmlspecialchars($flowId) ?>"
+         data-extension="<?= (int)$extension ?>"
+         data-url="<?= $flowUrl ?>"
+         title="Ver flujo"
+         style="color:#6c757d;text-decoration:none;">
         <span class="material-icons" style="font-size:20px;vertical-align:middle;">device_hub</span>
-        </a>
+      </a>
     </div>
 
   <?php else: ?>
@@ -1019,7 +965,6 @@ $extension  = (int)($tramite['extensionMovimiento'] ?? $tramite['extension'] ?? 
          data-id="<?= htmlspecialchars($flowId) ?>"
          data-extension="<?= (int)$extension ?>"
          data-url="<?= $flowUrl ?>"
-         data-expediente="<?= htmlspecialchars($tramite['expediente']) ?>"   
          title="Ver flujo"
          style="color:#6c757d;text-decoration:none;">
         <span class="material-icons" style="font-size:20px;vertical-align:middle;">device_hub</span>
@@ -1032,34 +977,38 @@ $extension  = (int)($tramite['extensionMovimiento'] ?? $tramite['extension'] ?? 
 
 
                      <!-- ASUNTO -->
-                     <div class="cell asunto"
-     title="<?= htmlspecialchars($tramite['cAsunto']) ?>">
-  <?= htmlspecialchars($tramite['cAsunto']) ?>
-</div>
+        <div class="grid-cell" style="width:200px;">
+          <?= htmlspecialchars($tramite['cAsunto']) ?>
+        </div>
 
                           <!-- DERIVADO POR -->
-<div class="cell derivado">
-  <strong><?= htmlspecialchars($tramite['OficinaOrigen']) ?></strong>
-  <?php if (!empty($tramite['iCodIndicacionDerivar'])): ?>
-    <small style="color:#444;">Indic.: <?= htmlspecialchars($tramite['iCodIndicacionDerivar']) ?></small>
+                       <div class="grid-cell" style="width:180px;">
+                        <?= htmlspecialchars($tramite['OficinaOrigen']) ?><br>
+                          <?php if (!empty($tramite['iCodIndicacionDerivar'])): ?>
+    <small style="color:#444;">Indic.: <?= htmlspecialchars($tramite['iCodIndicacionDerivar']) ?></small><br>
   <?php endif; ?>
-  <?php if (!empty($tramite['fFecDerivar']) && ($tramite['fFecDerivar'] instanceof DateTimeInterface)): ?>
-    <small><?= $tramite['fFecDerivar']->format("d/m/Y H:i") ?></small>
-  <?php endif; ?>
-</div>
+                        <small style="color: gray; font-size: 12px;">
+                        <?php
+      if (!empty($tramite['fFecDerivar']) && ($tramite['fFecDerivar'] instanceof DateTimeInterface)) {
+          echo $tramite['fFecDerivar']->format("d/m/Y H:i");
+      }
+    ?>
+                            </small>
+                        </div>
 
-<!-- ESTADO -->
-<div class="cell estado" id="estado-<?= $tramite['iCodMovimiento'] ?>">
-  <?php if (empty($tramite['fFecRecepcion'])): ?>
-    <strong style="color:#d9534f;">Sin Aceptar</strong>
-  <?php else: ?>
-    <strong style="color:#0d6efd;">Aceptado</strong>
-    <small><?= $tramite['fFecRecepcion']->format("d/m/Y H:i") ?></small>
-    <?php if (!empty($tramite['nombreDelegado'])): ?>
-      <small style="color:#ff9800; font-weight:600;">Delegado: <?= htmlspecialchars($tramite['nombreDelegado']) ?></small>
-    <?php endif; ?>
-  <?php endif; ?>
-</div>
+                     <!-- ESTADO -->
+        <div class="grid-cell" style="width:90px;" id="estado-<?= $tramite['iCodMovimiento'] ?>">
+                    <?php if (empty($tramite['fFecRecepcion'])): ?>
+                          <span style="font-weight: bold; color: #d9534f;">Sin Aceptar</span>
+                      <?php else: ?>
+                          <span style="font-weight: bold; color: #0d6efd;">Aceptado</span><br>
+                          <small style="color: gray;"><?= $tramite['fFecRecepcion']->format("d/m/Y H:i") ?></small>
+                          <?php if (!empty($tramite['nombreDelegado'])): ?>
+                              <br><span style="font-weight: bold; color: #ff9800;">Delegado</span><br>
+                              <small style="color: gray;"><?= htmlspecialchars($tramite['nombreDelegado']) ?></small>
+                          <?php endif; ?>
+                      <?php endif; ?>
+                      </div>
 
                      <!-- OPCIONES -->
                     <div class="grid-cell acciones" style="width:220px;" id="acciones-<?= $tramite['iCodMovimiento'] ?>">
@@ -1212,28 +1161,12 @@ $extension  = (int)($tramite['extensionMovimiento'] ?? $tramite['extension'] ?? 
 
 <script>
 document.querySelectorAll('.ver-flujo-btn').forEach(btn => {
-  btn.addEventListener('click', function (e) {
-    e.preventDefault(); // evita el salto del href="#"
+    btn.addEventListener('click', function() {
+        const id = this.dataset.id;
+        const extension = this.dataset.extension ?? 1;
+        window.open('bandejaFlujo.php?iCodTramite=' + id + '&extension=' + extension, '_blank');
 
-    // 👇 Log de depuración
-    console.log({ 
-      exp: this.dataset.expediente, 
-      id: this.dataset.id, 
-      url: this.dataset.url 
     });
-
-    const id  = this.dataset.id;
-    const ext = this.dataset.extension || 1;
-    const url = this.dataset.url || 'bandejaFlujo.php';
-    const exp = this.dataset.expediente || '';
-
-    const finalUrl = url
-      + '?iCodTramite=' + encodeURIComponent(id)
-      + '&extension='   + encodeURIComponent(ext)
-      + '&expediente='  + encodeURIComponent(exp);
-
-    window.open(finalUrl, '_blank');
-  });
 });
 
 document.querySelectorAll('.cerrarModal').forEach((el) => {

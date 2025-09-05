@@ -1,0 +1,141 @@
+USE [BD_STDD_marchablanca]
+GO
+
+/****** Object:  StoredProcedure [dbo].[SP_CONSULTA_INTERNO_OFICINA]    Script Date: 8/29/2025 11:20:27 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+
+
+CREATE OR ALTER PROCEDURE [dbo].[SP_CONSULTA_INTERNO_OFICINA] 
+	@i_fDesde				datetime  ,
+    @i_fHasta				datetime  ,
+    @i_SI					int,
+    @i_NO					int ,
+    @i_cCodificacion		varchar(150) ='' ,
+	@i_cAsunto				varchar(300) ='',
+	@i_cObservaciones		varchar(300) ='',
+	@i_cCodTipoDoc			int,
+	@i_iCodOficina		    int,
+	@i_iCodOficinaLogin		int,
+	@i_columna				varchar(10)='Fecha',
+	@i_dir					varchar(10)
+	-- @i_cCodificacionI		char(150)
+AS
+	SET NOCOUNT ON;
+	DECLARE @SQLQuery AS NVarchar ( 4000 )
+    DECLARE @ParamDefinition AS nvarchar (2000) 
+    IF 	@i_cAsunto = '%%'		 SET @i_cAsunto = ''
+	IF 	@i_cObservaciones = '%%' SET @i_cObservaciones = ''
+	IF 	@i_cCodificacion = '%%'  SET @i_cCodificacion = ''
+	------------------------------------------------------------------------------
+	 
+	----------------------------------------------------------------------------------------------------
+	IF (@i_columna = 'Oficina')
+BEGIN
+    SET @SQLQuery = '
+    SELECT TOP 200
+        t.iCodTramite,
+        td.cDescTipoDoc,
+        t.cCodificacion,
+        oDest.cNomOficina           AS cNomOficinaDerivar,   
+        t.fFecRegistro,
+        t.cAsunto,
+        t.cObservaciones,
+        t.cReferencia,
+        tra.cApellidosTrabajador,
+        tra.cNombresTrabajador,
+        t.nFlgEnvio,
+        t.iCodTrabajadorRegistro,
+        t.cCodTipoDoc,
+        t.iCodOficinaRegistro,
+        t.cCodificacionI,
+        t.nFlgTipoDerivo,
+        t.nFlgTipoDoc,
+        t.nFlgEstado,
+        t.nFlgNew
+    FROM Tra_M_Tramite t
+     LEFT JOIN Tra_M_Tipo_Documento td ON td.cCodTipoDoc = t.cCodTipoDoc
+    LEFT JOIN Tra_M_Trabajadores   tra ON tra.iCodTrabajador = t.iCodTrabajadorRegistro
+    LEFT JOIN Tra_M_Oficinas       oReg ON oReg.iCodOficina = t.iCodOficinaRegistro
+
+     JOIN Tra_M_Tramite_Movimientos m
+      ON m.cFlgTipoMovimiento = 1
+     AND m.iCodOficinaOrigen  = @i_iCodOficinaLogin
+     AND (
+            (t.nFlgTipoDerivo = 1              AND m.iCodTramiteDerivar = t.iCodTramite)   -- t derivado
+         OR (ISNULL(t.nFlgTipoDerivo,0) = 0    AND m.iCodTramite        = t.iCodTramite)   -- t generado
+         )
+      
+
+     JOIN Tra_M_Oficinas oDest
+      ON oDest.iCodOficina = m.iCodOficinaDerivar
+
+    WHERE
+         t.nFlgTipoDoc IN (2,4)
+        AND t.nFlgClaseDoc = 1
+        AND t.cCodTipoDoc <> 45
+
+         AND ( @i_iCodOficina IS NULL OR @i_iCodOficina = 0 OR m.iCodOficinaDerivar = @i_iCodOficina )
+
+         AND ( @i_fDesde IS NULL OR t.fFecRegistro >= @i_fDesde )
+        AND ( @i_fHasta IS NULL OR t.fFecRegistro <= @i_fHasta )
+
+         AND ( @i_cCodificacion  = '''' OR t.cCodificacion  LIKE @i_cCodificacion )
+        AND ( @i_cAsunto        = '''' OR t.cAsunto        LIKE @i_cAsunto )
+        AND ( @i_cObservaciones = '''' OR t.cObservaciones LIKE @i_cObservaciones )
+
+         AND ( @i_cCodTipoDoc IS NULL OR t.cCodTipoDoc = @i_cCodTipoDoc )
+
+    ORDER BY
+        CASE @i_dir WHEN ''DESC'' THEN oDest.cNomOficina END DESC,
+        CASE @i_dir WHEN ''ASC''  THEN oDest.cNomOficina END ASC
+    ';
+END
+
+	---------------------------------
+
+	 
+	
+     SET @ParamDefinition = '
+    @i_fDesde				datetime  ,
+    @i_fHasta				datetime  ,
+    @i_SI					int,
+    @i_NO					int ,
+    @i_cCodificacion		varchar(150) ,
+	@i_cAsunto				varchar(300) ,
+	@i_cObservaciones		varchar(300),
+	@i_cCodTipoDoc			int,
+	@i_iCodOficina			int,
+	@i_iCodOficinaLogin		int,
+	@i_columna				varchar(10),
+	@i_dir					varchar(10)'
+	-- @i_cCodificacionI		char(150)'
+	
+
+
+Execute sp_Executesql		@SQLQuery, 
+							@ParamDefinition, 
+							@i_fDesde,
+							@i_fHasta,
+							@i_SI,
+							@i_NO,
+							@i_cCodificacion,
+							@i_cAsunto,
+							@i_cObservaciones,
+							@i_cCodTipoDoc,
+							@i_iCodOficina,
+							@i_iCodOficinaLogin,
+							@i_columna,
+							@i_dir
+							-- @i_cCodificacionI
+
+GO
+
+

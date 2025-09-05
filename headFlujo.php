@@ -180,7 +180,17 @@ h3 {
   border-left: 4px solid #0072CE;
   padding-left: 10px;
 }
-
+/* Dos columnas fijas para Doc. Principal y Complementarios */
+.docs-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr; /* izquierda: principal | derecha: complementarios */
+  gap:18px;
+  align-items:start;
+}
+/* Fila label + chips en una misma línea */
+.kv-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.kv-row > b{white-space:nowrap}
+.kv-row > .chips-wrap{flex:1 1 auto} /* que los chips ocupen el resto del ancho */
     </style>
 </head>
 <body>

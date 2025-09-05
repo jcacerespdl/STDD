@@ -1,404 +1,609 @@
 <?php
 include("head.php");
 include("conexion/conexion.php");
+// Inyecta el CSS base de bandejas (después del head)
+$cssPath = 'bandejas.css';
+echo '<link rel="stylesheet" href="'.$cssPath.'?v='.(file_exists($cssPath)?filemtime($cssPath):time()).'">';
 
-$iCodTrabajador = $_SESSION['CODIGO_TRABAJADOR'];
-$iCodOficina = $_SESSION['iCodOficinaLogin'];
+/* =========================
+   SESIÓN / CONTEXTO
+   ========================= */
+$iCodTrabajador   = $_SESSION['CODIGO_TRABAJADOR'] ?? null;
+$iCodOficinaLogin = $_SESSION['iCodOficinaLogin']  ?? null;
+$iCodPerfil       = $_SESSION['ID_PERFIL']         ?? null;
 
-// Capturar filtros
-$filtroExpediente = isset($_GET['expediente']) ? trim($_GET['expediente']) : '';
-$valorExpediente  = htmlspecialchars($filtroExpediente);
+/* =========================
+   FILTROS (alineados al SP)
+   ========================= */
+   $fltDesde = isset($_GET['desde']) ? trim($_GET['desde']) : '';
+   $dtDesde  = ($fltDesde !== '' ? $fltDesde.' 00:00:00' : 0);
+   
+   $fltHasta = isset($_GET['hasta']) ? trim($_GET['hasta']) : '';
+   $dtHasta  = ($fltHasta !== '' ? $fltHasta.' 23:59:59' : 0);
 
-$filtroExtension = isset($_GET['extension']) ? trim($_GET['extension']) : '';
-$valorExtension  = htmlspecialchars($filtroExtension);
+$fltCodificacion   = isset($_GET['codificacion']) ? trim($_GET['codificacion']) : '';
+$valCodificacion   = htmlspecialchars($fltCodificacion, ENT_QUOTES, 'UTF-8');
+$paramCodificacion = ($fltCodificacion !== '' ? '%'.$fltCodificacion.'%' : '%%');
 
-$filtroAsunto = isset($_GET['asunto']) ? trim($_GET['asunto']) : '';
-$valorAsunto  = htmlspecialchars($filtroAsunto);
+$fltAsunto   = isset($_GET['asunto']) ? trim($_GET['asunto']) : '';
+$valAsunto   = htmlspecialchars($fltAsunto, ENT_QUOTES, 'UTF-8');
+$paramAsunto = ($fltAsunto !== '' ? '%'.$fltAsunto.'%' : '%%');
 
-$filtroDesde = isset($_GET['desde']) ? $_GET['desde'] : '';
-$valorDesde  = htmlspecialchars($filtroDesde);
+$tipoDocumentoSel = isset($_GET['tipoDocumento']) ? trim($_GET['tipoDocumento']) : '';
+$valTipoDocumento = htmlspecialchars($tipoDocumentoSel, ENT_QUOTES, 'UTF-8');
 
-$filtroHasta = isset($_GET['hasta']) ? $_GET['hasta'] : '';
-$valorHasta  = htmlspecialchars($filtroHasta);
+$dir = isset($_GET['dir']) ? strtoupper($_GET['dir']) : 'DESC';
+if (!in_array($dir, ['ASC','DESC'])) $dir = 'DESC';
 
-// Obtener tipos de documento internos
-$tipoDocQuery = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgInterno = 1 ORDER BY cDescTipoDoc ASC";
-$tipoDocResult = sqlsrv_query($cnx, $tipoDocQuery);
+/* =========================
+   CATÁLOGOS
+   ========================= */
+$tipoDocQuery   = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento ORDER BY cDescTipoDoc ASC";
+$tipoDocResult  = sqlsrv_query($cnx, $tipoDocQuery);
 
-// Obtener oficinas
-$oficinasQuery = "SELECT iCodOficina, cNomOficina FROM Tra_M_Oficinas ORDER BY cNomOficina ASC";
-$oficinasResult = sqlsrv_query($cnx, $oficinasQuery);
+/* =========================
+   EJECUCIÓN SP (opción por defecto op1)
+   ========================= */
+$sqlSp = "{CALL SP_BANDEJA_FINALIZADOS(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)}";
+$paramsSp = array(
+  'op1',             // @opcion (op1: orden por fFecFinalizar)
+  0,                 // @i_Entrada (ignorar)
+  0,                 // @i_Interno (ignorar)
+  $dtDesde,          // @i_fDesde
+  $dtHasta,          // @i_fHasta
+  $fltCodificacion,  // @i_cCodificacion
+  $fltAsunto,        // @i_cAsunto
+  $iCodOficinaLogin, // @i_iCodOficinaLogin
+  ($tipoDocumentoSel !== '' ? (int)$tipoDocumentoSel : 0), // @i_cCodTipoDoc
+  0,                 // @i_iCodTema
+  $dir               // @i_dir
+);
 
-$tipoDocQuery = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgInterno = 1 ORDER BY cDescTipoDoc ASC";
-$tipoDocResult = sqlsrv_query($cnx, $tipoDocQuery);
-
-$oficinasQuery = "SELECT iCodOficina, cNomOficina FROM Tra_M_Oficinas ORDER BY cNomOficina ASC";
-$oficinasResult = sqlsrv_query($cnx, $oficinasQuery);
-
-$sql = "
-    SELECT 
-        M1.iCodMovimiento,
-        M1.nEstadoMovimiento,
-        T.expediente,
-        M1.extension,
-        T.iCodTramite,
-        T.cCodificacion,
-        T.cAsunto,
-        T.fFecRegistro,
-        T.documentoElectronico,
-        M1.cDocumentoFinalizacion,
-        M1.cObservacionesFinalizar,
-        O1.cNomOficina AS OficinaOrigen,
-        O2.cNomOficina AS OficinaDestino
-    FROM Tra_M_Tramite_Movimientos M1
-    INNER JOIN Tra_M_Tramite T ON T.iCodTramite = M1.iCodTramite
-    INNER JOIN Tra_M_Oficinas O1 ON O1.iCodOficina = M1.iCodOficinaOrigen
-    INNER JOIN Tra_M_Oficinas O2 ON O2.iCodOficina = M1.iCodOficinaDerivar
-    WHERE M1.iCodOficinaDerivar = ?
-    AND M1.nEstadoMovimiento = 5
-    ORDER BY T.fFecRegistro DESC";
-
-$params = [$iCodOficina];
-$stmt = sqlsrv_prepare($cnx, $sql, $params);
-sqlsrv_execute($stmt);
-
-$tramites = [];
-while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
-    $tramites[] = $row;
+$stmt = sqlsrv_query($cnx, $sqlSp, $paramsSp);
+if ($stmt === false) {
+  die(print_r(sqlsrv_errors(), true));
 }
+
+/* =========================
+   NORMALIZACIÓN RESULTADOS
+   ========================= */
+$items = array();
+while ($r = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+  $items[] = array(
+    'iCodTramite'             => isset($r['iCodTramite']) ? (int)$r['iCodTramite'] : 0,
+    'iCodMovimiento'          => isset($r['iCodMovimiento']) ? (int)$r['iCodMovimiento'] : 0,
+    'cDescTipoDoc'            => $r['cDescTipoDoc'] ?? '',
+    'cCodificacion'           => $r['cCodificacion'] ?? '',
+    'cAsunto'                 => $r['cAsunto'] ?? '',
+    'fFecRegistro'            => $r['fFecRegistro'] ?? null,
+    'fFecDerivar'             => $r['fFecDerivar'] ?? null,
+    'fFecRecepcion'           => $r['fFecRecepcion'] ?? null,
+    'fFecFinalizar'           => $r['fFecFinalizar'] ?? null,
+    'cObservacionesFinalizar' => $r['cObservacionesFinalizar'] ?? '',
+    'iCodTrabajadorFinalizar' => isset($r['iCodTrabajadorFinalizar']) ? (int)$r['iCodTrabajadorFinalizar'] : 0,
+  );
+}
+
+/* =========================
+   PAGINACIÓN
+   ========================= */
+$totalRegistros = count($items);
+$porPagina = isset($_GET['pp']) ? max(5, min(200, (int)$_GET['pp'])) : 40;
+$pagina    = isset($_GET['pag']) ? max(1, (int)$_GET['pag']) : 1;
+$paginas   = max(1, (int)ceil($totalRegistros / $porPagina));
+if ($pagina > $paginas) { $pagina = $paginas; }
+$inicio       = ($pagina - 1) * $porPagina;
+$itemsPagina  = array_slice($items, $inicio, $porPagina);
+$desdeN       = ($totalRegistros === 0) ? 0 : ($inicio + 1);
+$hastaN       = min($inicio + $porPagina, $totalRegistros);
+
+function linkPag($p) {
+  $q = $_GET; $q['pag'] = $p; $qs = http_build_query($q);
+  return 'bandejaFinalizados.php?' . $qs;
+}
+
+/* =========================
+   MAPA DOC / EXP (Trámite)
+   ========================= */
+$docsByTramite = array();
+if (!empty($itemsPagina)) {
+  $ids = array();
+  foreach ($itemsPagina as $it) {
+    if (!empty($it['iCodTramite'])) $ids[(int)$it['iCodTramite']] = true;
+  }
+  $ids = array_keys($ids);
+  if (!empty($ids)) {
+    $ph = implode(',', array_fill(0, count($ids), '?'));
+    $qDocs = "SELECT iCodTramite, EXPEDIENTE, documentoElectronico, extension FROM Tra_M_Tramite WHERE iCodTramite IN ($ph)";
+    $stDocs = sqlsrv_query($cnx, $qDocs, $ids);
+    if ($stDocs !== false) {
+      while ($d = sqlsrv_fetch_array($stDocs, SQLSRV_FETCH_ASSOC)) {
+        $docsByTramite[(int)$d['iCodTramite']] = array(
+          'expediente'           => isset($d['EXPEDIENTE']) ? trim($d['EXPEDIENTE']) : '',
+          'documentoElectronico' => $d['documentoElectronico'] ?? null,
+          'extension'            => isset($d['extension']) ? (int)$d['extension'] : 1,
+        );
+      }
+    }
+  }
+}
+
+/* =========================
+   MAPA NOMBRES FINALIZADOR
+   ========================= */
+$finalizadorById = array();
+$idsF = array();
+foreach ($itemsPagina as $it) {
+  if (!empty($it['iCodTrabajadorFinalizar'])) $idsF[(int)$it['iCodTrabajadorFinalizar']] = true;
+}
+$idsF = array_keys($idsF);
+if (!empty($idsF)) {
+  $ph = implode(',', array_fill(0, count($idsF), '?'));
+  $qTrab = "SELECT iCodTrabajador, cApellidosTrabajador, cNombresTrabajador
+            FROM TRA_M_Trabajadores
+            WHERE iCodTrabajador IN ($ph)";
+  $stTrab = sqlsrv_query($cnx, $qTrab, $idsF);
+  if ($stTrab !== false) {
+    while ($tt = sqlsrv_fetch_array($stTrab, SQLSRV_FETCH_ASSOC)) {
+      $finalizadorById[(int)$tt['iCodTrabajador']] =
+        trim(($tt['cApellidosTrabajador'] ?? '').' '.($tt['cNombresTrabajador'] ?? ''));
+    }
+  }
+}
+
+/* =========================
+   HELPERS UI
+   ========================= */
+   function dmy($dt){
+    if ($dt instanceof DateTimeInterface) return $dt->format('d-m-Y');
+    if (is_array($dt) && isset($dt['date'])) return date('d-m-Y', strtotime($dt['date']));
+    if (is_string($dt) && $dt!=='') return date('d-m-Y', strtotime($dt));
+    return '';
+  }
+  function hi($dt){
+    if ($dt instanceof DateTimeInterface) return $dt->format('G:i');
+    if (is_array($dt) && isset($dt['date'])) return date('G:i', strtotime($dt['date']));
+    if (is_string($dt) && $dt!=='') return date('G:i', strtotime($dt));
+    return '';
+  }
+  function safe($v){ return htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'); }
 ?>
- 
-
-<!-- Material Icons y CSS -->
+<!-- ======= UI: mismo layout que bandejaEnviados ======= -->
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
- <style>
-    .row {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
+<style>
+/* ===== Ajustes SOLO para FINALIZADOS ===== */
+.bandeja--finalizados{
+  /* Anchos locales (7 columnas) */
+  --c-exp:  190px;                      /* Expediente / Registro */
+  --c-doc:  240px;                      /* Documento */
+  --c-asu:  minmax(560px, 1fr);         /* ASUNTO (más ancho) */
+  --c-der:  112px;                      /* Derivado (fecha) */
+  --c-rec:  112px;                      /* Recepción (fecha) */
+  --c-fin:  minmax(380px, .9fr);        /* FINALIZADO (más ancho) */
+  --c-opt:   68px;                      /* Opciones compacto */
+  --row-h:  118px;                      /* filas más altas */
 }
 
-.input-container {
-  position: relative;
-  flex: 1;
-  min-width: 250px;
+/* Header y filas: su propio grid (7 columnas) */
+.bandeja--finalizados .tabla-head-sticky .ths{
+  display:grid;
+  grid-template-columns: var(--c-exp) var(--c-doc) var(--c-asu) var(--c-der) var(--c-rec) var(--c-fin) var(--c-opt);
+  align-items:center;
 }
-.input-container input,
-.input-container select {
-  width: 100%;
-  padding: 20px 12px 8px;
-  font-size: 15px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: #fff;
-  box-sizing: border-box;
-}
-.input-container label {
-  position: absolute;
-  top: 20px;
-  left: 12px;
-  font-size: 14px;
-  color: #666;
-  background: #fff;
-  padding: 0 4px;
-  pointer-events: none;
-  transition: 0.2s ease;
-}
-.input-container input:focus + label,
-.input-container input:not(:placeholder-shown) + label,
-.input-container select:focus + label,
-.input-container select:valid + label {
-  top: 0px;
-  font-size: 12px;
-  color: #333;
-}
-.titulo-principal {
-  color: var(--primary, #005a86);
-  font-size: 22px;
-  font-weight: bold;
-  margin-top: 0;      /* 🔧 quitar espacio innecesario arriba */
-  margin-bottom: 20px;
-}
-.button-row a.btn {
-    text-decoration: none;
-}
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.5);
-}
-.modal-content.small{
-    max-width: 450px;
+.bandeja--finalizados .grid-row{
+  grid-template-columns: var(--c-exp) var(--c-doc) var(--c-asu) var(--c-der) var(--c-rec) var(--c-fin) var(--c-opt);
+  align-items:start;
+  min-height: var(--row-h);
 }
 
-.modal-content {
-    background: white;
-    margin: 5% auto;
-    padding: 20px;
-    width: 90%;
-    max-width: 1000px;
-    border-radius: 8px;
-    position: relative;
+/* Forzar apilado (columna) en celdas 1, 4, 5 y 6 */
+.bandeja--finalizados .grid-row > *:nth-child(1),
+.bandeja--finalizados .grid-row > *:nth-child(4),
+.bandeja--finalizados .grid-row > *:nth-child(5),
+.bandeja--finalizados .grid-row > *:nth-child(6){
+  display:flex; flex-direction:column; justify-content:center; align-items:center;
+  gap:2px; text-align:center; white-space:normal;
 }
-.modal-close {
-    position: absolute;
-    top: 10px; right: 20px;
-    font-size: 24px;
-    cursor: pointer;
+
+/* Fechas compactas (Derivado/Recepción) */
+.bandeja--finalizados .grid-row > *:nth-child(4),
+.bandeja--finalizados .grid-row > *:nth-child(5){
+  font-size:12.5px; line-height:1.15; padding:8px 10px;
 }
-td.acciones .btn-link {
-    background: none;
-    border: none;
-    padding: 4px;
-    cursor: pointer;
-    color: #364897;
-    font-size: 18px;
-    vertical-align: middle;
+
+/* Finalizado: orden y jerarquía visual */
+.bandeja--finalizados .fin-obs{ font-size:13px; line-height:1.2; }
+.bandeja--finalizados .fin-who{ color:#005a86; font-weight:600; }
+.bandeja--finalizados .fin-dt { font-size:12.5px; color:#6b7280; }
+
+/* Opciones: realmente compactas y al extremo derecho (última columna) */
+.bandeja--finalizados .grid-row > *:nth-child(7){ padding:6px 2px; }
+.bandeja--finalizados .acciones{ display:flex; justify-content:center; align-items:center; gap:4px; flex-wrap:nowrap; }
+.bandeja--finalizados .btn.btn-link{ padding:2px; }
+.bandeja--finalizados .btn.btn-link .material-icons{ font-size:18px; }
+
+
+/* ====== FINALIZADOS: usar sticky en vez de fixed ====== */
+.bandeja--finalizados .contenedor-principal{
+  /* el panel sticky ya ocupa altura, no necesitamos empujón extra */
+  margin-top: 0;
 }
-td.acciones .btn-link:hover {
-    color: #1a237e;
+
+.bandeja--finalizados .panel-fijo{
+  position: sticky;            /* << antes era fixed */
+  top: var(--stick-top);
+  z-index: 950;
 }
- </style>
 
-<div class="container" style="margin: 120px auto; max-width: 1200px; background: white; border: 1px solid #ccc; border-radius: 10px; padding: 30px;">
-<div class="titulo-principal">BANDEJA DE DOCUMENTOS FINALIZADOS</div>
+/* Ya no necesitamos compensar panel-h + gap para el cuerpo */
+.bandeja--finalizados {
+  --panel-gap: 0;              /* ignora el gap global */
+  padding-top: 24px;   /* sube/baja este valor si quieres más/menos aire */
 
-<div class="card">
-    <div class="card-title">CRITERIOS DE BÚSQUEDA</div>
-    <form>
+}
+.bandeja--finalizados .lista-scroll{
+  margin-top: 0;               /* << quita el salto grande */
+}
+</style>
 
-        <!-- FILA 1 -->
-  <div class="row">
-    <!-- Grupo: Documentos -->
-    <div style="flex: 1; display: flex; align-items: center; gap: 10px;">
-      <label style="font-weight:bold;">Enviado</label>
-      <label><input type="checkbox" name="tipo_doc_externo"> SI</label>
-      <label><input type="checkbox" name="tipo_doc_interno"> NO</label>
-    </div>
 
-    <!-- Grupo: Desde - Hasta -->
-    <div style="flex: 2; display: flex; gap: 20px;">
-      <div class="input-container" style="flex: 1;">
-        <input type="date" name="desde" value="<?= $valorDesde ?>" placeholder=" ">
-        <label>Desde</label>
+<div class="bandeja bandeja--finalizados">
+<div class="contenedor-principal">
+  <div class="panel-fijo" id="panelFijo">
+    <div class="barra-titulo">BANDEJA DE FINALIZADOS</div>
+
+    <!-- Filtros (mismo layout visual de Enviados) -->
+    <form class="filtros-formulario" method="get" action="bandejaFinalizados.php">
+      <div class="columna-izquierda">
+        <div class="fila">
+          <div class="input-container">
+            <input type="date" name="desde" value="<?= $valDesde ?>" placeholder=" ">
+            <label>Desde</label>
+          </div>
+          <div class="input-container">
+            <input type="date" name="hasta" value="<?= $valHasta ?>" placeholder=" ">
+            <label>Hasta</label>
+          </div>
+        </div>
+        <div class="fila">
+          <div class="input-container">
+            <input type="text" name="codificacion" value="<?= $valCodificacion ?>" placeholder=" ">
+            <label>Codificación / Nro</label>
+          </div>
+        </div>
+        <div class="fila">
+          <div class="input-container">
+            <input type="text" name="asunto" value="<?= $valAsunto ?>" placeholder=" ">
+            <label>Asunto</label>
+          </div>
+        </div>
       </div>
-      <div class="input-container" style="flex: 1;">
-        <input type="date" name="hasta" value="<?= $valorHasta ?>" placeholder=" ">
-        <label>Hasta</label>
+
+      <div class="columna-derecha">
+        <div class="fila">
+          <div class="input-container">
+            <select name="tipoDocumento" id="tipoDocumento" <?= $tipoDocumentoSel==='' ? '' : 'value="'.htmlspecialchars($tipoDocumentoSel).'"' ?>>
+              <option value="" <?= ($tipoDocumentoSel===''?'selected':'') ?> disabled hidden></option>
+              <?php while ($td = sqlsrv_fetch_array($tipoDocResult, SQLSRV_FETCH_ASSOC)):
+                $val = (string)$td['cCodTipoDoc'];
+                $txt = $td['cDescTipoDoc'];
+                $selected = ($tipoDocumentoSel !== '' && (string)$tipoDocumentoSel === $val) ? 'selected' : '';
+              ?>
+                <option value="<?= htmlspecialchars($val) ?>" <?= $selected ?>><?= htmlspecialchars($txt) ?></option>
+              <?php endwhile; ?>
+            </select>
+            <label for="tipoDocumento">Tipo de Documento</label>
+          </div>
+
+          <div class="botones-filtro" style="margin-left:auto;">
+          <button type="submit" class="btn-filtro btn-primary">Buscar</button>
+            <button type="button" class="btn-filtro btn-secondary" onclick="window.location.href='bandejaFinalizados.php'">Reestablecer</button>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <!-- Barra de registros + paginación (idéntica visual) -->
+    <div class="barra-titulo">
+      <div class="bt-left">
+        REGISTROS
+        <span class="badge-registros"><?= number_format($totalRegistros) ?></span>
+        <small style="font-weight:normal; margin-left:10px;">Mostrando <?= $desdeN ?>–<?= $hastaN ?> de <?= number_format($totalRegistros) ?></small>
+      </div>
+      <div class="bt-right">
+        <div class="paginacion">
+          <?php
+            $win  = 2;
+            $from = max(1, $pagina - $win);
+            $to   = min($paginas, $pagina + $win);
+
+            if ($pagina > 1) echo '<a href="'.htmlspecialchars(linkPag($pagina-1)).'">&laquo;</a>';
+            else echo '<span class="disabled">&laquo;</span>';
+
+            if ($from > 1) {
+              echo '<a href="'.htmlspecialchars(linkPag(1)).'">1</a>';
+              if ($from > 2) echo '<span class="ellipsis">…</span>';
+            }
+
+            for ($p=$from; $p<=$to; $p++) {
+              if ($p == $pagina) echo '<span class="current">'.$p.'</span>';
+              else echo '<a href="'.htmlspecialchars(linkPag($p)).'">'.$p.'</a>';
+            }
+
+            if ($to < $paginas) {
+              if ($to < $paginas-1) echo '<span class="ellipsis">…</span>';
+              echo '<a href="'.htmlspecialchars(linkPag($paginas)).'">'.$paginas.'</a>';
+            }
+
+            if ($pagina < $paginas) echo '<a href="'.htmlspecialchars(linkPag($pagina+1)).'">&raquo;</a>';
+            else echo '<span class="disabled">&raquo;</span>';
+          ?>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- FILA 2 -->
-  <div class="row">
-    <div class="input-container" style="flex: 1;">
-      <input type="text" name="expediente" value="<?= $valorExpediente ?>" placeholder=" ">
-      <label>N° Expediente</label>
+    <!-- Cabecera tipo tabla (mismas 6 columnas/anchos) -->
+    <div class="tabla-head-sticky" id="tablaHeadSticky">
+      <div class="ths">
+        <div class="th">Expediente / Registro</div>
+        <div class="th">Documento</div>
+        <div class="th">Asunto</div>
+        <div class="th">Derivado</div>
+        <div class="th">Recepción</div>
+        <div class="th">Finalizado</div>
+        <div class="th">Opciones</div>
+      </div>
     </div>
-    <div class="input-container" style="flex: 2;">
-      <input type="text" name="asunto" value="<?= $valorAsunto ?>" placeholder=" ">
-      <label>Asunto</label>
-    </div>
-  </div>
+  </div><!-- /panel-fijo -->
 
-  <!-- FILA 3 -->
-  <div class="row">
-    <div class="input-container select-flotante" style="flex: 1;">
-      <select name="tipo_documento" required>
-        <option value="" disabled selected hidden> </option>
-        <?php while ($td = sqlsrv_fetch_array($tipoDocResult, SQLSRV_FETCH_ASSOC)): ?>
-          <option value="<?= $td['cDescTipoDoc'] ?>"><?= $td['cDescTipoDoc'] ?></option>
-        <?php endwhile; ?>
-      </select>
-      <label>Tipo de Documento</label>
-    </div>
-
-    <div class="input-container select-flotante" style="flex: 2;">
-      <select name="oficina_destino" required>
-        <option value="" disabled selected hidden> </option>
-        <?php while ($of = sqlsrv_fetch_array($oficinasResult, SQLSRV_FETCH_ASSOC)): ?>
-          <option value="<?= $of['cNomOficina'] ?>"><?= $of['cNomOficina'] ?></option>
-        <?php endwhile; ?>
-      </select>
-      <label>Oficina de Destino</label>
-    </div>
-  </div>
-
+  <!-- Cuerpo scrolleable -->
+  <div class="lista-scroll" id="listaScroll">
+    <div class="lista-grid">
  
+        <?php
+          // === BUCLE QUE PINTA REGISTROS ===
+      foreach ($itemsPagina as $it):
+        $flowId   = (int)$it['iCodTramite'];
+        $movId    = (int)$it['iCodMovimiento'];
+        $docInfo  = $docsByTramite[$flowId] ?? array();
+        $exped    = $docInfo['expediente'] ?? '';
 
-        <!-- FILA 5: Botones -->
-        <div class="row" style="justify-content: flex-end;">
-        <button type="submit" class="btn btn-primary">
-            <span class="material-icons">search</span> Buscar
-        </button>
-        <button type="button" class="btn btn-secondary" onclick="window.location.href='bandejaPendientes.php'">
-            <span class="material-icons">autorenew</span> Reestablecer
-        </button>
+        $docTipo  = $it['cDescTipoDoc'] ?: '-';
+        $codif    = $it['cCodificacion'] ?: '';
+        $asunto   = $it['cAsunto'] ?: '';
+
+        $fReg     = $it['fFecRegistro'] ?? null;
+        $fDer     = $it['fFecDerivar'] ?? null;
+        $fRec     = $it['fFecRecepcion'] ?? null;
+        $fFin     = $it['fFecFinalizar'] ?? null;
+
+        $obsFin   = $it['cObservacionesFinalizar'] ?: '';
+        $whoFin   = isset($finalizadorById[$it['iCodTrabajadorFinalizar']]) ? $finalizadorById[$it['iCodTrabajadorFinalizar']] : '—';
+      ?>
+
+<div class="grid-row" id="fila-<?= $flowId ?>">
+        <!-- 1) Expediente / Registro: fecha (abajo) + hora (más abajo) -->
+  <div class="cell">
+    <div><?= safe($exped) ?></div>
+    <div><?= dmy($fReg) ?></div>
+    <div><?= hi($fReg) ?></div>
+  </div>
+
+        <!-- 2) Documento -->
+        <div class="cell">
+          <div><?= safe($docTipo) ?> — <?= safe($codif) ?></div>
         </div>
 
-    </form>
-</div>
+        <!-- 3) Asunto -->
+        <div class="cell">
+          <div><?= safe($asunto) ?></div>
+        </div>
 
-<div style="text-align: center; font-weight: bold; color: var(--primary); font-size: 18px; margin: 30px 0 10px;">
-REGISTROS
-</div>
+        <!-- 4) Derivado -->
+        <div class="cell">
+          <div><?= dmy($fDer) ?></div>
+          <div><?= hi($fDer) ?></div>
+        </div>
 
-<table class="table table-bordered">
-    <thead class="table-secondary">
-        <tr>                 
-                <th>Expediente</th>
-                <th>Extensión</th>
-                <th>Documento</th>
-                <th>Asunto</th>
-                <th>Oficina de Origen</th>
-      <th>Opciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($tramites as $tramite): ?>
-                <tr>
-                <td><?= htmlspecialchars($tramite['expediente']) ?></td>   
-                    <td><?= htmlspecialchars($tramite['extension']) ?></td>   
-                    <td>
-                    <?php if (!empty($tramite['cDocumentoFinalizacion'])): ?>
-            <a href="./cAlmacenArchivos/<?= rawurlencode($tramite['cDocumentoFinalizacion']) ?>" target="_blank">
-              <span class="material-icons">insert_drive_file</span>
-            </a>
+        <!-- 5) Recepción -->
+        <div class="cell">
+          <?php if (empty($fRec)): ?>
+            <div>sin aceptar</div>
           <?php else: ?>
-            <span style="color: gray;">Sin documento</span>
+            <div><?= dmy($fRec) ?></div>
+            <div><?= hi($fRec) ?></div>
           <?php endif; ?>
-        </td>               
-        <td><?= htmlspecialchars($tramite['cAsunto']) ?></td>
-        <td><?= htmlspecialchars($tramite['OficinaOrigen']) ?></td>    
-                    <td class="acciones">
-                        <!-- Ver Flujo -->
-                        <button class="btn btn-link ver-flujo-btn" data-id="<?= $tramite['iCodTramite'] ?>" data-extension="<?= $tramite['extension'] ?? 1 ?>" title="Ver Flujo">
-                        <span class="material-icons">device_hub</span>
-          </button>
-          <!-- Revertir -->
-          <button class="btn btn-link" title="Revertir Finalización" onclick="revertirFinalizacion(<?= $tramite['iCodMovimiento'] ?>)">
-            <span class="material-icons">undo</span>
-          </button>
-          <!-- Editar -->
-          <button class="btn btn-link" title="Editar Finalización" onclick="abrirEditarFinalizacion(<?= $tramite['iCodMovimiento'] ?>, '<?= addslashes($tramite['expediente']) ?>')">
-            <span class="material-icons">edit</span>
-          </button>      
-</td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table> 
+        </div>
+
+        <!-- 6) Finalizado -->
+        <div class="cell">
+        <div class="fin-obs"><?= safe($obsFin) ?></div>
+    <div class="fin-who"><?= safe($whoFin) ?></div>
+    <div class="fin-dt"><?= dmy($fFin) ?> <?= hi($fFin) ?></div>
+        </div>
+
+       <!-- 7) Opciones -->
+              <?php
+                $ext = (int)($docInfo['extension'] ?? 1);
+                $expedView = htmlspecialchars($exped ?? '', ENT_QUOTES, 'UTF-8'); // para título del modal
+              ?>
+              <div class="cell center" style="gap:8px;">
+                <!-- Ver Flujo -->
+                <button class="btn btn-link ver-flujo-btn"
+                        data-id="<?= $flowId ?>"
+                        data-extension="<?= $ext ?>"
+                        title="Ver Flujo">
+                  <span class="material-icons">device_hub</span>
+                </button>
+
+                <!-- Revertir -->
+                <button class="btn btn-link"
+                        title="Revertir Finalización"
+                        onclick="revertirFinalizacion(<?= $movId  ?>)">
+                  <span class="material-icons">undo</span>
+                </button>
+
+                <!-- Editar -->
+                <button class="btn btn-link"
+                        title="Editar Finalización"
+                        onclick="abrirEditarFinalizacion(<?= $movId  ?>, '<?= $expedView ?>')">
+                  <span class="material-icons">edit</span>
+                </button>
+              </div>
 
 
-  <!-- INICIO modal editar finalizacion -->
-    <div id="modalEditarFinal" class="modal">
+
+
+
+      </div>
+
+      <?php endforeach; // === FIN BUCLE QUE PINTA REGISTROS === ?>
+<!-- Modal Editar Finalización -->
+<div id="modalEditarFinal" class="modal" style="display:none;">
   <form id="formEditarFinal" class="modal-content small" enctype="multipart/form-data">
     <input type="hidden" name="iCodMovimiento" id="editCodMovimiento">
     <span class="modal-close cerrarModal" onclick="cerrarModal('modalEditarFinal')">&times;</span>
-    <h2>Editar Finalización <span id="expedienteEditar"></span></h2>
+    <h2>Editar Finalización <span id="expedienteEditar" style="font-weight:600;"></span></h2>
 
-    <div style="margin-bottom: 1rem;">
+    <div style="margin-bottom:1rem;">
       <label>Observaciones</label>
-      <textarea name="observaciones" id="editObservaciones" rows="4" style="width: 100%;"></textarea>
+      <textarea name="observaciones" id="editObservaciones" rows="4" style="width:100%;"></textarea>
     </div>
-   <!-- 🔽 Aquí se insertará dinámicamente el documento actual -->
-   <div id="archivoFinalActual" style="margin-bottom: 1rem;"></div>
 
-    <div style="margin-bottom: 1rem;">
+    <!-- Documento actual (se llena dinámicamente) -->
+    <div id="archivoFinalActual" style="margin-bottom:1rem;"></div>
+
+    <div style="margin-bottom:1rem;">
       <label>Nuevo documento (opcional)</label>
       <input type="file" name="archivoFinal" accept="application/pdf">
     </div>
 
-    <div style="text-align: right;">
-      <button type="button" class="btn-secondary" onclick="cerrarModal('modalEditarFinal')">Cancelar</button>
-      <button type="submit" class="btn-primary">Guardar Cambios</button>
+    <div style="text-align:right; display:flex; gap:8px; justify-content:flex-end;">
+      <button type="button" class="btn-filtro btn-secondary" onclick="cerrarModal('modalEditarFinal')">Cancelar</button>
+      <button type="submit" class="btn-filtro btn-primary">Guardar Cambios</button>
     </div>
   </form>
 </div>
-  <!-- FIN modal editar finalizacion -->
+    </div>
+  </div>
+</div>
 
 <script>
-document.querySelectorAll('.ver-flujo-btn').forEach(btn => {
-    btn.addEventListener('click', function () {
-        const id = this.dataset.id;
-        const extension = this.dataset.extension ?? 1;
-        window.open('bandejaFlujo.php?iCodTramite=' + id + '&extension=' + extension, '_blank');
-    });
-});
- 
-function revertirFinalizacion(iCodMovimiento) {
-  if (!confirm("¿Deseas revertir esta finalización?")) return;
+function calcPanelH(){
+  const root  = document.documentElement;
+  const panel = document.getElementById('panelFijo');
+  if(!panel) return;
+  // Medimos todo el bloque fijo (incluye filtros, REGISTROS y cabecera)
+  const h = Math.ceil(panel.getBoundingClientRect().height);
+  root.style.setProperty('--panel-h', h + 'px');
+}
 
-  fetch("revertirFinalizacion.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: `iCodMovimiento=${iCodMovimiento}`
-  })
-  .then(res => res.json())
-  .then(json => {
-    if (json.status === "ok") {
-      alert("Finalización revertida.");
+function fixPanelOffset(){
+  // 1) inmediato
+  calcPanelH();
+  // 2) tras el siguiente frame (por si faltó layout)
+  requestAnimationFrame(calcPanelH);
+  // 3) tras pequeña espera (por fuentes o contenidos diferidos)
+  setTimeout(calcPanelH, 200);
+  setTimeout(calcPanelH, 600);
+}
+
+window.addEventListener('load', fixPanelOffset);
+window.addEventListener('resize', fixPanelOffset);
+
+if ('ResizeObserver' in window) {
+  const panel = document.getElementById('panelFijo');
+  if (panel) new ResizeObserver(fixPanelOffset).observe(panel);
+}
+
+// Ver flujo (abre en nueva pestaña)
+document.querySelectorAll('.ver-flujo-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    const id = this.dataset.id;
+    const extension = this.dataset.extension || 1;
+    // Usa la vista que prefieras (Raíz o estándar). Mantengo tu preferencia a bandejaFlujo.php.
+    window.open('bandejaFlujo.php?iCodTramite=' + encodeURIComponent(id) + '&extension=' + encodeURIComponent(extension), '_blank');
+  });
+});
+
+// Revertir finalización
+async function revertirFinalizacion(iCodMovimiento) {
+  if (!confirm('¿Deseas revertir esta finalización?')) return;
+  try {
+    const res = await fetch('revertirFinalizacion.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'iCodMovimiento=' + encodeURIComponent(iCodMovimiento)
+    });
+    const json = await res.json();
+    if (json.status === 'ok') {
+      alert('Finalización revertida.');
       location.reload();
     } else {
-      alert("Error: " + json.message);
+      alert('Error: ' + (json.message || 'No se pudo completar la operación.'));
     }
-  });
+  } catch (e) {
+    alert('Error de conexión.');
+  }
 }
 
-function abrirEditarFinalizacion(iCodMovimiento, expediente) {
-  fetch(`getDocumentoFinal.php?iCodMovimiento=${iCodMovimiento}`)
-    .then(res => res.json())
-    .then(json => {
-      if (json.status === 'ok') {
-        document.getElementById("editCodMovimiento").value = iCodMovimiento;
-        document.getElementById("editObservaciones").value = json.observaciones ?? '';
-        document.getElementById("expedienteEditar").innerText = expediente;
+// Abrir modal de edición
+async function abrirEditarFinalizacion(iCodMovimiento, expediente) {
+  try {
+    const res = await fetch('getDocumentoFinal.php?iCodMovimiento=' + encodeURIComponent(iCodMovimiento));
+    const json = await res.json();
 
-        const contenedor = document.getElementById("archivoFinalActual");
-        if (json.nombre) {
-          contenedor.innerHTML = `
-            <div style="margin-bottom: 1rem;">
-              <strong>Documento Actual:</strong><br>
-              <a href="cAlmacenArchivos/${encodeURIComponent(json.nombre)}" target="_blank" style="color: #0066cc;">
-                <span class="material-icons">insert_drive_file</span> ${json.nombre}
-              </a>
-            </div>`;
-        } else {
-          contenedor.innerHTML = '';
-        }
+    if (json.status === 'ok') {
+      document.getElementById('editCodMovimiento').value = iCodMovimiento;
+      document.getElementById('editObservaciones').value = json.observaciones || '';
+      document.getElementById('expedienteEditar').innerText = expediente || '';
 
-        document.getElementById("modalEditarFinal").style.display = "block";
+      const cont = document.getElementById('archivoFinalActual');
+      if (json.nombre) {
+        // Si tu carpeta difiere, ajústala aquí:
+        const href = 'cAlmacenArchivos/' + encodeURIComponent(json.nombre);
+        cont.innerHTML = `
+          <div>
+            <strong>Documento actual:</strong><br>
+            <a href="${href}" target="_blank" style="color:#0066cc; text-decoration:none;">
+              <span class="material-icons" style="vertical-align:middle;">insert_drive_file</span>
+              <span style="vertical-align:middle;"> ${json.nombre}</span>
+            </a>
+          </div>`;
       } else {
-        alert("No se pudo cargar los datos.");
+        cont.innerHTML = '';
       }
-    });
+
+      document.getElementById('modalEditarFinal').style.display = 'block';
+    } else {
+      alert('No se pudo cargar los datos.');
+    }
+  } catch (e) {
+    alert('Error de conexión.');
+  }
 }
 
-
-
+// Cerrar modal
 function cerrarModal(id) {
-  document.getElementById(id).style.display = 'none';
+  const el = document.getElementById(id);
+  if (el) el.style.display = 'none';
 }
 
 // Guardar edición
-document.getElementById("formEditarFinal")?.addEventListener("submit", async function(e) {
+document.getElementById('formEditarFinal')?.addEventListener('submit', async function(e) {
   e.preventDefault();
-  const form = e.target;
-  const body = new FormData(form);
-
-  const res = await fetch("editarFinalizacion.php", { method: "POST", body });
-  const json = await res.json();
-
-  if (json.status === "ok") {
-    alert("Finalización actualizada.");
-    location.reload();
-  } else {
-    alert("Error: " + json.message);
+  const body = new FormData(this);
+  try {
+    const res = await fetch('editarFinalizacion.php', { method: 'POST', body });
+    const json = await res.json();
+    if (json.status === 'ok') {
+      alert('Finalización actualizada.');
+      location.reload();
+    } else {
+      alert('Error: ' + (json.message || 'No se pudo actualizar.'));
+    }
+  } catch (err) {
+    alert('Error de conexión.');
   }
 });
 </script>
-
