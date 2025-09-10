@@ -14,6 +14,7 @@ $iCodTramite = $_GET['iCodTramite'] ?? null;
 if (!$iCodTramite) {
     die("Error: Código de trámite no proporcionado.");
 }
+
 //----** Restricciones por tipo de documento : INICIO
 // Solo 68 puede 110; solo 46 puede 111
 $iCodOficina = (int)($_SESSION['iCodOficinaLogin'] ?? 0);
@@ -42,6 +43,14 @@ while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
   $tiposDoc[] = $row;
 }
 
+// // Tipos de documentos
+//         $sqlTiposDoc = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgInterno = 1 ORDER BY cDescTipoDoc ASC";
+//         $resultTiposDoc = sqlsrv_query($cnx, $sqlTiposDoc);
+//         $tiposDoc = [];
+//         while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
+//             $tiposDoc[] = $row;
+//         }
+//----** Restricciones por tipo de documento : FIN
 
 // Oficinas
 $sqlOficinas = "SELECT iCodOficina, cNomOficina, cSiglaOficina  FROM Tra_M_Oficinas";
@@ -193,7 +202,7 @@ if ($resComps) {
     }
 }
 
-// Obtener complementarios por pedido_siga
+ // Obtener complementarios por pedido_siga
 $complementariosPorPedido = [];
 $sqlPorPedido = "SELECT pedido_siga, cDescripcion, cTipoComplementario  FROM Tra_M_Tramite_Digitales WHERE iCodTramite = ? AND pedido_siga IS NOT NULL";
 $resPedido = sqlsrv_query($cnx, $sqlPorPedido, [$iCodTramite]);
@@ -246,7 +255,7 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
                 text-decoration: none;
                 font-weight: normal;
             }
-            /* para quitar spinners */
+/* para quitar spinners */
             input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -257,15 +266,43 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 /* FIN para quitar spinners */
+/* INICIO codigo para tostada */
+#alert-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* centrado perfecto */
+  background-color: #28a745;
+  color: white;
+  padding: 16px 24px;
+  border-radius: 10px;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 15px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  animation: fadeInOut 3s forwards;
+  display: none;
+}
+@keyframes fadeInOut {
+  0%   {opacity: 0; transform: translate(-50%, -40%);}
+  10%  {opacity: 1; transform: translate(-50%, -50%);}
+  90%  {opacity: 1;}
+  100% {opacity: 0; transform: translate(-50%, -60%);}
+}
+#alert-toast.success  { background-color: #28a745; } /* verde */
+#alert-toast.error    { background-color: #dc3545; } /* rojo */
+#alert-toast.warning  { background-color: #ffc107; color: #212529; } /* amarillo */
+#alert-toast.info     { background-color: #17a2b8; } /* celeste */
+/* FIN codigo para tostada */
     </style>
 </head>
 <body>
 <div class="container" style="margin-top: 125px;">
     <form id="formularioEditorCabecera" method="POST">
     <input type="hidden" name="iCodTramite" value="<?= $iCodTramite ?>">
-
+ 
         <div class="form-card">
-            <h2>Redacción del Encabezado</h2>
+            <h2>Redacción del Documento</h2>
             <div class="form-row">
                  <div class="input-container select-flotante">
                     <select id="tipoDocumento" name="tipoDocumento" required>
@@ -281,11 +318,11 @@ input[type=number] {
 
                 <div class="input-container">
                     <input type="text" id="correlativo" name="correlativo" class="form-control" value="<?= $tramite['cCodificacion'] ?>" readonly>
-                    <label for="correlativo">Correlativo:</label>
+                    <label for="correlativo">Correlativo</label>
                 </div>
                 </div>
 
-                       <!-- ==== -->
+  <!-- ==== -->
   <!-- INICIO: GRUPO REQUERIMIENTO -->
   <!-- ==== -->
 
@@ -294,11 +331,11 @@ input[type=number] {
   <!-- Fila de selección tipo de bien y ¿tiene pedido SIGA? -->
   <div class="form-row">
     <div class="input-container select-flotante">
-        <select id="tipoBien" name="tipoBien" required>
-            <option value="" disabled <?= $tipoBienBD === '' ? 'selected' : '' ?> hidden></option>
-            <option value="B" <?= $tipoBienBD === 'B' ? 'selected' : '' ?>>Bien</option>
-            <option value="S" <?= $tipoBienBD === 'S' ? 'selected' : '' ?>>Servicio</option>
-        </select>
+      <select id="tipoBien" name="tipoBien" required>
+        <option value="" disabled <?= $tipoBienBD === '' ? 'selected' : '' ?> hidden></option>
+        <option value="B" <?= $tipoBienBD === 'B' ? 'selected' : '' ?>>Bien</option>
+        <option value="S" <?= $tipoBienBD === 'S' ? 'selected' : '' ?>>Servicio</option>
+      </select>
       <label for="tipoBien">Tipo de Requerimiento</label>
     </div>
 
@@ -312,12 +349,12 @@ input[type=number] {
     </div>
   </div>
 
-   <!-- === BLOQUE: CON PEDIDO SIGA === -->
-   <?php if ((int)$tramite['nTienePedidoSiga'] == 1): ?>
-  <div id="seccionPedidoSiga" style="display:none; margin-top: 10px;">
+  <!-- === BLOQUE: CON PEDIDO SIGA === -->
+  <?php if ((int)$tramite['nTienePedidoSiga'] == 1): ?>
+  <div id="seccionPedidoSiga" style="margin-top: 15px;">
     <div class="form-row">
       <div class="input-container">
-      <input type="text" id="nroPedidoSIGA" placeholder=" " autocomplete="off">
+        <input type="text" id="nroPedidoSIGA" placeholder=" " autocomplete="off">
         <label for="nroPedidoSIGA">N° Pedido SIGA</label>
       </div>
       <div class="input-container">
@@ -328,40 +365,40 @@ input[type=number] {
       </div>
     </div>
 
-      <!-- Resultados búsqueda SIGA -->
+    <!-- Resultados búsqueda -->
     <div class="form-row" id="resultadoBusqueda" style="display: none; margin-top: 10px;">
       <div class="input-container" style="width: 100%; overflow-x: auto;">
         <h3>Ítems SIGA Búsqueda</h3>
-        <table id="tablaSiga" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <table id="tablaSiga" style="width: 100%; font-size: 14px;">
           <thead style="background: #f5f5f5;">
             <tr>
               <th>PEDIDO SIGA</th>
               <th>CÓDIGO ITEM</th>
               <th>NOMBRE ITEM</th>
               <th>CANTIDAD SOLICITADA</th>
+               
             </tr>
           </thead>
           <tbody></tbody>
         </table>
       </div>
     </div>
-     <!-- FIN Resultados búsqueda SIGA -->
 
-<!-- Ítems agregados -->
-  <div class="form-row" id="resultadoAgregado" style="margin-top: 10px;">
-    <div class="input-container" style="width: 100%; overflow-x: auto;">
-      <h3>Ítems SIGA Agregados</h3>
-      <table id="tablaSigaAgregados" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+    <!-- Ítems SIGA Agregados -->
+<div class="form-row" id="resultadoAgregado" style="margin-top: 10px;">
+  <div class="input-container" style="width: 100%; overflow-x: auto;">
+    <h3>Ítems SIGA Agregados</h3>
+    <table id="tablaSigaAgregados" style="width: 100%; font-size: 14px;">
       <thead style="background: #f5f5f5;">
         <tr>
           <th>PEDIDO SIGA</th>
           <th>CÓDIGO ITEM</th>
           <th>NOMBRE ITEM</th>
-          <th>CANTIDAD SOLICITADA</th>
+          <th>CANTIDAD</th>
           <th>ACCIONES</th>
-          </tr>
-        </thead>
-        <tbody>
+        </tr>
+      </thead>
+      <tbody>
         <?php
         $agrupados = [];
         foreach ($sigaItems as $item) {
@@ -411,42 +448,42 @@ input[type=number] {
 <div id="busquedaItemSinPedido" style="margin-top: 20px;">
  
   <!-- Buscadores -->
-    <div class="form-row" style="display: flex; gap: 12px;">
-      <div style="display: flex; flex: 1.9; gap: 8px;">
-        <div class="input-container select-flotante" style="flex: 1.5;">
-          <input type="text" id="buscarItemCodigo" name="buscarItemCodigo" placeholder=" ">
-          <label for="buscarItemCodigo">Código de Ítem</label>
-        </div>
-        <div class="input-container" style="flex: 0.4;">
-          <button type="button" id="buscarItemBtn" class="btn-primary" style="width: 75%;">Buscar Catálogo</button>
-        </div>
+  <div class="form-row" style="display: flex; gap: 12px;">
+    <div style="display: flex; flex: 1.9; gap: 8px;">
+      <div class="input-container select-flotante" style="flex: 1.5;">
+        <input type="text" id="buscarItemCodigo" name="buscarItemCodigo" placeholder=" ">
+        <label for="buscarItemCodigo">Código de Ítem</label>
       </div>
-
-      <div class="input-container select-flotante" style="flex: 1.85; position: relative;">
-        <input type="text" id="buscarItemTextoNombre" name="buscarItemTextoNombre" placeholder=" " autocomplete="off">
-        <label for="buscarItemTextoNombre">Nombre de Ítem</label>
-        <div id="sugerenciasItemsNombre" class="sugerencias-dropdown"></div>
+      <div class="input-container" style="flex: 0.4;">
+        <button type="button" id="buscarItemBtn" class="btn-primary" style="width: 75%;">Buscar Catálogo</button>
       </div>
     </div>
 
-     <!-- Resultados de búsqueda -->
-    <div class="form-row">
-      <h4>Ítems Catálogo Búsqueda</h4>
-      <table id="tablaItemsEncontrados" style="width: 100%; font-size: 14px; margin-top: 10px;">
-        <thead style="background: #f5f5f5;">
-        <tr>
+    <div class="input-container select-flotante" style="flex: 1.85; position: relative;">
+      <input type="text" id="buscarItemTextoNombre" name="buscarItemTextoNombre" placeholder=" " autocomplete="off">
+      <label for="buscarItemTextoNombre">Nombre de Ítem</label>
+      <div id="sugerenciasItemsNombre" class="sugerencias-dropdown"></div>
+    </div>
+  </div>
+
+  <!-- Resultados de búsqueda -->
+  <div class="form-row">
+              <h4>Ítems Catálogo Búsqueda</h4>
+              <table id="tablaItemsEncontrados" style="width: 100%; font-size: 14px; margin-top: 10px;">
+                <thead style="background: #f5f5f5;">
+                  <tr>
                     <th>Código</th><th>Nombre</th> <th>Cantidad</th><th>Acción</th>
                   </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
 
-      <!-- Ítems agregados -->
-  <div class="form-row">
-    <h4>Ítems Catálogo Agregados</h4>
-      <table id="tablaItemsSinPedido" style="width: 100%; font-size: 14px;">
-        <thead style="background: #f5f5f5;">
+  <!-- Ítems agregados manualmente desde BD -->
+  <div class="form-row" style="margin-top: 35px;">
+    <h4 style="margin-bottom: 10px;">Ítems Catálogo Agregados</h4>
+    <table id="tablaItemsSinPedido" style="width: 100%; font-size: 14px;">
+      <thead style="background: #f5f5f5;">
         <tr>
           <th>Código</th>
           <th>Nombre</th>
@@ -498,9 +535,9 @@ input[type=number] {
 </div>
 <?php endif; ?>
 </div>
+  <!-- ==== -->
 <!-- FIN: GRUPO REQUERIMIENTO -->
- 
-         <!-- Asunto y Observaciones, Selección de destinos, etc. continúan aquí... -->
+  <!-- ==== -->
                 <div class="form-row">
                 <div class="input-container" style="flex: 1; position: relative;">
                     <textarea name="asunto" id="asunto" class="form-textarea relleno" required><?= htmlspecialchars($tramite['cAsunto']) ?></textarea>
@@ -655,22 +692,22 @@ input[type=number] {
         <i class="material-icons">download</i> Descargar
         </a>
         <button type="button" onclick="abrirPopupFirmantesPrincipal(<?= $iCodTramite ?>)" class="btn-primary">
-        <i class="material-icons">group_add</i> Solicitar Vistos Buenos
-              </button>
+            <i class="material-icons">group_add</i> Solicitar Vistos Buenos
+        </button>
         <?php if ($iCodPerfilLogin == 3): ?>
-    <?php if ($hayFirmantesPrincipal): ?>
-        <button type="button" class="btn-primary" disabled title="No disponible: documento con firmantes asignados">
-            <i class="material-icons">edit_document</i> Firmar
-        </button>
-    <?php else: ?>
-        <button type="button" id="btnFirmarPrincipal" class="btn-primary" 
-                <?= $documentoElectronico ? '' : 'disabled' ?>>
-            <i class="material-icons">edit_document</i> Firmar
-        </button>
-    <?php endif; ?>
-<?php endif; ?>
+          <?php if ($hayFirmantesPrincipal): ?>
+              <button type="button" class="btn-primary" disabled title="No disponible: documento con firmantes asignados">
+                  <i class="material-icons">edit_document</i> Firmar
+              </button>
+            <?php else: ?>
+              <button type="button" id="btnFirmarPrincipal" class="btn-primary" 
+                      <?= $documentoElectronico ? '' : 'disabled' ?>>
+                  <i class="material-icons">edit_document</i> Firmar
+              </button>
+          <?php endif; ?>
+        <?php endif; ?>
 
-<?php if ((string)$tramite['cCodTipoDoc'] === '108' || (string)$tramite['cCodTipoDoc'] === '109'): ?>
+        <?php if ((string)$tramite['cCodTipoDoc'] === '108' || (string)$tramite['cCodTipoDoc'] === '109'): ?>
             <button type="button" id="btnInsertarSiga" class="btn btn-secondary" style="margin-left: 10px;">
                 <i class="material-icons">addchart</i> Insertar data SIGA
             </button>
@@ -773,7 +810,7 @@ input[type=number] {
                     <a href="#" onclick="abrirPopupFirmantes(<?= $iCodTramite ?>, <?= $iCodDigital ?>, '<?= htmlspecialchars($doc['archivo']) ?>')" style="color: var(--primary);">
                         <i class="material-icons" title="Solicitar Firmas">person_add</i>
                     </a>
-
+                     
                 <?php endif; ?>
             </td>
             <!-- <td>
@@ -797,7 +834,7 @@ input[type=number] {
                 <i class="material-icons">upload</i> Subir Complementarios
             </button>
             <button type="button" id="btnEnviar" class="btn-primary" style="margin-top: 10px;">
-                <i class="material-icons">send</i> Guardar Cambios
+                <i class="material-icons">send</i> Generar Trámite
             </button>
         </form>
     </div>
@@ -820,8 +857,8 @@ input[type=number] {
         
         console.log("iCodTramite:", <?= json_encode($iCodTramite) ?>);
         console.log("Destinos:", <?= json_encode($destinos) ?>);
-
-        tinymce.init({
+        
+          tinymce.init({
                 selector: '#descripcion',
                 height: 500,
                 language: 'es',
@@ -850,8 +887,8 @@ input[type=number] {
                     input.click();
                   }
                 }
-        });
-
+              });
+       
 
         // Alternar entre editor y adjunto
         function cambiarModoDocumento() {
@@ -904,7 +941,7 @@ document.getElementById('formularioEditor').addEventListener('submit', function(
                         if (btnFirmar && btnFirmar.disabled) {
                             btnFirmar.disabled = false;
                         }
-                    alert('Guardado correctamente. PDF actualizado.');
+                        showToast('success','Guardado correctamente. PDF actualizado.');
                 } else {
                     throw new Error(res.message || 'No se pudo generar el PDF');
                 }
@@ -917,44 +954,29 @@ document.getElementById('formularioEditor').addEventListener('submit', function(
                 guardarBtn.innerHTML = '<i class="material-icons">save</i> Guardar';
             });
         });
-        //// FIN DE  Guardar y generar PDF
+//// FIN DE  Guardar y generar PDF
 // boton enviar
-document.getElementById('btnEnviar').addEventListener('click', async function () {
-  const iCodTramite = <?= json_encode($iCodTramite) ?>;
+        document.getElementById('btnEnviar').addEventListener('click', async function() {
+    const iCodTramite = <?= json_encode($iCodTramite) ?>;
+    if (!confirm("¿Está seguro que desea enviar el documento? ")) return;
 
-  try {
-    // 1) (opcional) si quieres guardar cabecera/destinos antes:
-    // const fd = new FormData(document.getElementById('formularioEditorCabecera'));
-    // await fetch('actualizarCabeceraGenerar.php', { method:'POST', body: fd });
-
-    // 2) (opcional) si quieres guardar cuerpo antes:
-    // if (typeof tinymce !== 'undefined') tinymce.triggerSave();
-    // const fd2 = new FormData(document.getElementById('formularioEditor'));
-    // await fetch('actualizarDescripcion.php', { method:'POST', body: fd2 });
-
-    // 3) Aplicar reglas SOLO para nFlgEnvio
-    const res  = await fetch('aplicarReglasNflgEnvio.php', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ iCodTramite })
-    });
-    const data = await res.json();
-
-    if (data.status === 'success') {
-      if (data.nFlgEnvio === 1) {
-        // alert('Marcado como ENVIADO directo (Proveído sin V°B°).');
-        window.location.href = 'bandejaEnviados.php';
-      } else {
-        // alert('Marcado como POR APROBAR (no es Proveído o tiene V°B°).');
-        window.location.href = 'bandejaEnviados.php';
-      }
-    } else {
-      alert('Error: ' + (data.message || 'No se pudo aplicar la regla.'));
+    try {
+        const res = await fetch('enviar_Tramite.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ iCodTramite })
+        });
+        const data = await res.json();
+        if (data.status === 'success') {
+            alert("Documento enviado correctamente.");
+            window.location.href = 'bandejaEnviados.php';
+        } else {
+            alert("Error: " + data.message);
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Ocurrió un error al enviar el documento.");
     }
-  } catch (e) {
-    console.error(e);
-    alert('Error de red al aplicar la regla.');
-  }
 });
 
 document.getElementById('formSubirComplementarios').addEventListener('submit', function(e) {
@@ -1028,12 +1050,12 @@ function signatureInit() {
 }
 
 function signatureOk() {
-    alert("✅ Documento firmado correctamente");
+    alert(" Documento firmado correctamente");
     location.reload();
 }
 
 function signatureCancel() {
-    alert("❌ Firma cancelada.");
+    alert("Firma cancelada.");
 }
 
 const btnFirmar = document.getElementById("btnFirmarPrincipal");
@@ -1118,12 +1140,12 @@ document.getElementById('formAdjuntoPrincipal').addEventListener('submit', async
         }
 
 
-            alert("✅ Documento subido correctamente.");
+            alert(" Documento subido correctamente.");
         } else {
-            alert("❌ Error al subir documento: " + result.message);
+            alert(" Error al subir documento: " + result.message);
         }
     } catch (err) {
-        alert("❌ Error en la conexión: " + err.message);
+        alert(" Error en la conexión: " + err.message);
     }
 });
 
@@ -1244,7 +1266,7 @@ function agregarDestino() {
                 }
             } catch (err) {
                 alert("Error en la solicitud");
-                console.error("❌ Error en guardarCabeceraGenerar:", err);
+                console.error(" Error en guardarCabeceraGenerar:", err);
 
             }
         }
@@ -1471,7 +1493,7 @@ function renderizarItemsCatalogo(items) {
 // ➕ 4. Agregar ítem manual a tabla y guardar en BD
 function agregarItemManual(codigo, nombre) {
   const cantidad = parseInt($(`input[name="cantidad_${codigo}"]`).val()) || 0;
-  if (cantidad <= 0) return alert("⚠️ Cantidad inválida");
+  if (cantidad <= 0) return alert(" Cantidad inválida");
 
   const stock = parseFloat($(`input[name="stock_${codigo}"]`).val()) || 0;
   const consumo = parseFloat($(`input[name="consumo_${codigo}"]`).val()) || 0;
@@ -1480,7 +1502,7 @@ function agregarItemManual(codigo, nombre) {
 
   // Verifica duplicado
   if ($(`#tablaItemsSinPedido tbody tr[data-cod="${codigo}"]`).length > 0) {
-    return alert("⚠️ Ya fue agregado.");
+    return alert("Item Ya fue agregado.");
   }
 
   const bodyData = `iCodTramite=${iCodTramite}&codigoItem=${encodeURIComponent(codigo)}&nuevaCantidad=${cantidad}` +
@@ -1520,12 +1542,12 @@ function agregarItemManual(codigo, nombre) {
           </td>
         </tr>
       `);
-      alert("✅ Ítem agregado correctamente.");
+      alert(" Ítem agregado correctamente.");
     } else {
       alert("Meses de consumo calculado: " + data.message);
     }
   })
-  .catch(err => alert("❌ Error de red: " + err));
+  .catch(err => alert(" Error de red: " + err));
 }
 
 // ACTUALIZAR LOS NUEVOS CAMPOS
@@ -1592,14 +1614,14 @@ $(document).on('change', '.cantidad-input', function () {
   .then(res => res.json())
   .then(data => {
     if (data.status === 'inserted') {
-      alert('✅ Ítem agregado correctamente');
+      alert(' Ítem agregado correctamente');
     } else if (data.status === 'updated') {
       console.log('Cantidad actualizada');
     } else {
-      alert('❌ Error: ' + data.message);
+      alert(' Error: ' + data.message);
     }
   })
-  .catch(err => alert('❌ Error de red: ' + err));
+  .catch(err => alert('Error de red: ' + err));
 });
 // 🔄 6A. Al cambiar tipo de requerimiento (Bien o Servicio)
 $('#tipoBien').on('change', function () {
@@ -1710,10 +1732,9 @@ $(document).on('click', '.eliminar-item', function () {
   .then(data => {
     if (data.status === 'deleted') {
       $(`tr[data-clave$="${cod}"]`).remove();
-      alert("Ítem eliminado correctamente.");
-      location.reload();
+      alert(" Ítem eliminado correctamente.");
     } else {
-      alert("⚠️ No se pudo eliminar: " + data.message);
+      alert("No se pudo eliminar: " + data.message);
     }
   })
   .catch(err => alert("❌ Error al eliminar: " + err));
@@ -1849,7 +1870,27 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 ////FIN JS PARA AGREGAR ITEMS SIGA AL PDF 
 
-</script>
+// INICIO JS PARA TOSTADAS
+
+function showToast(type, msg) {
+  const toast = document.getElementById('alert-toast');
+  toast.className = ''; // limpia clases previas
+  toast.classList.add(type); // aplica clase tipo
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  toast.style.animation = 'none';
+  void toast.offsetWidth; // reinicia animación
+  toast.style.animation = 'fadeInOut 2s forwards';
+  setTimeout(() => {
+    toast.style.display = 'none';
+  }, 2000);
+}
+
+
+
+// FIN JS PARA TOSTADAS
+    </script>
     <script src="https://apps.firmaperu.gob.pe/web/clienteweb/firmaperu.min.js"></script>
+    <div id="alert-toast" style="display: none;"></div>
 </body>
 </html>

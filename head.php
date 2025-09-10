@@ -851,24 +851,32 @@ if ($resultOficinas && $rowOficina = sqlsrv_fetch_array($resultOficinas, SQLSRV_
                     <a href="BandejaPendientes.php" class="submenu-item">Pendientes</a>
                     <?php endif; ?>
                     <?php if ($_SESSION['iCodPerfilLogin'] == 4): ?>
-                    <a href="bandejaProfesional.php" class="submenu-item">Bandeja Profesional</a>
+                    <a href="bandejaProfesional.php" class="submenu-item">Pendientes del Profesional</a>
                     <?php endif; ?>
 
-                    <?php if ($_SESSION['iCodPerfilLogin'] == 3):  ?>
-                    <a href="bandejaPorAprobar.php" class="submenu-item">Documentos por Aprobar</a>
+                    
+                    <a href="BandejaFinalizados.php" class="submenu-item">Finalizados</a>
+                    <!-- <a href="BandejaEspecial.php" class="submenu-item">Bandeja Especial</a> -->
+                </div>
+            </div>
+
+            <div class="nav-item">FIRMA
+            <div class="submenu">
+            <?php if ($_SESSION['iCodPerfilLogin'] == 3):  ?>
+                    <a href="bandejaPorAprobar.php" class="submenu-item">Docs. por Aprobar</a>
                     
                     <?php endif; ?>
                     
                     <a href="BandejaFirma.php" class="submenu-item">Docs. para Visto Bueno y Firma</a>
                     <!-- <a href="BandejaObservados.php" class="submenu-item">Documentos Observados</a> -->
-                    <a href="BandejaFinalizados.php" class="submenu-item">Documentos Finalizados</a>
-                    <!-- <a href="BandejaEspecial.php" class="submenu-item">Bandeja Especial</a> -->
+                
+                <a href="https://apps.firmaperu.gob.pe/web/validador.xhtml" class="submenu-item" target="_blank">Validar Firmas</a>
                 </div>
-            </div>
+            </div>           
 
-            <div class="nav-item">ENVIADOS
+            <div class="nav-item">ENVÍO
                 <div class="submenu">
-                <a href="BandejaEnviados.php" class="submenu-item">Doc. Internos Enviados </a>
+                <a href="BandejaEnviados.php" class="submenu-item">Enviados </a>
                 </div>
             </div>
 
@@ -881,11 +889,7 @@ if ($resultOficinas && $rowOficina = sqlsrv_fetch_array($resultOficinas, SQLSRV_
             </div>
             <?php endif; ?>
             
-            <div class="nav-item">VALIDACIÓN
-                <div class="submenu">
-                <a href="https://apps.firmaperu.gob.pe/web/validador.xhtml" class="submenu-item" target="_blank">Validar Firmas</a>
-                </div>
-            </div>
+            
         <?php endif; ?>
      </div>
    </nav>

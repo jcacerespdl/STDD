@@ -48,7 +48,7 @@ $params = new stdClass();
 $params->signatureFormat = "PAdES";
 $params->signatureLevel = "B";
 $params->signaturePackaging = "enveloped";
-$params->documentToSign = "https://tramite.heves.gob.pe/STDD_uat/$nombreZIP.7z";
+$params->documentToSign = "https://tramite.heves.gob.pe/STDD_marchablanca/$nombreZIP.7z";
 $params->certificateFilter = ".*FIR.*.*";
 $params->theme = "claro";
 $params->visiblePosition = false;
@@ -56,13 +56,13 @@ $params->signatureReason = "Soy Autor del documento ";
 $params->bachtOperation = true;
 $params->oneByOne = false;
 $params->signatureStyle = 1;
-$params->imageToStamp = "https://tramite.heves.gob.pe/STDD_uat/img/isotipo.png";
+$params->imageToStamp = "https://tramite.heves.gob.pe/STDD_marchablanca/img/isotipo.png";
 $params->stampTextSize = 15;
 $params->stampWordWrap = 37;
 $params->stampPage = 1;
 $params->positionx = 465;
 $params->positiony = 10;
-$params->uploadDocumentSigned = "https://tramite.heves.gob.pe/STDD_uat/uploadFileMasivoPorAprobar.php?nombreZip=$nombreZIP";
+$params->uploadDocumentSigned = "https://tramite.heves.gob.pe/STDD_marchablanca/uploadFileMasivoPorAprobar.php?nombreZip=$nombreZIP";
 $params->token = $token;
 
 // Respuesta codificada

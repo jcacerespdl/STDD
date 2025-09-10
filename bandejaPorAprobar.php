@@ -12,12 +12,29 @@ $iCodTrabajador = $_SESSION['CODIGO_TRABAJADOR'];
 $iCodOficina    = $_SESSION['iCodOficinaLogin'];
 
 $filtroFirma = $_GET['estado'] ?? '0'; // Por defecto: No firmados
-$isFirmado = ($filtroFirma === '1');
+$isFirmado  = ($filtroFirma === '1');
 $titulo = $filtroFirma === '1' ? "DOCUMENTOS PRINCIPALES FIRMADOS" : "DOCUMENTOS PRINCIPALES POR APROBAR";
 
 // Armar consulta según filtro
-$sql = "SELECT t.iCodTramite, t.cCodificacion, t.cAsunto, t.fFecDocumento, t.documentoElectronico
-        FROM Tra_M_Tramite t
+$sql = "SELECT 
+          t.iCodTramite, 
+          t.EXPEDIENTE,     
+          t.cCodificacion, 
+          t.cAsunto, 
+          t.fFecDocumento, 
+          t.documentoElectronico,
+            -- principal (iCodDigital IS NULL)
+  (SELECT COUNT(*) FROM Tra_M_Tramite_Firma f
+    WHERE f.iCodTramite=t.iCodTramite AND f.iCodDigital IS NULL AND f.nFlgEstado=1)              AS totalFirmantesPrincipal,
+  (SELECT SUM(CASE WHEN f.nFlgFirma=3 THEN 1 ELSE 0 END) FROM Tra_M_Tramite_Firma f
+    WHERE f.iCodTramite=t.iCodTramite AND f.iCodDigital IS NULL AND f.nFlgEstado=1)              AS firmadosPrincipal,
+
+  -- complementarios (iCodDigital IS NOT NULL)
+  (SELECT COUNT(*) FROM Tra_M_Tramite_Firma f
+    WHERE f.iCodTramite=t.iCodTramite AND f.iCodDigital IS NOT NULL AND f.nFlgEstado=1)          AS totalFirmantesComp,
+  (SELECT SUM(CASE WHEN f.nFlgFirma=3 THEN 1 ELSE 0 END) FROM Tra_M_Tramite_Firma f
+    WHERE f.iCodTramite=t.iCodTramite AND f.iCodDigital IS NOT NULL AND f.nFlgEstado=1)          AS firmadosComp
+                      FROM Tra_M_Tramite t
         WHERE t.iCodOficinaRegistro = ?
         AND " . ($isFirmado ? "t.nFlgFirma = 1" : "(t.nFlgFirma = 0 OR t.nFlgFirma IS NULL)") . "
          AND t.nFlgEstado = 1
@@ -35,7 +52,28 @@ $stmt = sqlsrv_query($cnx, $sql, $params);
   margin-top: 0;
   margin-bottom: 20px;
 }
+.chip-bloqueo{display:inline-block;font-size:11px;color:#b00;margin-top:4px}
+
+/* Modal estilo simple (igual patrón visual que usas en bandejas) */
+.modal-firmantes{
+  display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.35);
+}
+.modal-firmantes .box{
+  position:absolute;top:10%;left:50%;transform:translateX(-50%);
+  background:#fff;max-width:700px;width:92%;
+  border:1px solid #ddd;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.25);
+  overflow:hidden;
+}
+.modal-firmantes .hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  background:#005a86;color:#fff;padding:10px 14px;font-weight:600
+}
+.modal-firmantes .cnt{padding:16px;max-height:65vh;overflow:auto;background:#fff}
+.modal-firmantes .ftr{display:flex;justify-content:flex-end;gap:8px;padding:10px 14px;background:#fafafa}
+.btn{cursor:pointer}
+
 </style>
+
 <div class="container" style="margin: 120px auto; max-width: 1500px; background: white; border: 1px solid #ccc; border-radius: 10px; padding: 30px;">
     <h2 class="titulo-principal"><?= htmlspecialchars($titulo) ?></h2>
 
@@ -47,10 +85,12 @@ $stmt = sqlsrv_query($cnx, $sql, $params);
         </select>
     </form>
     <br>
+
     <?php if ($filtroFirma === '0'): ?>
         <button id="firmarSeleccionados" class="btn btn-primary mb-3">Firmar seleccionados</button>
     <?php endif; ?>
     <br>
+
     <table class="table table-bordered table-sm" id="tablaFirmaPrincipal">
         <thead class="table-light">
             <tr>
@@ -58,25 +98,104 @@ $stmt = sqlsrv_query($cnx, $sql, $params);
                     <th><input type="checkbox" id="seleccionarTodos"></th>
                 <?php endif; ?>
                 <th>Expediente</th>
-                <th>Documento</th>
-                <th>Asunto</th>
                 <th>Fecha</th>
+                <th>Asunto</th>
+                <th>Documento Principal</th>
+                
+               
+                <th>Firmantes Doc. Principal</th>  
+                <th>Firmantes Docs. Complementarios</th>  
             </tr>
         </thead>
         <tbody>
-            <?php while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) : ?>
-                <tr>
+        <?php while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) : 
+        $totP = (int)($row['totalFirmantesPrincipal'] ?? 0);
+        $okP  = (int)($row['firmadosPrincipal'] ?? 0);
+        $pendPrincipal = ($totP > 0 && $okP < $totP);
+        
+        $totC = (int)($row['totalFirmantesComp'] ?? 0);
+        $okC  = (int)($row['firmadosComp'] ?? 0);
+        $pendComp = ($totC > 0 && $okC < $totC);
+        
+        $pendientes = $pendPrincipal || $pendComp; // 👈 bloquear si falta alguien en principal o en cualquier complementario
+      ?>
+                      <tr>
                 <?php if ($filtroFirma === '0'): ?>
-                        <td><input type="checkbox" class="chkDocumento" data-id="<?= $row['iCodTramite'] ?>" data-archivo="<?= $row['documentoElectronico'] ?>"></td>
-                    <?php endif; ?>
-                    <td><?= htmlspecialchars($row['cCodificacion']) ?></td>
-                    <td><a href="./cDocumentosFirmados/<?= rawurlencode($row['documentoElectronico']) ?>" target="_blank"><?= htmlspecialchars($row['documentoElectronico']) ?></a></td>
-                    <td><?= htmlspecialchars($row['cAsunto']) ?></td>
+                    <td>
+              <!-- BLOQUEO: si hay pendientes => disabled (no se puede seleccionar para firma) -->
+              <input 
+                type="checkbox" 
+                class="chkDocumento" 
+                data-id="<?= $row['iCodTramite'] ?>" 
+                data-archivo="<?= $row['documentoElectronico'] ?>"
+                <?= $pendientes ? 'disabled title="Hay firmantes pendientes. No se puede firmar aún."' : '' ?>
+              >
+              <?php if ($pendientes): ?>
+                <div class="chip-bloqueo">Firmas pendientes</div>
+              <?php endif; ?>
+            </td>
+          <?php endif; ?>
+          
+                    <td><?= htmlspecialchars($row['EXPEDIENTE']) ?></td>
                     <td><?= isset($row['fFecDocumento']) && $row['fFecDocumento'] instanceof DateTime ? $row['fFecDocumento']->format('d/m/Y H:i') : '' ?></td>
+                    <td><?= htmlspecialchars($row['cAsunto']) ?></td>
+                    <td>
+                      <a href="./cDocumentosFirmados/<?= rawurlencode($row['documentoElectronico']) ?>" target="_blank"
+                        style="color:#111;text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+                        <img src="img/pdf.png" alt="PDF" width="18" height="18" style="display:inline-block;vertical-align:middle;">
+                        <span><?= htmlspecialchars($row['documentoElectronico']) ?></span>
+                      </a>
+                    </td>
+                  
+                    
+          <!-- NUEVA COLUMNA: botón a detallesFirmantes2.php SOLO si hay firmantes -->
+          <td style="text-align:center">
+            <?php if ($tieneFirmantes): ?>
+              <a href="detallesFirmantes2.php?iCodTramite=<?= $row['iCodTramite'] ?>&iCodDigital=null"
+                 title="Ver firmantes"
+                 style="text-decoration: none;"
+                 onclick="return abrirModalFirmantes(this.href)">
+                <span class="material-icons" style="font-size: 18px; color: #555;">group</span>
+              </a>
+            <?php else: ?>
+              <span style="color:#999">—</span>
+            <?php endif; ?>
+          </td>
+          <td style="text-align:center">
+            <?php if ((int)($row['totalFirmantesComp'] ?? 0) > 0): ?>
+              <a href="detallesFirmantesComplementarios.php?iCodTramite=<?= $row['iCodTramite'] ?>"
+                title="Ver firmantes de complementarios"
+                onclick="return abrirModalOtrosFirmantes(this.href)">
+                <span class="material-icons" style="font-size:18px;color:#555">groups_2</span>
+              </a>
+            <?php else: ?>
+              <span style="color:#999">—</span>
+            <?php endif; ?>
+          </td>
+
+
+
+
                 </tr>
             <?php endwhile; ?>
         </tbody>
     </table>
+</div>
+
+<!-- Modal para firmantes (sin iframe) -->
+<div id="modalFirmantes" class="modal-firmantes" aria-hidden="true">
+  <div class="box">
+    <div class="hdr">
+      <div>Firmantes</div>
+      <button class="btn btn-light" onclick="cerrarModalFirmantes()" title="Cerrar" style="background:#fff;border:0;border-radius:6px;padding:6px 10px;">
+        <span class="material-icons" style="color:#005a86;vertical-align:middle">close</span>
+      </button>
+    </div>
+    <div class="cnt" id="contenidoModalFirmantes">Cargando...</div>
+    <div class="ftr">
+      <button class="btn btn-secondary" onclick="cerrarModalFirmantes()">Cerrar</button>
+    </div>
+  </div>
 </div>
 
 <div id="addComponent" style="display: none;"></div>
@@ -133,7 +252,7 @@ $stmt = sqlsrv_query($cnx, $sql, $params);
             .then(data => {
                 if (data.status === 'ok') {
                     const nombreZip = data.zipPath.replace('.7z', '');
-                    const param_url = `https://tramite.heves.gob.pe/STDD_uat/getFpParamsMasivoPorAprobar.php?iCodTramite=${nombreZip}`;
+                    const param_url = `https://tramite.heves.gob.pe/STDD_marchablanca/getFpParamsMasivoPorAprobar.php?iCodTramite=${nombreZip}`;
 
                     const paramPrev = {
                         param_url: param_url,
@@ -150,4 +269,38 @@ $stmt = sqlsrv_query($cnx, $sql, $params);
             });
         });
     });
+
+    // === Modal firmantes (igual patrón que bandejaFirma.php, sin iframes) ===
+    function abrirModalFirmantes(url){
+    const overlay = document.getElementById('modalFirmantes');
+    const cont    = document.getElementById('contenidoModalFirmantes');
+    cont.innerHTML = 'Cargando...';
+    overlay.style.display = 'block';
+
+    fetch(url, { credentials: 'same-origin' })
+      .then(r => r.text())
+      .then(html => { cont.innerHTML = html; })
+      .catch(() => { cont.innerHTML = '<p style="color:#b00">No se pudo cargar firmantes.</p>'; });
+
+    return false; // prevenir navegación
+  }
+  function cerrarModalFirmantes(){
+    document.getElementById('modalFirmantes').style.display = 'none';
+    document.getElementById('contenidoModalFirmantes').innerHTML = '';
+  }
+  
+  function abrirModalOtrosFirmantes(url){
+  const overlay = document.getElementById('modalFirmantes');
+  const cont    = document.getElementById('contenidoModalFirmantes');
+  cont.innerHTML = 'Cargando...';
+  overlay.style.display = 'block';
+
+  fetch(url, { credentials: 'same-origin' })
+    .then(r => r.text())
+    .then(html => { cont.innerHTML = html; })
+    .catch(() => { cont.innerHTML = '<p style="color:#b00">No se pudo cargar los complementarios.</p>'; });
+
+  return false;
+}
+
 </script>

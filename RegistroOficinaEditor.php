@@ -19,6 +19,9 @@ if (!$iCodTramite) {
 // Solo 68 puede 110; solo 46 puede 111
 $iCodOficina = (int)($_SESSION['iCodOficinaLogin'] ?? 0);
 
+// Solo OF. 5 y 103 pueden ver/editar stock/consumo/meses/situación
+$mostrarCamposInventario = in_array((int)$iCodOficina, [5, 103]);
+
 if ($iCodOficina === 68) {
     // Admin (68): ver todo menos 111
     $whereExtra = "AND cCodTipoDoc <> 111";
@@ -43,14 +46,6 @@ while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
   $tiposDoc[] = $row;
 }
 
-// // Tipos de documentos
-//         $sqlTiposDoc = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgInterno = 1 ORDER BY cDescTipoDoc ASC";
-//         $resultTiposDoc = sqlsrv_query($cnx, $sqlTiposDoc);
-//         $tiposDoc = [];
-//         while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
-//             $tiposDoc[] = $row;
-//         }
-//----** Restricciones por tipo de documento : FIN
 
 // Oficinas
 $sqlOficinas = "SELECT iCodOficina, cNomOficina, cSiglaOficina  FROM Tra_M_Oficinas";
@@ -98,12 +93,23 @@ if (!$tramite) {
     die("Error: Trámite no encontrado.");
 }
 
-//obtener firmantes de doc principal
+//INICIO firmantes de doc principal
 $sqlFirmantesPrincipal = "SELECT COUNT(*) AS total FROM Tra_M_Tramite_Firma 
                           WHERE iCodTramite = ? AND iCodDigital IS NULL";
 $stmtFirmantesPrincipal = sqlsrv_query($cnx, $sqlFirmantesPrincipal, [$iCodTramite]);
-$rowFirmantes = sqlsrv_fetch_array($stmtFirmantesPrincipal, SQLSRV_FETCH_ASSOC);
-$hayFirmantesPrincipal = $rowFirmantes['total'] > 0;
+$rowFirmantesPrincipal = sqlsrv_fetch_array($stmtFirmantesPrincipal, SQLSRV_FETCH_ASSOC);
+$hayFirmantesPrincipal = $rowFirmantesPrincipal['total'] > 0;
+//FIN firmantes de doc principal
+
+//INICIO firmantes de docs complementarios
+$sqlFirmantesComp = "SELECT  COUNT(*) AS total   FROM Tra_M_Tramite_Firma
+  WHERE iCodTramite = ? AND iCodDigital IS NOT NULL;
+ 
+";
+$stmtFirmantesComp = sqlsrv_query($cnx, $sqlFirmantesComp, [$iCodTramite]);
+$rowFirmantesComp = sqlsrv_fetch_array($stmtFirmantesComp, SQLSRV_FETCH_ASSOC);
+$hayFirmantesComp = $rowFirmantesComp['total'] > 0;
+//FIN firmantes de docs complementarios
 
 $descripcionHTML = $tramite['descripcion'] ?? "";
 $documentoElectronico = $tramite['documentoElectronico'] ?? null;
@@ -122,7 +128,6 @@ if ((string)$tramite['cCodTipoDoc'] === '109' || (string)$tramite['cCodTipoDoc']
     FROM Tra_M_Tramite_SIGA_Pedido 
     WHERE iCodTramite = ?";
   $stmtPedidos = sqlsrv_query($cnx, $sqlPedidos, [$iCodTramite]);
-
   if ($stmtPedidos) {
     while ($pedido = sqlsrv_fetch_array($stmtPedidos, SQLSRV_FETCH_ASSOC)) {
       $pedidoSiga = $pedido['pedido_siga'];
@@ -327,7 +332,6 @@ input[type=number] {
   <!-- ==== -->
 
 <div id="grupoRequerimiento" style="margin-top: 25px;">
-
   <!-- Fila de selección tipo de bien y ¿tiene pedido SIGA? -->
   <div class="form-row">
     <div class="input-container select-flotante">
@@ -472,7 +476,7 @@ input[type=number] {
               <table id="tablaItemsEncontrados" style="width: 100%; font-size: 14px; margin-top: 10px;">
                 <thead style="background: #f5f5f5;">
                   <tr>
-                    <th>Código</th><th>Nombre</th> <th>Cantidad</th><th>Acción</th>
+                    <th>Código</th><th>Nombre</th><th>Cantidad</th><th>Acción</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -488,11 +492,14 @@ input[type=number] {
           <th>Código</th>
           <th>Nombre</th>
           <th>Cantidad</th>
+          <?php if ($mostrarCamposInventario): ?>
           <th>Stock</th>
           <th>Consumo Promedio</th>
           <th>Meses de Consumo</th>
           <th>Situación</th>
+          <?php endif; ?>
           <th>Acciones</th>
+
         </tr>
       </thead>
       <tbody>
@@ -504,7 +511,8 @@ input[type=number] {
           <tr data-cod="<?= $item['CODIGO_ITEM'] ?>">
             <td><?= $item['CODIGO_ITEM'] ?></td>
             <td><?= $item['NOMBRE_ITEM'] ?></td>
-            <td><input type="number" min="1" value="<?= $item['CANTIDAD'] ?>" class="cantidad-input" data-cod="<?= $item['CODIGO_ITEM'] ?>" style="width: 70px;"></td>
+          <td><input type="number" min="1" value="<?= $item['CANTIDAD'] ?>" class="cantidad-input" data-cod="<?= $item['CODIGO_ITEM'] ?>" style="width: 70px;"></td>
+            <?php if ($mostrarCamposInventario): ?>
             <td><input type="number" min="0" value="<?= $item['stock'] ?>" class="stock-input" data-cod="<?= $item['CODIGO_ITEM'] ?>" style="width: 70px;"></td>
             <td><input type="number" min="0" value="<?= $item['consumo_promedio'] ?>" class="consumo-input" data-cod="<?= $item['CODIGO_ITEM'] ?>" style="width: 70px;"></td>
             <td><input type="number" min="0" value="<?= $meses ?>" class="meses-input" data-cod="<?= $item['CODIGO_ITEM'] ?>" style="width: 70px;" readonly></td>
@@ -519,6 +527,7 @@ input[type=number] {
                 ?>
               </select>
             </td>
+            <?php endif; ?>
             <td>
               <button type="button" class="btn-secondary eliminar-item"
                       data-cod="<?= $item['CODIGO_ITEM'] ?>"
@@ -695,7 +704,7 @@ input[type=number] {
             <i class="material-icons">group_add</i> Solicitar Vistos Buenos
         </button>
         <?php if ($iCodPerfilLogin == 3): ?>
-          <?php if ($hayFirmantesPrincipal): ?>
+          <?php if ($hayFirmantesPrincipal || $hayFirmantesComp): ?>
               <button type="button" class="btn-primary" disabled title="No disponible: documento con firmantes asignados">
                   <i class="material-icons">edit_document</i> Firmar
               </button>
@@ -707,10 +716,12 @@ input[type=number] {
           <?php endif; ?>
         <?php endif; ?>
 
+        <?php if ($mostrarCamposInventario): ?>
         <?php if ((string)$tramite['cCodTipoDoc'] === '108' || (string)$tramite['cCodTipoDoc'] === '109'): ?>
             <button type="button" id="btnInsertarSiga" class="btn btn-secondary" style="margin-left: 10px;">
                 <i class="material-icons">addchart</i> Insertar data SIGA
             </button>
+        <?php endif; ?>
         <?php endif; ?>
     </div>
 </form>
@@ -856,8 +867,7 @@ input[type=number] {
          console.log("firmantes", <?= json_encode($hayFirmantesPrincipal) ?>);
         
         console.log("iCodTramite:", <?= json_encode($iCodTramite) ?>);
-        console.log("Destinos:", <?= json_encode($destinos) ?>);
-        
+        console.log("Destinos:", <?= json_encode($destinos) ?>);  
           tinymce.init({
                 selector: '#descripcion',
                 height: 500,
@@ -889,7 +899,6 @@ input[type=number] {
                 }
               });
        
-
         // Alternar entre editor y adjunto
         function cambiarModoDocumento() {
             const modo = document.querySelector('input[name="modoDocumento"]:checked').value;
@@ -1018,12 +1027,22 @@ document.getElementById('formSubirComplementarios').addEventListener('submit', f
     }
 
     function abrirPopupFirmantes(iCodTramite, iCodDigital, nombreArchivo) {
-    const url = `registroTrabajadoresFirmaComplementario.php?iCodTramite=${iCodTramite}&iCodDigital=${iCodDigital}`;
-    const win = window.open(url, `Firmantes - ${nombreArchivo}`, 'width=1250,height=600,resizable=yes,scrollbars=yes');
-    if (!win || win.closed || typeof win.closed == 'undefined') {
-        alert("Por favor, habilite las ventanas emergentes en su navegador.");
+  const url = `registroTrabajadoresFirmaComplementario.php?iCodTramite=${iCodTramite}&iCodDigital=${iCodDigital}`;
+  const win = window.open(url, `Firmantes - ${nombreArchivo}`, 'width=1250,height=600,resizable=yes,scrollbars=yes');
+  if (!win || win.closed || typeof win.closed === 'undefined') {
+    alert("Por favor, habilite las ventanas emergentes en su navegador.");
+    return;
+  }
+  // 🔁 Solo recarga cuando el popup se CIERRE
+  const timer = setInterval(() => {
+    if (win.closed) {
+      clearInterval(timer);
+      location.reload();
     }
+  }, 300);
 }
+
+  
 
 function abrirPopupFirmantesPrincipal(iCodTramite) {
     const url = `registroTrabajadoresFirmaPrincipal.php?iCodTramite=${iCodTramite}`;
@@ -1414,6 +1433,8 @@ function agregarDestino() {
 // No usamos itemsManual, todo se guarda en BD
 let itemsSeleccionados = {}; // Objeto para controlar ítems CON pedido SIGA (por clave único: pedido_codigo)
 const iCodTramite = <?= (int)$iCodTramite ?>;
+const mostrarCamposInventario = <?= $mostrarCamposInventario ? 'true' : 'false' ?>;
+
 // 🔍 2A. Buscar por código
 $('#buscarItemBtn').on('click', function () {
   const tipo = $('#tipoBien').val();
@@ -1467,7 +1488,6 @@ $(document).on('click', function (e) {
     $('#sugerenciasItemsNombre').hide();
   }
 });
-
 // 🔄 3. Renderizar resultados del catálogo (tablaItemsEncontrados)
 function renderizarItemsCatalogo(items) {
   const filas = items.map(item => {
@@ -1495,18 +1515,26 @@ function agregarItemManual(codigo, nombre) {
   const cantidad = parseInt($(`input[name="cantidad_${codigo}"]`).val()) || 0;
   if (cantidad <= 0) return alert(" Cantidad inválida");
 
-  const stock = parseFloat($(`input[name="stock_${codigo}"]`).val()) || 0;
-  const consumo = parseFloat($(`input[name="consumo_${codigo}"]`).val()) || 0;
-  const meses = consumo > 0 ? (stock / consumo).toFixed(2) : 0;
-  const situacion = $(`select[name="situacion_${codigo}"]`).val() || '';
+  // Solo oficinas 5/103
+  const stock   = mostrarCamposInventario ? (parseFloat($(`input[name="stock_${codigo}"]`).val()) || 0) : 0;
+  const consumo = mostrarCamposInventario ? (parseFloat($(`input[name="consumo_${codigo}"]`).val()) || 0) : 0;
+  const meses   = mostrarCamposInventario ? (consumo > 0 ? (stock / consumo).toFixed(2) : 0) : 0;
+  const situacion = mostrarCamposInventario ? ($(`select[name="situacion_${codigo}"]`).val() || '') : '';
 
   // Verifica duplicado
   if ($(`#tablaItemsSinPedido tbody tr[data-cod="${codigo}"]`).length > 0) {
     return alert("Item Ya fue agregado.");
   }
 
-  const bodyData = `iCodTramite=${iCodTramite}&codigoItem=${encodeURIComponent(codigo)}&nuevaCantidad=${cantidad}` +
-                   `&stock=${stock}&consumo=${consumo}&meses=${meses}&situacion=${encodeURIComponent(situacion)}`;
+  const bodyData = new URLSearchParams({
+    iCodTramite: iCodTramite,
+    codigoItem: codigo,
+    nuevaCantidad: cantidad,
+    stock: stock,
+    consumo: consumo,
+    meses: meses,
+    situacion: situacion
+  }).toString();
 
   fetch('guardarItemManual.php', {
     method: 'POST',
@@ -1516,12 +1544,9 @@ function agregarItemManual(codigo, nombre) {
   .then(res => res.json())
   .then(data => {
     if (data.status === 'inserted' || data.status === 'updated') {
-      // Añadir fila con clases correctas
-      $('#tablaItemsSinPedido tbody').append(`
-        <tr data-cod="${codigo}">
-          <td>${codigo}</td>
-          <td>${nombre}</td>
-          <td><input type="number" min="1" value="${cantidad}" class="cantidad-input" data-cod="${codigo}" style="width: 70px;"></td>
+
+      // Celdas condicionales
+      const celdasInventario = mostrarCamposInventario ? `
           <td><input type="number" min="0" value="${stock}" class="stock-input" data-cod="${codigo}" style="width: 70px;"></td>
           <td><input type="number" min="0" value="${consumo}" class="consumo-input" data-cod="${codigo}" style="width: 70px;"></td>
           <td><input type="number" min="0" value="${meses}" class="meses-input" data-cod="${codigo}" style="width: 70px;" readonly></td>
@@ -1534,6 +1559,14 @@ function agregarItemManual(codigo, nombre) {
               <option value="Sobre Stock" ${situacion === 'Sobre Stock' ? 'selected' : ''}>Sobre Stock</option>
             </select>
           </td>
+          ` : '';
+
+          $('#tablaItemsSinPedido tbody').append(`
+        <tr data-cod="${codigo}">
+          <td>${codigo}</td>
+          <td>${nombre}</td>
+          <td><input type="number" min="1" value="${cantidad}" class="cantidad-input" data-cod="${codigo}" style="width: 70px;"></td>
+          ${celdasInventario}
           <td>
             <button type="button" class="btn-secondary eliminar-item"
               data-cod="${codigo}" data-pedido="N.A." data-tramite="${iCodTramite}">
@@ -1542,6 +1575,7 @@ function agregarItemManual(codigo, nombre) {
           </td>
         </tr>
       `);
+
       alert(" Ítem agregado correctamente.");
     } else {
       alert("Meses de consumo calculado: " + data.message);
@@ -1549,7 +1583,6 @@ function agregarItemManual(codigo, nombre) {
   })
   .catch(err => alert(" Error de red: " + err));
 }
-
 // ACTUALIZAR LOS NUEVOS CAMPOS
 function actualizarCampoManual(campo, valor, codigo) {
   fetch('actualizarCampoItemManual.php', {
@@ -1597,32 +1630,51 @@ $(document).on('change', '.situacion-input', function () {
 // FIN ACTUALIZAR NUEVOS CAMPOS
 
 // ✏️ 5. Escuchar cambios de cantidad en inputs de tabla
+// Cantidad (siempre aplica)
 $(document).on('change', '.cantidad-input', function () {
   const nuevaCantidad = parseInt($(this).val());
   const codItem = $(this).data('cod');
-
   if (isNaN(nuevaCantidad) || nuevaCantidad < 1) {
     alert('Cantidad inválida. Debe ser mayor a 0.');
     return;
   }
-
   fetch('guardarItemManual.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: `iCodTramite=${iCodTramite}&codigoItem=${encodeURIComponent(codItem)}&nuevaCantidad=${nuevaCantidad}`
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.status === 'inserted') {
-      alert(' Ítem agregado correctamente');
-    } else if (data.status === 'updated') {
-      console.log('Cantidad actualizada');
-    } else {
-      alert(' Error: ' + data.message);
-    }
-  })
-  .catch(err => alert('Error de red: ' + err));
+  }).then(r=>r.json()).then(data=>{
+    if (data.status === 'inserted') alert(' Ítem agregado correctamente');
+  });
 });
+
+// Solo para OF. 5 y 103
+if (mostrarCamposInventario) {
+  $(document).on('change', '.stock-input', function () {
+    const cod = $(this).data('cod');
+    const stockVal = parseFloat($(this).val()) || 0;
+    actualizarCampoManual('stock', stockVal, cod);
+
+    const consumoVal = parseFloat($(`.consumo-input[data-cod="${cod}"]`).val()) || 0;
+    const meses = consumoVal > 0 ? (stockVal / consumoVal).toFixed(2) : 0;
+    $(`.meses-input[data-cod="${cod}"]`).val(meses);
+    actualizarCampoManual('meses_consumo', meses, cod);
+  });
+
+  $(document).on('change', '.consumo-input', function () {
+    const cod = $(this).data('cod');
+    const consumoVal = parseFloat($(this).val()) || 0;
+    actualizarCampoManual('consumo_promedio', consumoVal, cod);
+
+    const stockVal = parseFloat($(`.stock-input[data-cod="${cod}"]`).val()) || 0;
+    const meses = consumoVal > 0 ? (stockVal / consumoVal).toFixed(2) : 0;
+    $(`.meses-input[data-cod="${cod}"]`).val(meses);
+    actualizarCampoManual('meses_consumo', meses, cod);
+  });
+
+  $(document).on('change', '.situacion-input', function () {
+    actualizarCampoManual('situacion', $(this).val(), $(this).data('cod'));
+  });
+}
 // 🔄 6A. Al cambiar tipo de requerimiento (Bien o Servicio)
 $('#tipoBien').on('change', function () {
   const nuevoTipo = $(this).val();
@@ -1675,7 +1727,7 @@ $('#tipoDocumento').on('change', function () {
   if (tipo === '109' || tipo === '108') {
     $('#grupoRequerimiento').show();
   } else {
-    if (confirm('⚠️ Al cambiar de tipo se eliminarán todos los ítems SIGA. ¿Desea continuar?')) {
+    if (confirm('Al cambiar de tipo se eliminarán todos los ítems SIGA. ¿Desea continuar?')) {
       fetch('eliminarItemsSigaTramite.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -1733,6 +1785,7 @@ $(document).on('click', '.eliminar-item', function () {
     if (data.status === 'deleted') {
       $(`tr[data-clave$="${cod}"]`).remove();
       alert(" Ítem eliminado correctamente.");
+      location.reload();
     } else {
       alert("No se pudo eliminar: " + data.message);
     }

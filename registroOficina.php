@@ -36,14 +36,6 @@ while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
   $tiposDoc[] = $row;
 }
 
-// // Tipos de documentos
-//         $sqlTiposDoc = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgInterno = 1 ORDER BY cDescTipoDoc ASC";
-//         $resultTiposDoc = sqlsrv_query($cnx, $sqlTiposDoc);
-//         $tiposDoc = [];
-//         while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
-//             $tiposDoc[] = $row;
-//         }
-//----** Restricciones por tipo de documento : FIN
 
 // Oficinas
         $sqlOficinas = "SELECT iCodOficina, cNomOficina, cSiglaOficina  FROM Tra_M_Oficinas";
@@ -239,7 +231,10 @@ while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
               <table id="tablaItemsSinPedido" style="width: 100%; font-size: 14px;">
                 <thead style="background: #f5f5f5;">
                   <tr>
-                    <th>Código</th><th>Nombre</th><th>Cantidad</th><th>Acción</th>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Cantidad</th>
+                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -249,7 +244,6 @@ while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
         </div>
     <!-- FIN: GRUPO REQUERIMIENTO -->
 
-    
          <!-- Asunto y Observaciones, Selección de destinos, etc. continúan aquí... -->
          <div class="form-row">
           <div class="input-container" style="flex: 1; position: relative;">
@@ -267,13 +261,11 @@ while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
           <input type="number" id="folios" name="folios" class="form-control" value="1" min="1">
           <label for="folios">Folios</label>
         </div>
-
         </div>
 
             
 <!-- CAMPO EXTRA DESTINOS -->
             <h3>Búsqueda de Oficinas</h3>
-            
             <div class="form-row">
             <div class="input-container oficina-ancha" style="position: relative;">
             <input type="text" id="nombreOficinaInput" placeholder=" " autocomplete="off" required>
@@ -535,7 +527,7 @@ $('#buscarItemBtn').on('click', function () {
   }, 'json');
 });
 
-// 6B. Buscar ítems del catálogo por NOMBRE en vivo (autosugerencias)
+// 6B. Buscar ítems del catálogo por NOMBRE  
 $('#buscarItemTextoNombre').on('input', function () {
   const texto = $(this).val().trim();
   const tipo = $('#tipoBien').val();
@@ -556,7 +548,7 @@ $('#buscarItemTextoNombre').on('input', function () {
       const nombre = item.NOMBRE_ITEM;
       const codigo = item.CODIGO_ITEM;
 
-      // Validar tipo al renderizar
+       
       if (tipoBien === tipo) {
         const opcion = $(`<div class="sugerencia-item">${nombre}</div>`);
         opcion.on('click', function () {
@@ -568,14 +560,14 @@ $('#buscarItemTextoNombre').on('input', function () {
       }
     });
 
-    // Si no hubo resultados válidos
+    
     if (contenedor.children().length === 0) {
       contenedor.append('<div class="sugerencia-item" style="color: #888;">Sin coincidencias del tipo seleccionado</div>');
     }
   }, 'json');
 });
 
-// Ocultar dropdown si se hace clic fuera
+ 
 $(document).on('click', function (e) {
   if (!$(e.target).closest('#buscarItemTextoNombre, #sugerenciasItemsNombre').length) {
     $('#sugerenciasItemsNombre').hide();
@@ -706,7 +698,6 @@ async function guardarTramite() {
             alert("Por favor, complete todos los campos.");
             return;
         }
-
         // Prevenir duplicado
         if (oficinasAgregadas.has(oficinaId)) {
             alert("Esta oficina ya ha sido agregada.");

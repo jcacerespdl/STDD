@@ -17,7 +17,7 @@ if (!$iCodTramite) {
 // Consulta según si es documento principal o complementario
 if (is_null($iCodDigital)) {
     // Documento principal
-    $sql = "SELECT f.iCodFirma, f.posicion, f.tipoFirma, f.nFlgFirma, 
+    $sql = "SELECT f.iCodFirma, f.posicion, f.tipoFirma, f.nFlgFirma,  f.observaciones,
                    t.cNombresTrabajador + ' ' + t.cApellidosTrabajador AS nombreCompleto,
                    o.cNomOficina
             FROM Tra_M_Tramite_Firma f
@@ -27,7 +27,7 @@ if (is_null($iCodDigital)) {
     $stmt = sqlsrv_query($cnx, $sql, [$iCodTramite]);
 } else {
     // Documento complementario
-    $sql = "SELECT f.iCodFirma, f.posicion, f.tipoFirma, f.nFlgFirma, 
+    $sql = "SELECT f.iCodFirma, f.posicion, f.tipoFirma, f.nFlgFirma, f.observaciones,
                    t.cNombresTrabajador + ' ' + t.cApellidosTrabajador AS nombreCompleto,
                    o.cNomOficina
             FROM Tra_M_Tramite_Firma f
@@ -43,7 +43,8 @@ if (!$stmt) {
 }
 
 echo "<table border='1' cellpadding='5' cellspacing='0' style='width:100%; font-size: 13px;'>";
-echo "<thead><tr><th>Nombre</th><th>Oficina</th><th>Posición</th><th>Tipo</th><th>Estado</th></tr></thead><tbody>";
+echo "<thead><tr><th>Nombre</th><th>Oficina</th><th>Posición</th><th>Tipo</th><th>Estado</th><th>Observación</th>
+        </tr></thead><tbody>";
 
 while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
     $tipo = $row['tipoFirma'] == 1 ? 'Firma Principal' : 'Visto Bueno';
@@ -60,13 +61,16 @@ while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
             $estado = "❌ Pendiente";
             break;
     }
-
+    $obs = trim((string)($row['observaciones'] ?? ''));
+    $obsHtml = $obs !== '' ? nl2br(htmlspecialchars($obs)) : '—';
     echo "<tr>
         <td>" . htmlspecialchars($row['nombreCompleto'] ?? '-') . "</td>
         <td>" . htmlspecialchars($row['cNomOficina'] ?? '-') . "</td>
         <td align='center'>" . htmlspecialchars($row['posicion']) . "</td>
         <td>" . $tipo . "</td>
         <td>" . $estado . "</td>
+        <td style='max-width:320px; white-space:normal; word-break:break-word;'>" . $obsHtml . "</td>
+
     </tr>";
 }
 

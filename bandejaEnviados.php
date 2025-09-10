@@ -404,7 +404,7 @@ body > .contenedor-principal{ margin-top:var(--stick-top); }
         <div class="th" style="width:220px;">Registrador</div>
         <div class="th" style="width:180px;">Documento</div>
         <div class="th">Asunto</div>
-        <div class="th" style="width:240px;">Oficina de Destino</div>
+        <!-- <div class="th" style="width:240px;">Oficina de Destino</div> -->
         <div class="th" style="width:180px;">Opciones</div>
       </div>
     </div>
@@ -581,23 +581,23 @@ if ($stComp) {
             <?= htmlspecialchars($it['cAsunto']) ?>
           </div>
 
-           <!-- 5) Oficina de Destino (según regla icodtramitederivar -> bloque -> destinos) -->
+           <!-- 5) Oficina de Destino (según regla icodtramitederivar -> bloque -> destinos) 
            <div class="cell">
-  <?php
-    $n     = (int)($it['nDestinos'] ?? 0);
-    $etq   = trim((string)($it['cNomOficinaDerivar'] ?? ''));
-    $lista = trim((string)($it['cDestinosLista'] ?? ''));
+            <?php
+              $n     = (int)($it['nDestinos'] ?? 0);
+              $etq   = trim((string)($it['cNomOficinaDerivar'] ?? ''));
+              $lista = trim((string)($it['cDestinosLista'] ?? ''));
 
-    if ($n <= 0) {
-      echo '-';
-    } elseif ($n === 1) {
-      echo htmlspecialchars($etq, ENT_QUOTES, 'UTF-8');
-    } else {
-      // Varios + tooltip con la lista de oficinas
-      echo '<span title="'.htmlspecialchars($lista, ENT_QUOTES, 'UTF-8').'">Varios</span>';
-    }
-  ?>
-</div>
+              if ($n <= 0) {
+                echo '-';
+              } elseif ($n === 1) {
+                echo htmlspecialchars($etq, ENT_QUOTES, 'UTF-8');
+              } else {
+                // Varios + tooltip con la lista de oficinas
+                echo '<span title="'.htmlspecialchars($lista, ENT_QUOTES, 'UTF-8').'">Varios</span>';
+              }
+            ?>
+          </div>-->
 
          
           <!-- 6) Opciones -->

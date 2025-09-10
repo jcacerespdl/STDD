@@ -15,6 +15,16 @@ if (!$iCodTramite || !$codigoItem || !$nuevaCantidad) {
     echo json_encode(['status' => 'error', 'message' => 'Parámetros incompletos']);
     exit;
 }
+/* 1) Traer EXPEDIENTE (y extension por si acaso) desde el trámite */
+$sqlTr = "SELECT  EXPEDIENTE  FROM Tra_M_Tramite WHERE iCodTramite = ?";
+$rsTr  = sqlsrv_query($cnx, $sqlTr, [$iCodTramite]);
+if ($rsTr === false) {
+    echo json_encode(['status' => 'error', 'message' => 'Error al obtener EXPEDIENTE del trámite']);
+    exit;
+}
+$tr = sqlsrv_fetch_array($rsTr, SQLSRV_FETCH_ASSOC);
+$expedienteTram = $tr['EXPEDIENTE'] ?? null;
+
 
 // Verificar si ya existe
 $sqlCheck = "SELECT COUNT(*) AS total FROM Tra_M_Tramite_SIGA_Pedido 
@@ -47,11 +57,11 @@ $iCodTramite, $codigoItem
     echo json_encode(['status' => 'updated', 'message' => 'Ítem actualizado']);
 } else {
     $sqlInsert = "INSERT INTO Tra_M_Tramite_SIGA_Pedido 
-    (iCodTramite, pedido_siga, extension, codigo_item, cantidad, stock, consumo_promedio, meses_consumo, situacion)
-    VALUES (?, NULL, 1, ?, ?, ?, ?, ?, ?)";
+    (iCodTramite, pedido_siga, extension, codigo_item, cantidad, stock, consumo_promedio, meses_consumo, situacion, EXPEDIENTE)
+    VALUES (?, NULL, 1, ?, ?, ?, ?, ?, ?,?)";
 $stmtInsert = sqlsrv_query($cnx, $sqlInsert, [
     $iCodTramite, $codigoItem, $nuevaCantidad,
-    $stock, $consumo, $meses, $situacion
+    $stock, $consumo, $meses, $situacion, $expedienteTram
 ]);
 
     if ($stmtInsert === false) {

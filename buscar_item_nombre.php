@@ -11,9 +11,9 @@ $q = trim($_GET['q'] ?? '');
 $data = [];
 
 if ($q !== '' && $sigaConn) {
-    $sql = "SELECT TOP 10 CODIGO_ITEM, NOMBRE_ITEM, TIPO_BIEN
+    $sql = "SELECT CODIGO_ITEM, NOMBRE_ITEM, TIPO_BIEN
             FROM CATALOGO_BIEN_SERV
-            WHERE NOMBRE_ITEM LIKE ?";
+            WHERE NOMBRE_ITEM LIKE ? order by NOMBRE_ITEM";
     $params = ["%$q%"];
     $stmt = sqlsrv_query($sigaConn, $sql, $params);
 

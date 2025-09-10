@@ -549,17 +549,27 @@ body > .contenedor-principal { margin-top: var(--stick-top); }
   display: flex;               /* por si vienes de grid-cell */
   flex-direction: column;
   justify-content: center;     /* centrado vertical dentro de la fila fija */
-  align-items: center;         /* centrado horizontal */
+  align-items: stretch;         /* centrado horizontal */
   text-align: center;
   line-height: 1.2;
   padding: 10px 12px;
   overflow: hidden;            /* evita desbordes */
-  white-space: nowrap;         /* una línea por cada subtexto */
+  /* white-space: nowrap;          
+  text-overflow: ellipsis; */
+}
+.grid-row .cell.derivado > *,
+.grid-row .cell.estado > *{
+  display: block;              /* para que el ellipsis funcione mejor */
+  min-width: 0;                /* clave en flex para permitir encoger */
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
 }
 .grid-row .cell.derivado strong,
 .grid-row .cell.estado strong{
   font-weight: 600;
+  overflow-wrap: anywhere;     /* opcional, por si vienen tokens largos */
 }
 .grid-row .cell.derivado small,
 .grid-row .cell.estado small{

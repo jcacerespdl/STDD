@@ -14,7 +14,7 @@ $filtroFirmado = $_GET['firmado'] ?? '';
 
 // === Consulta principal para render ===
 $sql = "SELECT 
-    F.iCodFirma, F.iCodTramite, F.iCodDigital, F.posicion, F.tipoFirma, F.nFlgFirma,
+    F.iCodFirma, F.iCodTramite, F.iCodDigital, F.posicion, F.tipoFirma, F.nFlgFirma, F.observaciones,
     T.cAsunto, T.fFecDocumento, T.expediente, T.documentoElectronico,
     D.cDescripcion, ISNULL(D.cTipoComplementario, 0) AS cTipoComplementario
 FROM Tra_M_Tramite_Firma F
@@ -99,34 +99,27 @@ if ($stmtResumen) {
     }
 }
 
-// echo "<pre>";
-// print_r($resumen);
-// echo "</pre>";
-
-// $sqlDebug = "
-// SELECT 
-//   F.iCodFirma, F.iCodTramite, F.iCodDigital,
-//   D.iCodDigital AS digitalExistente, D.cTipoComplementario,
-//   F.posicion, F.nFlgFirma
-// FROM Tra_M_Tramite_Firma F
-// JOIN Tra_M_Tramite T ON T.iCodTramite = F.iCodTramite
-// LEFT JOIN Tra_M_Tramite_Digitales D 
-//   ON D.iCodTramite = F.iCodTramite AND D.iCodDigital = F.iCodDigital
-// WHERE F.iCodTrabajador = ?
-//   AND F.nFlgFirma = 0 
-//   AND F.nFlgEstado = 1 
-//   AND T.nFlgEstado = 1
-// ORDER BY F.iCodTramite DESC";
-
-// $stmtDebug = sqlsrv_query($cnx, $sqlDebug, [$iCodTrabajador]);
-// while ($row = sqlsrv_fetch_array($stmtDebug, SQLSRV_FETCH_ASSOC)) {
-//     echo "<pre>";
-//     print_r($row);
-//     echo "</pre>";
-// }
+ 
 
 
 ?>
+<style>
+  /* 5ta columna = Archivo */
+  .tabla-firmas th:nth-child(5),
+  .tabla-firmas td:nth-child(5) {
+    width: 240px;           /* ajusta a tu gusto: 200–280px */
+    max-width: 240px;
+  }
+
+  /* Recorta el texto del enlace con … */
+  .tabla-firmas td:nth-child(5) a {
+    display: inline-block;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+</style>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <link href="bandejas.css" rel="stylesheet">
 
@@ -244,8 +237,9 @@ $filtradoActivo = $filtroTipoComplementario !== ''; // solo permite firmar si ha
                 <th>Expediente</th>
                 <th>Fecha</th>
                 <th>Asunto</th>
-                <th>Archivo</th>
+                <th>Documento</th>
                 <th>Detalle</th>
+                <th>Observación</th>
             </tr>
         </thead>
         <tbody>
@@ -267,7 +261,7 @@ $filtradoActivo = $filtroTipoComplementario !== ''; // solo permite firmar si ha
                         <?php elseif ($esPrincipal): ?>
                             <!-- ✅ Caso 3: Documento principal -->
                             <button class="btn btn-primary firmarVBPrincipal" data-firma="<?= $iCodFirma ?>" data-archivo="<?= $archivo ?>">
-                                <i class="material-icons">edit_document</i> Firmar Principal
+                                <i class="material-icons">edit_document</i> Firmar 
                             </button>
 
                         <?php elseif ($tipo > 0): ?>
@@ -302,6 +296,16 @@ $filtradoActivo = $filtroTipoComplementario !== ''; // solo permite firmar si ha
 
                        
                     </td>
+                    <td style="text-align:center">
+                        <button type="button"
+                                class="btn-obs"
+                                title="Agregar/editar observación"
+                                data-icodfirma="<?= (int)$iCodFirma ?>"
+                                data-obs="<?= htmlspecialchars($row['observaciones'] ?? '', ENT_QUOTES) ?>"
+                                style="background:none;border:0;cursor:pointer">
+                            <span class="material-icons" style="font-size:20px;vertical-align:middle;color:#666">edit</span>
+                        </button>
+                    </td>
                 </tr>
             <?php endwhile; ?>
         </tbody>
@@ -319,7 +323,7 @@ if ($filtradoActivo && $esComplementarioRequerimiento):
     <p>No hay documentos que coincidan con el filtro actual.</p>
 <?php endif; ?>
 </div>
-<!-- Modal para firmantes -->
+<!-- INICIO Modal para firmantes -->
 <div id="modalFirmantes" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
      background:white; padding:20px; border:1px solid #ccc; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index:9999; max-width:600px;">
     <div id="contenidoModalFirmantes">Cargando...</div>
@@ -327,6 +331,33 @@ if ($filtradoActivo && $esComplementarioRequerimiento):
         <button onclick="cerrarModalFirmantes()">Cerrar</button>
     </div>
 </div>
+<!-- FIN Modal para firmantes -->
+<!-- INICIO Modal Observación -->
+<div id="modalObs" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,.35);">
+  <div style="position:absolute; top:12%; left:50%; transform:translateX(-50%);
+              background:#fff; width:92%; max-width:600px; border-radius:10px; overflow:hidden;
+              box-shadow:0 8px 30px rgba(0,0,0,.25);">
+    <div style="background:#005a86;color:#fff;padding:10px 14px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
+      <span>Observación</span>
+      <button type="button" onclick="cerrarModalObs()" style="background:#fff;border:0;border-radius:6px;padding:4px 8px;cursor:pointer">
+        <span class="material-icons" style="color:#005a86">close</span>
+      </button>
+    </div>
+    <div style="padding:14px">
+      <input type="hidden" id="obs_iCodFirma">
+      <label style="font-weight:600;display:block;margin-bottom:6px">Escribe tu observación</label>
+      <textarea id="obs_texto" rows="6" style="width:100%;resize:vertical"></textarea>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;padding:10px 14px;background:#fafafa">
+      <button type="button" onclick="cerrarModalObs()" class="btn btn-secondary">Cancelar</button>
+      <button type="button" onclick="guardarObservacion()" class="btn btn-primary">Guardar</button>
+    </div>
+  </div>
+</div>
+<!-- FIN Modal Observación -->
+
+
+
 <div id="addComponent" style="display: none;"></div>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="./scripts/jquery.blockUI.js"></script>
@@ -486,4 +517,85 @@ function abrirModalFirmantes(url) {
 function cerrarModalFirmantes() {
     document.getElementById('modalFirmantes').style.display = 'none';
 }
+
+
+// PARA OBSERVACION
+// ——— Observación: abrir modal ———
+document.addEventListener('click', function(e){
+  const btn = e.target.closest('.btn-obs');
+  if (!btn) return;
+
+  const id  = btn.getAttribute('data-icodfirma');
+  const txt = btn.getAttribute('data-obs') || '';
+
+  document.getElementById('obs_iCodFirma').value = id;
+  document.getElementById('obs_texto').value = txt;
+  document.getElementById('modalObs').style.display = 'block';
+});
+
+// Cerrar modal
+function cerrarModalObs(){
+  document.getElementById('modalObs').style.display = 'none';
+}
+
+// Guardar observación
+function guardarObservacion(){
+  const id  = document.getElementById('obs_iCodFirma').value;
+  const txt = document.getElementById('obs_texto').value.trim();
+
+  const body = new URLSearchParams();
+  body.append('iCodFirma', id);
+  body.append('observacion', txt);
+
+  fetch('guardarObservacionFirma.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body
+  })
+  .then(r => r.json())
+  .then(j => {
+    if (j.ok) {
+      // Actualiza el dataset y pinta el icono
+      const btn = document.querySelector(`.btn-obs[data-icodfirma="${id}"]`);
+      if (btn) {
+        btn.setAttribute('data-obs', txt);
+        const icon = btn.querySelector('.material-icons');
+        if (icon) icon.style.color = txt ? '#f39c12' : '#666'; // ámbar si hay texto
+      }
+      cerrarModalObs();
+    } else {
+      alert(j.msg || 'No se pudo guardar la observación');
+    }
+  })
+  .catch(() => alert('Error de red al guardar la observación'));
+}
+
+// Al cargar, pinta los lápices que ya tienen observación
+document.querySelectorAll('.btn-obs').forEach(btn => {
+  const has = (btn.getAttribute('data-obs') || '').trim().length > 0;
+  const icon = btn.querySelector('.material-icons');
+  if (icon) icon.style.color = has ? '#f39c12' : '#666';
+});
+
+function tieneFirmantesPrincipal($cnx, int $iCodTramite): bool {
+  $sql = "SELECT COUNT(*) AS total
+            FROM Tra_M_Tramite_Firma
+           WHERE iCodTramite = ? AND iCodDigital IS NULL AND nFlgEstado = 1";
+  $st  = sqlsrv_query($cnx, $sql, [$iCodTramite]);
+  if (!$st) return false;
+  $rw = sqlsrv_fetch_array($st, SQLSRV_FETCH_ASSOC);
+  return (int)($rw['total'] ?? 0) > 0;
+}
+
+function tieneFirmantesDigital($cnx, int $iCodTramite, int $iCodDigital): bool {
+  $sql = "SELECT COUNT(*) AS total
+            FROM Tra_M_Tramite_Firma
+           WHERE iCodTramite = ? AND iCodDigital = ? AND nFlgEstado = 1";
+  $st  = sqlsrv_query($cnx, $sql, [$iCodTramite, $iCodDigital]);
+  if (!$st) return false;
+  $rw = sqlsrv_fetch_array($st, SQLSRV_FETCH_ASSOC);
+  return (int)($rw['total'] ?? 0) > 0;
+}
+
+
 </script>

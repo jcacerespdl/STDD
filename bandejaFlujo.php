@@ -3,7 +3,17 @@ include("headFlujo.php");
 include("conexion/conexion.php");
 
 $iCodTramite = isset($_GET['iCodTramite']) ? intval($_GET['iCodTramite']) : 0;
-$expediente = isset($_GET['EXPEDIENTE']) ? trim($_GET['EXPEDIENTE']) : ($info['EXPEDIENTE'] ?? '');
+$sql = "SELECT EXPEDIENTE 
+        FROM Tra_M_Tramite 
+        WHERE iCodTramite = ?";
+
+$stmt = sqlsrv_query($cnx, $sql, [$iCodTramite]);
+if ($stmt === false) {
+    die(print_r(sqlsrv_errors(), true));
+}
+
+$row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
+$expediente = $row['EXPEDIENTE'] ?? '';
 
 
 // ─────────────────────────────────────────────────────────────
@@ -172,15 +182,15 @@ foreach ($nodes as $id => $n) {
 // ─────────────────────────────────────────────────────────────
 // === NUEVA LÓGICA: buscar ítems SIGA directamente por EXPEDIENTE y solo los código_item reales ===
 $itemsSIGA = [];
-
-$expediente = $infoInicial['expediente'];
-$sqlSIGA = "SELECT pedido_siga, codigo_item, cantidad FROM Tra_M_Tramite_SIGA_Pedido WHERE EXPEDIENTE = ?";
+ 
+$sqlSIGA = "SELECT pedido_siga, codigo_item, cantidad, extension FROM Tra_M_Tramite_SIGA_Pedido WHERE EXPEDIENTE = ?";
 $stmtSIGA = sqlsrv_query($cnx, $sqlSIGA, [$expediente]);
 
 while ($pedido = sqlsrv_fetch_array($stmtSIGA, SQLSRV_FETCH_ASSOC)) {
     $pedidoSiga = $pedido['pedido_siga'];
     $codigoItem = $pedido['codigo_item'];
     $cantidad = $pedido['cantidad'];
+    $extSIGA    = isset($pedido['extension']) ? (int)$pedido['extension'] : null;
 
     // Si tiene pedido SIGA, buscamos información adicional del pedido
     if ($pedidoSiga) {
@@ -200,7 +210,8 @@ while ($pedido = sqlsrv_fetch_array($stmtSIGA, SQLSRV_FETCH_ASSOC)) {
 
             if ($stmtCat && $cat = sqlsrv_fetch_array($stmtCat, SQLSRV_FETCH_ASSOC)) {
                 $itemsSIGA[] = [
-                    "pedido_siga" => $pedidoSiga,                
+                    "pedido_siga" => $pedidoSiga,   
+                    "extension"   => $extSIGA,                
                     "TIPO_BIEN" => $cat['TIPO_BIEN'] ?? $orden['TIPO_BIEN'] ?? 'N.A.',         
                      "CODIGO_ITEM" => $codigoItem,
                     "CANTIDAD" => $cantidad,
@@ -223,6 +234,7 @@ while ($pedido = sqlsrv_fetch_array($stmtSIGA, SQLSRV_FETCH_ASSOC)) {
         if ($stmtCat && $cat = sqlsrv_fetch_array($stmtCat, SQLSRV_FETCH_ASSOC)) {
             $itemsSIGA[] = [
                 "pedido_siga" => "N.A.",
+                "extension"   => $extSIGA,   
                 "TIPO_BIEN" => $cat['TIPO_BIEN'] ?? 'N.A.',                    
                 "CODIGO_ITEM" => $codigoItem,
                 "CANTIDAD" => $cantidad,
@@ -240,95 +252,92 @@ while ($pedido = sqlsrv_fetch_array($stmtSIGA, SQLSRV_FETCH_ASSOC)) {
 function h($s){ return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8'); }
 function fmtDate($d){ return ($d instanceof DateTimeInterface) ? $d->format('d/m/Y H:i:s') : '—'; }
 
-function renderDocPrincipal($row){
-    $principal = trim((string)($row['DocElectronico'] ?? ''));
-    $calc      = $row['DocumentNameOldStyle'] ?? '';
-    $docFile   = $principal !== '' ? $principal : $calc;
+function renderDocPrincipal($cnx, $row){
+  $principal = trim((string)($row['DocElectronico'] ?? ''));
+  $calc      = $row['DocumentNameOldStyle'] ?? '';
+  $docFile   = $principal !== '' ? $principal : $calc;
 
-    if ($docFile === '') {
-        return '<span class="badge">Sin documento principal</span>';
-    }
-
-    $repo = (
-      ($row['fFecDerivar'] instanceof DateTimeInterface
-        && $row['fFecDerivar']->format('Y-m-d H:i') >= '2025-09-04 16:00'
-      ) ? 'STDD_marchablanca' : 'STD'
-    );
-
-    return '<a href="https://tramite.heves.gob.pe/'.$repo.'/cDocumentosFirmados/'.urlencode($docFile).'" class="chip-adjunto" target="_blank" title="'.h($docFile).'">
-              <span class="material-icons chip-icon">picture_as_pdf</span>
-              <span class="chip-text">'.h($docFile).'</span>
-            </a>';
-}
-
-function renderComplementariosPorTramite($cnx, $iCodTramite){
-  $s = sqlsrv_query($cnx, "SELECT TOP(2) cNombreNuevo, cNombreOriginal, iCodTramite 
-                           FROM Tra_M_Tramite_Digitales 
-                           WHERE iCodTramite = ?
-                           ORDER BY fFechaRegistro DESC", [$iCodTramite]);
-  if(!$s) return '<span class="badge">—</span>';
-  $rows=[]; while($r=sqlsrv_fetch_array($s,SQLSRV_FETCH_ASSOC)){ $rows[]=$r; }
-  $cnt=count($rows);
-  if($cnt===0) return '<span class="badge">Ninguno</span>';
-  if($cnt===1){
-    $uno=$rows[0];
-    $nombre = $uno['cNombreNuevo'] ?: ($uno['iCodTramite'].'-'.preg_replace("/\ /","_",trim($uno["cNombreOriginal"])));
-    return '<a href="https://tramite.heves.gob.pe/STDD_marchablanca/cAlmacenArchivos/'.urlencode($nombre).'"
-              class="chip-adjunto" target="_blank" title="'.h($nombre).'">
-              <span class="material-icons chip-icon chip-doc">article</span>
-              <span class="chip-text">'.h($nombre).'</span>
-            </a>';
+  if ($docFile === '') {
+      return '<span class="badge">Sin documento principal</span>';
   }
-  // + de 1 → link a modal/lista
-  return '<a href="detalleComplementarios.php?iCodTramite='.$iCodTramite.'"
-            class="chip-adjunto" title="Documentos Complementarios">
-            <span class="material-icons chip-icon chip-doc">article</span>
-            <span class="chip-text">'.$cnt.' archivos</span>
-          </a>';
+
+  $repo = (
+    ($row['fFecDerivar'] instanceof DateTimeInterface
+      && $row['fFecDerivar']->format('Y-m-d H:i') >= '2025-09-04 16:00'
+    ) ? 'STDD_marchablanca' : 'STD'
+  );
+
+  // chip de descarga
+  $chip = '<a href="https://tramite.heves.gob.pe/'.$repo.'/cDocumentosFirmados/'.urlencode($docFile).'"
+             class="chip-adjunto" target="_blank" title="'.h($docFile).'">
+             <span class="material-icons chip-icon">picture_as_pdf</span>
+             <span class="chip-text">'.h($docFile).'</span>
+           </a>';
+
+  // botón "group" SOLO si hay firmantes en principal
+  $btn = '';
+  $iCodTramitePDF = (int)($row['iCodTramitePDF'] ?? 0);
+  if ($iCodTramitePDF && tieneFirmantesPrincipal($cnx, $iCodTramitePDF)) {
+    $url = 'detallesFirmantes2.php?iCodTramite='.$iCodTramitePDF.'&iCodDigital=null';
+    $btn = ' <a href="'.$url.'" class="btn-firmantes" title="Ver firmantes" onclick="return abrirModalFirmantes(this.href)">
+               <span class="material-icons">group</span>
+             </a>';
 }
 
-function renderComplementariosTodos($cnx, $iCodTramite){
+// antes: return $chip.$btn;
+return '<span class="chip-line">'.$chip.$btn.'</span>';
+}
+
+ 
+
+function renderComplementariosTodos($cnx, int $iCodTramite, bool $mostrarFirmantes = true){
   $s = sqlsrv_query(
     $cnx,
-    "SELECT cDescripcion, cNombreNuevo, cNombreOriginal, iCodTramite, fFechaRegistro
-     FROM Tra_M_Tramite_Digitales
-     WHERE iCodTramite = ?
-     ORDER BY fFechaRegistro ASC",
+    "SELECT iCodDigital, cDescripcion, cNombreNuevo, cNombreOriginal, iCodTramite, fFechaRegistro
+       FROM Tra_M_Tramite_Digitales
+      WHERE iCodTramite = ?
+      ORDER BY fFechaRegistro ASC",
     [$iCodTramite]
   );
   if(!$s) return '<span class="badge">—</span>';
 
   $chips = [];
   while($r = sqlsrv_fetch_array($s, SQLSRV_FETCH_ASSOC)){
-    // 1) Preferir el nombre FINAL guardado (cDescripcion)
+    $iCodDigital = (int)($r['iCodDigital'] ?? 0);
+
     $nombre = trim((string)($r['cDescripcion'] ?? ''));
-
-    // 2) Si no hubiera, intentar cNombreNuevo (otros flujos)
-    if($nombre === ''){
-      $nombre = trim((string)($r['cNombreNuevo'] ?? ''));
-    }
-
-    // 3) Fallback a iCodTramite-NOMBRE_ORIGINAL_sin_espacios.pdf
+    if($nombre === '') $nombre = trim((string)($r['cNombreNuevo'] ?? ''));
     if($nombre === ''){
       $orig   = preg_replace('/\s+/', '_', trim((string)($r['cNombreOriginal'] ?? 'adjunto.pdf')));
       $nombre = ((int)$r['iCodTramite']).'-'.$orig;
     }
 
-    // SIEMPRE apuntar a STDD_marchablanca
-    $chips[] =
+    $chip =
       '<a href="https://tramite.heves.gob.pe/STDD_marchablanca/cAlmacenArchivos/'.urlencode($nombre).'"
           class="chip-adjunto" target="_blank" title="'.htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8').'">
          <span class="material-icons chip-icon chip-doc">article</span>
          <span class="chip-text">'.htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8').'</span>
        </a>';
+
+    $btn = '';
+    if ($mostrarFirmantes && $iCodDigital && tieneFirmantesDigital($cnx, $iCodTramite, $iCodDigital)) {
+      $url = 'detallesFirmantes2.php?iCodTramite='.$iCodTramite.'&iCodDigital='.$iCodDigital;
+      $btn = ' <a href="'.$url.'" class="btn-firmantes" title="Ver firmantes" onclick="return abrirModalFirmantes(this.href)">
+                 <span class="material-icons">group</span>
+               </a>';
+    }
+
+    $chips[] = '<span class="chip-line">'.$chip.$btn.'</span>';
   }
 
   if(empty($chips)) return '<span class="badge">Ninguno</span>';
   return '<div class="chips-wrap">'.implode('', $chips).'</div>';
 }
 
+
 // Render recursivo de ramas
 function renderNodo($id, $nodes, $children, $nivel = 0){
+  
     $n = $nodes[$id];
 
     // Etiquetas de relación
@@ -361,8 +370,9 @@ function renderNodo($id, $nodes, $children, $nivel = 0){
       }
 
       // Documentos
-      
-      echo "<div class='kv'><b>Documento principal:</b> ".renderDocPrincipal($n)."</div>";
+      echo "<div class='kv'><b>Documento principal:</b> "
+   . renderDocPrincipal($GLOBALS['cnx'], $n)
+   . "</div>";
       echo "<div class='kv kv-row'><b>Documentos Complementarios:</b> "
          . renderComplementariosTodos($GLOBALS['cnx'], (int)($n['iCodTramitePDF'] ?? 0))
          . "</div>";       
@@ -377,6 +387,27 @@ function renderNodo($id, $nodes, $children, $nivel = 0){
     echo "</div>"; // node-body
     echo "</details>";
 }
+
+function tieneFirmantesPrincipal($cnx, int $iCodTramite): bool {
+  $sql = "SELECT COUNT(*) AS total
+            FROM Tra_M_Tramite_Firma
+           WHERE iCodTramite = ? AND iCodDigital IS NULL AND nFlgEstado = 1";
+  $st  = sqlsrv_query($cnx, $sql, [$iCodTramite]);
+  if (!$st) return false;
+  $rw = sqlsrv_fetch_array($st, SQLSRV_FETCH_ASSOC);
+  return (int)($rw['total'] ?? 0) > 0;
+}
+
+function tieneFirmantesDigital($cnx, int $iCodTramite, int $iCodDigital): bool {
+  $sql = "SELECT COUNT(*) AS total
+            FROM Tra_M_Tramite_Firma
+           WHERE iCodTramite = ? AND iCodDigital = ? AND nFlgEstado = 1";
+  $st  = sqlsrv_query($cnx, $sql, [$iCodTramite, $iCodDigital]);
+  if (!$st) return false;
+  $rw = sqlsrv_fetch_array($st, SQLSRV_FETCH_ASSOC);
+  return (int)($rw['total'] ?? 0) > 0;
+}
+
 
 ?>
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -399,6 +430,29 @@ summary{cursor:pointer;padding:8px 12px}
 details{border:1px solid #eee;border-radius:8px;margin:8px 0}
 details > summary:hover{background:#f8fafc}
 .chips-wrap{display:flex;flex-wrap:wrap;gap:6px}
+.chip-line{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    vertical-align:middle;
+  }
+  .btn-firmantes{
+    display:inline-flex;
+    align-items:center;
+    text-decoration:none;
+  }
+  .btn-firmantes .material-icons{
+    font-size:18px;
+    line-height:1;
+    color:#555;
+  }
+  /* mejora la alineación de los renglones de chips */
+  .chips-wrap{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    align-items:center;
+  }
 </style>
 
 <h3>DETALLES DEL EXPEDIENTE:  </h3>
@@ -436,7 +490,7 @@ details > summary:hover{background:#f8fafc}
         <span class="chip-text"><?= h($info['documentoElectronico']) ?></span>
       </a>
       <div class="kv kv-row" style="margin-top:6px;"><b>Documentos Complementarios:</b>
-        <?= renderComplementariosTodos($cnx, (int)$iCodTramite) ?>
+      <?= renderComplementariosTodos($cnx, (int)$iCodTramite, false) ?>
       </div>
       <?php else: ?>
       <span class="badge">No disponible</span>
@@ -449,7 +503,7 @@ details > summary:hover{background:#f8fafc}
 <!-- iTEMS SIGA: INICIO -->
 
 <?php if (!empty($itemsSIGA)): ?>
-    <h3>DETALLES DEL REQUERIMIENTO para el EXPEDIENTE <?= htmlspecialchars($infoInicial['expediente']) ?></h3>
+    <h3>DETALLES DEL REQUERIMIENTO para el EXPEDIENTE <?= htmlspecialchars($expediente) ?></h3>
   <div class="detail-content section">
     <div class="detail-header">ÍTEMS SIGA</div>
     <div class="detail-body">
@@ -457,6 +511,7 @@ details > summary:hover{background:#f8fafc}
         <thead style="background:#f5f5f5;">
           <tr>
             <th>PEDIDO SIGA</th>
+            <th>EXTENSION</th>
             <th>TIPO BIEN</th>
             <th>CÓDIGO ITEM</th>
             <th>NOMBRE ITEM</th>
@@ -467,6 +522,7 @@ details > summary:hover{background:#f8fafc}
           <?php foreach ($itemsSIGA as $item): ?>
             <tr>
               <td><?= $item['pedido_siga'] ?></td>
+              <td><?= $item['extension'] ?></td>
               <td><?= $item['TIPO_BIEN'] === 'S' ? 'SERVICIO' : 'BIEN' ?></td>
               <td><?= $item['CODIGO_ITEM'] ?></td>
               <td><?= $item['NOMBRE_ITEM'] ?></td>
@@ -496,3 +552,30 @@ details > summary:hover{background:#f8fafc}
     ?>
   </div>
 </div>
+
+
+<!-- Modal firmantes -->
+<div id="modalFirmantes" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
+     background:white; padding:20px; border:1px solid #ccc; box-shadow:0 4px 12px rgba(0,0,0,0.2); z-index:9999; max-width:700px; width:92%;">
+    <div id="contenidoModalFirmantes">Cargando...</div>
+    <div style="text-align:right; margin-top:10px;">
+        <button onclick="cerrarModalFirmantes()">Cerrar</button>
+    </div>
+</div>
+
+<script>
+function abrirModalFirmantes(url){
+  const cont = document.getElementById('contenidoModalFirmantes');
+  const md   = document.getElementById('modalFirmantes');
+  cont.innerHTML = 'Cargando...';
+  fetch(url, {credentials:'same-origin'})
+    .then(r=>r.text())
+    .then(html => { cont.innerHTML = html; md.style.display = 'block'; })
+    .catch(()=>{ cont.innerHTML = '<p style="color:#b00">No se pudo cargar.</p>'; md.style.display='block'; });
+  return false;
+}
+function cerrarModalFirmantes(){
+  document.getElementById('modalFirmantes').style.display = 'none';
+  document.getElementById('contenidoModalFirmantes').innerHTML = '';
+}
+</script>

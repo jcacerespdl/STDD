@@ -46,6 +46,9 @@ if ($iCodTramite) {
 // Solo 68 puede 110; solo 46 puede 111
 $iCodOficina = (int)($_SESSION['iCodOficinaLogin'] ?? 0);
 
+// Solo OF. 5 y 103 pueden ver/editar stock/consumo/meses/situación
+$mostrarCamposInventario = in_array((int)$iCodOficina, [5, 103]);
+
 if ($iCodOficina === 68) {
     // Admin (68): ver todo menos 111
     $whereExtra = "AND cCodTipoDoc <> 111";
@@ -70,14 +73,6 @@ while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
   $tiposDoc[] = $row;
 }
 
-// // Tipos de documentos
-//         $sqlTiposDoc = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgInterno = 1 ORDER BY cDescTipoDoc ASC";
-//         $resultTiposDoc = sqlsrv_query($cnx, $sqlTiposDoc);
-//         $tiposDoc = [];
-//         while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
-//             $tiposDoc[] = $row;
-//         }
-//----** Restricciones por tipo de documento : FIN
 
 // Oficinas
 $sqlOficinas = "SELECT iCodOficina, cNomOficina, cSiglaOficina  FROM Tra_M_Oficinas";
@@ -110,7 +105,7 @@ while ($row = sqlsrv_fetch_array($resultIndicaciones, SQLSRV_FETCH_ASSOC)) {
 }
 // Obtener datos básicos del trámite y tipo de documento
 $sqlTramite = "SELECT t.cCodTipoDoc, td.cDescTipoDoc, t.cCodificacion, t.cAsunto, t.cObservaciones, 
-                      t.nNumFolio, t.nFlgFirma, t.documentoElectronico, t.descripcion ,t.cTipoBien , t.fase
+                      t.nNumFolio, t.nFlgFirma, t.documentoElectronico, t.descripcion ,t.cTipoBien, t.nTienePedidoSiga, t.fase
                FROM Tra_M_Tramite t 
                JOIN Tra_M_Tipo_Documento td ON t.cCodTipoDoc = td.cCodTipoDoc
                WHERE t.iCodTramite = ?";
@@ -136,11 +131,16 @@ $descripcionHTML = $tramite['descripcion'] ?? "";
 $documentoElectronico = $tramite['documentoElectronico'] ?? null;
 $tipoBienBD = isset($tramite['cTipoBien']) ? trim($tramite['cTipoBien']) : '';
 
-// Obtener ítems SIGA si es tipo de documento 109
+// =====
+// INICIO QUERY Obtener ítems SIGA si es tipo de documento 109
+// =====
 $sigaItems = [];
 if ((string)$tramite['cCodTipoDoc'] === '109') {
     error_log("Tipo de documento 109 detectado. Buscando pedidos SIGA...");
-    $sqlPedidos = "SELECT pedido_siga, codigo_item, cantidad FROM Tra_M_Tramite_SIGA_Pedido WHERE iCodTramite = ?";
+    $sqlPedidos = "SELECT 
+    pedido_siga, codigo_item, cantidad 
+    FROM Tra_M_Tramite_SIGA_Pedido 
+    WHERE iCodTramite = ?";
     $stmtPedidos = sqlsrv_query($cnx, $sqlPedidos, [$iCodTramite]);
     if ($stmtPedidos) {
         while ($pedido = sqlsrv_fetch_array($stmtPedidos, SQLSRV_FETCH_ASSOC)) {
@@ -311,6 +311,45 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
             text-decoration: none;
             font-weight: normal;
         }
+        /* para quitar spinners */
+        input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+/* FIN para quitar spinners */
+/* INICIO codigo para tostada */
+#alert-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* centrado perfecto */
+  background-color: #28a745;
+  color: white;
+  padding: 16px 24px;
+  border-radius: 10px;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 15px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  animation: fadeInOut 3s forwards;
+  display: none;
+}
+@keyframes fadeInOut {
+  0%   {opacity: 0; transform: translate(-50%, -40%);}
+  10%  {opacity: 1; transform: translate(-50%, -50%);}
+  90%  {opacity: 1;}
+  100% {opacity: 0; transform: translate(-50%, -60%);}
+}
+#alert-toast.success  { background-color: #28a745; } /* verde */
+#alert-toast.error    { background-color: #dc3545; } /* rojo */
+#alert-toast.warning  { background-color: #ffc107; color: #212529; } /* amarillo */
+#alert-toast.info     { background-color: #17a2b8; } /* celeste */
+/* FIN codigo para tostada */
     </style>
 </head>
 <body>
@@ -340,18 +379,19 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
                 </div>
                 </div>
 
-                  <!-- INICIO: GRUPO REQUERIMIENTO -->
+               <!-- ==== -->
+  <!-- INICIO: GRUPO REQUERIMIENTO -->
+  <!-- ==== -->
+
 <div id="grupoRequerimiento" style="margin-top: 25px;">
-  <!-- Tipo de requerimiento y ¿tiene pedido SIGA? -->
+  <!-- Fila de selección tipo de bien y ¿tiene pedido SIGA? -->
   <div class="form-row">
-    <!-- Tipo de Requerimiento -->
     <div class="input-container select-flotante">
         <select id="tipoBien" name="tipoBien" required>
             <option value="" disabled <?= $tipoBienBD === '' ? 'selected' : '' ?> hidden></option>
             <option value="B" <?= $tipoBienBD === 'B' ? 'selected' : '' ?>>Bien</option>
             <option value="S" <?= $tipoBienBD === 'S' ? 'selected' : '' ?>>Servicio</option>
         </select>
-
       <label for="tipoBien">Tipo de Requerimiento</label>
     </div>
 
@@ -431,7 +471,8 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
             </td>
             <td>
               <button type="button" class="btn-secondary eliminar-item" 
-                      data-cod="<?= $item['CODIGO_ITEM'] ?>" data-pedido="<?= $item['pedido_siga'] ?>">
+                      data-cod="<?= $item['CODIGO_ITEM'] ?>" 
+                      data-pedido="<?= $item['pedido_siga'] ?>">
                 Eliminar
               </button>
             </td>
@@ -447,10 +488,11 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
     </div>
   </div>
 
-  <!-- Sección: Buscar sin pedido SIGA -->
+  <!-- === BLOQUE: SIN PEDIDO SIGA === -->
   <div id="busquedaItemSinPedido" style="display: <?= ($tramite['nTienePedidoSiga'] == 0 ? 'block' : 'none') ?>; margin-top: 20px;">
     <h3>Agregar Ítems SIN Pedido SIGA</h3>
 
+      <!-- Buscadores -->
     <div class="form-row" style="display: flex; gap: 12px;">
       <div style="display: flex; flex: 1.9; gap: 8px;">
         <div class="input-container select-flotante" style="flex: 1.5;">
@@ -469,18 +511,22 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
       </div>
     </div>
 
+      <!-- Resultados de búsqueda -->
     <div class="form-row">
       <h4>Ítems Catálogo Búsqueda</h4>
       <table id="tablaItemsEncontrados" style="width: 100%; font-size: 14px; margin-top: 10px;">
         <thead style="background: #f5f5f5;">
-          <tr><th>Código</th><th>Nombre</th><th>Precio</th><th>Cantidad</th><th>Acción</th></tr>
+          <tr>
+            <th>Código</th><th>Nombre</th><th>Cantidad</th><th>Acción</th>
+          </tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
 
-    <div class="form-row">
-      <h4>Ítems Catálogo Agregados</h4>
+<!-- Ítems agregados manualmente desde BD -->
+<div class="form-row" style="margin-top: 35px;">
+    <h4 style="margin-bottom: 10px;">Ítems Catálogo Agregados</h4>
       <table id="tablaItemsSinPedido" style="width: 100%; font-size: 14px;">
         <thead style="background: #f5f5f5;">
           <tr><th>Código</th><th>Nombre</th><th>Cantidad</th><th>Acción</th></tr>
@@ -546,8 +592,9 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
   </div>
 </div>
 <?php endif; ?>
-<!-- FIN: GRUPO REQUERIMIENTOS DEL EXPEDIENTE -->
-
+ <!-- ==== -->
+<!-- FIN: GRUPO REQUERIMIENTO -->
+  <!-- ==== -->
 <div class="form-row">
   <div class="input-container" style="flex: 1; position: relative;">
     <textarea name="asunto" id="asunto" class="form-textarea relleno" required><?= htmlspecialchars($tramite['cAsunto']) ?></textarea>
@@ -560,7 +607,7 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
 </div>
 
 <div class="form-row">
-    <div class="input-container" style="flex: 1; position: relative;">
+<div class="input-container" style="flex: 0.49; position: relative;">
         <input type="number" id="folios" name="folios" class="form-control" value="<?= intval($tramite['nNumFolio'] ?? 1) ?>" min="1">
         <label for="folios">Folios</label>
     </div>
@@ -570,7 +617,6 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
       <option value="" disabled hidden <?= is_null($tramite['fase']) ? 'selected' : '' ?>></option>
       <option value="0" <?= $tramite['fase'] === 0 ? 'selected' : '' ?>>No Corresponde</option>
       <option value="2" <?= $tramite['fase'] === 2 ? 'selected' : '' ?>>Validación</option>
-      
       <?php if ($_SESSION['iCodOficinaLogin'] == 112): ?>
         <option value="3" <?= $tramite['fase'] === 3 ? 'selected' : '' ?>>Certificación</option>
         <option value="4" <?= $tramite['fase'] === 4 ? 'selected' : '' ?>>Reformulación</option>
@@ -581,7 +627,6 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
     <label for="fase">Fase</label>
   </div>
 </div>
-    
 
                      
         <!-- Búsqueda de oficinas -->
@@ -719,7 +764,7 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
         <i class="material-icons">download</i> Descargar
         </a>
         <button type="button" onclick="abrirPopupFirmantesPrincipal(<?= $iCodTramite ?>)" class="btn-primary">
-            <i class="material-icons">group_add</i> Visar Documento Principal
+            <i class="material-icons">group_add</i> Solicitar Vistos Buenos
         </button>
                 <?php if ($iCodPerfilLogin == 3): ?>
                  <?php if ($hayFirmantesPrincipal): ?>
@@ -733,6 +778,14 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
         </button>
     <?php endif; ?>
 <?php endif; ?>
+
+<?php if ($mostrarCamposInventario): ?>
+        <?php if ((string)$tramite['cCodTipoDoc'] === '108' || (string)$tramite['cCodTipoDoc'] === '109'): ?>
+            <button type="button" id="btnInsertarSiga" class="btn btn-secondary" style="margin-left: 10px;">
+                <i class="material-icons">addchart</i> Insertar data SIGA
+            </button>
+        <?php endif; ?>
+        <?php endif; ?>
             </div>
             </form>
 
@@ -746,9 +799,9 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
             <i class="material-icons">upload</i> Subir Documento Principal
         </button>
     </form>
-    <!-- <a href="generarPlantillaWord.php?iCodTramite=<?= $iCodTramite ?>" class="btn-primary" target="_blank" style="margin-top: 10px; display: inline-block;">
+      <a href="generarPlantillaWord.php?iCodTramite=<?= $iCodTramite ?>" class="btn-primary" target="_blank" style="margin-top: 10px; display: inline-block;">
         <i class="material-icons">description</i> Descargar Plantilla Word
-    </a> -->
+    </a>  
   </div>
                     </form>
           
@@ -829,11 +882,9 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
                 }
                 if ($iCodDigital): ?>
                     <a href="#" onclick="abrirPopupFirmantes(<?= $iCodTramite ?>, <?= $iCodDigital ?>, '<?= htmlspecialchars($doc['archivo']) ?>')" style="color: var(--primary);">
-                    <i class="material-icons" title="Visar Complementario">person_add</i>
+                    <i class="material-icons" title="Solicitar Firmas">person_add</i>
                      </a>
-                     <!-- <a href="#" onclick="abrirTipoComplementario(<?= $iCodTramite ?>, <?= $iCodDigital ?>, '<?= htmlspecialchars($doc['archivo']) ?>')" style="color: var(--primary);">
-                     <i class="material-icons" title="Designar Tipo de Complementario">assignment</i>
-                     </a> -->
+                   
                                         <?php endif; ?>
                                     </td>
                                       <!-- <td>
@@ -904,12 +955,34 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
         console.log("iCodTramite:", <?= json_encode($iCodTramite) ?>);
         console.log("Destinos:", <?= json_encode($destinos) ?>);
         tinymce.init({
-            selector: '#descripcion',
-            height: 500,
-            menubar: false,
-            plugins: 'advlist autolink lists link image charmap print preview anchor textcolor',
-            toolbar: 'undo redo | formatselect | bold italic backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat',
-            language: 'es',
+          selector: '#descripcion',
+                height: 500,
+                language: 'es',
+                menubar: 'insert table',  // importante que incluya 'table'
+                plugins: 'table image link lists autolink paste',
+                toolbar: 'undo redo | styleselect | bold italic underline forecolor backcolor | ' +
+                        'alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | ' +
+                        'link image table | removeformat',
+                fontsize_formats: '8pt 10pt 12pt 14pt 16pt 18pt 24pt 36pt',
+                image_title: true,
+                automatic_uploads: true,
+                file_picker_types: 'image',
+                file_picker_callback: function(cb, value, meta) {
+                  if (meta.filetype === 'image') {
+                    const input = document.createElement('input');
+                    input.setAttribute('type', 'file');
+                    input.setAttribute('accept', 'image/*');
+                    input.onchange = function () {
+                      const file = this.files[0];
+                      const reader = new FileReader();
+                      reader.onload = function () {
+                        cb(reader.result, { title: file.name });
+                      };
+                      reader.readAsDataURL(file);
+                    };
+                    input.click();
+                  }
+                }
         });
 
         // Alternar entre editor y adjunto
@@ -924,7 +997,10 @@ $iCodPerfilLogin = $_SESSION['iCodPerfilLogin'] ?? null;
 document.getElementById('formularioEditor').addEventListener('submit', function(e) {
             e.preventDefault();
             tinymce.triggerSave();
+              // ✅ Añadir tipoDocumento manualmente desde otro formulario
+              const tipoDocumentoValor = document.getElementById('tipoDocumento').value;
             const formData = new FormData(this);
+            formData.append('tipoDocumento', tipoDocumentoValor); // ← AQUÍ VA
             const guardarBtn = document.getElementById('guardarBtn');
             guardarBtn.disabled = true;
             guardarBtn.innerHTML = 'Guardando...';
@@ -960,7 +1036,7 @@ document.getElementById('formularioEditor').addEventListener('submit', function(
                     if (btnFirmar && btnFirmar.disabled) {
                         btnFirmar.disabled = false;
                     }
-                    alert('Guardado correctamente. PDF actualizado.');
+                    showToast('success','Guardado correctamente. PDF actualizado.');
                 } else {
                     throw new Error(res.message || 'No se pudo generar el PDF');
                 }
@@ -973,6 +1049,7 @@ document.getElementById('formularioEditor').addEventListener('submit', function(
                 guardarBtn.innerHTML = '<i class="material-icons">save</i> Guardar';
             });
         });
+        //// FIN DE  Guardar y generar PDF
 // boton enviar
         document.getElementById('btnEnviar').addEventListener('click', async function() {
     const iCodTramite = <?= json_encode($iCodTramite) ?>;
@@ -1068,12 +1145,12 @@ function signatureInit() {
 }
 
 function signatureOk() {
-    alert("✅ Documento firmado correctamente");
+    alert(" Documento firmado correctamente");
     location.reload();
 }
 
 function signatureCancel() {
-    alert("❌ Firma cancelada.");
+    alert("Firma cancelada.");
 }
 
 const btnFirmar = document.getElementById("btnFirmarPrincipal");
@@ -1121,11 +1198,6 @@ const param_url = `https://tramite.heves.gob.pe/STDD_marchablanca/getFpParamsPri
     });
 }
 
-function abrirModalSIGA(pedido_siga) {
-    const iCodTramite = <?= json_encode($iCodTramite) ?>;
-    const url = `subirComplementarioSIGA.php?iCodTramite=${iCodTramite}&pedido_siga=${pedido_siga}`;
-    window.open(url, 'Subir Complementario SIGA', 'width=700,height=500,resizable=yes,scrollbars=yes');
-}
 
 function abrirTipoComplementario(iCodTramite, iCodDigital) {
     const url = `registroEspecialComplementario.php?iCodTramite=${iCodTramite}&iCodDigital=${iCodDigital}`;
@@ -1133,14 +1205,7 @@ function abrirTipoComplementario(iCodTramite, iCodDigital) {
     if (!win || win.closed || typeof win.closed == 'undefined') {
         alert("Por favor, habilite las ventanas emergentes.");
     }
-    const interval = setInterval(() => {
-        if (win.closed) {
-            clearInterval(interval);
-            console.log("🔁 Recargando editor por cambio de tipo complementario...");
-            location.reload(); // 🔄 Recarga automática
-        }
-    }, 500);
-}
+   }
 
 document.getElementById('formAdjuntoPrincipal').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -1170,12 +1235,12 @@ document.getElementById('formAdjuntoPrincipal').addEventListener('submit', async
         }
 
 
-            alert("✅ Documento subido correctamente.");
+            alert(" Documento subido correctamente.");
         } else {
-            alert("❌ Error al subir documento: " + result.message);
+            alert(" Error al subir documento: " + result.message);
         }
     } catch (err) {
-        alert("❌ Error en la conexión: " + err.message);
+        alert(" Error en la conexión: " + err.message);
     }
 });
 
@@ -1296,7 +1361,7 @@ function agregarDestino() {
                 }
             } catch (err) {
                 alert("Error en la solicitud");
-                console.error("❌ Error en guardarCabeceraGenerar:", err);
+                console.error(" Error en guardarCabeceraGenerar:", err);
 
             }
         }
@@ -1444,6 +1509,8 @@ function agregarDestino() {
 // No usamos itemsManual, todo se guarda en BD
 let itemsSeleccionados = {}; // Objeto para controlar ítems CON pedido SIGA (por clave único: pedido_codigo)
 const iCodTramite = <?= (int)$iCodTramite ?>;
+const mostrarCamposInventario = <?= $mostrarCamposInventario ? 'true' : 'false' ?>;
+
 // 🔍 2A. Buscar por código
 $('#buscarItemBtn').on('click', function () {
   const tipo = $('#tipoBien').val();
@@ -1527,68 +1594,169 @@ function renderizarItemsCatalogo(items) {
 
 // ➕ 4. Agregar ítem manual a tabla y guardar en BD
 function agregarItemManual(codigo, nombre) {
-  const cantidad = $(`input[data-cod="${codigo}"]`).val();
-  if (!cantidad || cantidad <= 0) return alert("Cantidad inválida");
+  const cantidad = parseInt($(`input[name="cantidad_${codigo}"]`).val()) || 0;
+  if (cantidad <= 0) return alert(" Cantidad inválida");
 
-  // Validar visualmente si ya está agregado
+  // Solo oficinas 5/103
+  const stock   = mostrarCamposInventario ? (parseFloat($(`input[name="stock_${codigo}"]`).val()) || 0) : 0;
+  const consumo = mostrarCamposInventario ? (parseFloat($(`input[name="consumo_${codigo}"]`).val()) || 0) : 0;
+  const meses   = mostrarCamposInventario ? (consumo > 0 ? (stock / consumo).toFixed(2) : 0) : 0;
+  const situacion = mostrarCamposInventario ? ($(`select[name="situacion_${codigo}"]`).val() || '') : '';
+
+  // Verifica duplicado
   if ($(`#tablaItemsSinPedido tbody tr[data-cod="${codigo}"]`).length > 0) {
-    return alert("⚠️ Este ítem ya fue agregado. Modifique la cantidad directamente.");
+    return alert("Item Ya fue agregado.");
   }
+
+  const bodyData = new URLSearchParams({
+    iCodTramite: iCodTramite,
+    codigoItem: codigo,
+    nuevaCantidad: cantidad,
+    stock: stock,
+    consumo: consumo,
+    meses: meses,
+    situacion: situacion
+  }).toString();
 
   fetch('guardarItemManual.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: `iCodTramite=${iCodTramite}&codigoItem=${encodeURIComponent(codigo)}&nuevaCantidad=${cantidad}`
+    body: bodyData
   })
   .then(res => res.json())
   .then(data => {
     if (data.status === 'inserted' || data.status === 'updated') {
+
+       // Celdas condicionales
+       const celdasInventario = mostrarCamposInventario ? `
+          <td><input type="number" min="0" value="${stock}" class="stock-input" data-cod="${codigo}" style="width: 70px;"></td>
+          <td><input type="number" min="0" value="${consumo}" class="consumo-input" data-cod="${codigo}" style="width: 70px;"></td>
+          <td><input type="number" min="0" value="${meses}" class="meses-input" data-cod="${codigo}" style="width: 70px;" readonly></td>
+          <td>
+            <select class="situacion-input" data-cod="${codigo}" style="width: 130px;">
+              <option value="">-</option>
+              <option value="Desabastecido" ${situacion === 'Desabastecido' ? 'selected' : ''}>Desabastecido</option>
+              <option value="Sub Stock" ${situacion === 'Sub Stock' ? 'selected' : ''}>Sub Stock</option>
+              <option value="Norma Stock" ${situacion === 'Norma Stock' ? 'selected' : ''}>Norma Stock</option>
+              <option value="Sobre Stock" ${situacion === 'Sobre Stock' ? 'selected' : ''}>Sobre Stock</option>
+            </select>
+          </td>
+          ` : '';
+
       $('#tablaItemsSinPedido tbody').append(`
         <tr data-cod="${codigo}">
           <td>${codigo}</td>
           <td>${nombre}</td>
-          <td><input type="number" min="1" value="${cantidad}" class="cantidad-input" data-cod="${codigo}"></td>
-          <td><button type="button" onclick="eliminarItemManual('${codigo}')">Eliminar</button></td>
+          <td><input type="number" min="1" value="${cantidad}" class="cantidad-input" data-cod="${codigo}" style="width: 70px;"></td>
+          ${celdasInventario}
+          <td>
+            <button type="button" class="btn-secondary eliminar-item"
+              data-cod="${codigo}" data-pedido="N.A." data-tramite="${iCodTramite}">
+              Eliminar
+            </button>
+          </td>
         </tr>
       `);
-      if (data.status === 'inserted') {
-        alert("✅ Ítem agregado correctamente.");
-      } else {
-        alert("⚠️ Ya existía. Se actualizó la cantidad.");
-      }
+
+      alert(" Ítem agregado correctamente.");
     } else {
-      alert("❌ Error: " + data.message);
+      alert("Meses de consumo calculado: " + data.message);
     }
   })
-  .catch(err => alert("❌ Error de red: " + err));
+  .catch(err => alert(" Error de red: " + err));
 }
+// ACTUALIZAR LOS NUEVOS CAMPOS
+function actualizarCampoManual(campo, valor, codigo) {
+  fetch('actualizarCampoItemManual.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `iCodTramite=${iCodTramite}&codigoItem=${codigo}&campo=${campo}&valor=${encodeURIComponent(valor)}`
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status !== 'ok') {
+       alert("Revise los datos: " + data.message);
+    }
+  });
+}
+
+$(document).on('change', '.cantidad-input', function () {
+  actualizarCampoManual('cantidad', $(this).val(), $(this).data('cod'));
+});
+$(document).on('change', '.stock-input', function () {
+  const cod = $(this).data('cod');
+  const stockVal = parseFloat($(this).val()) || 0;
+  actualizarCampoManual('stock', stockVal, cod);
+
+  const consumoVal = parseFloat($(`.consumo-input[data-cod="${cod}"]`).val()) || 0;
+  const meses = consumoVal > 0 ? (stockVal / consumoVal).toFixed(2) : 0;
+  $(`.meses-input[data-cod="${cod}"]`).val(meses);
+  actualizarCampoManual('meses_consumo', meses, cod);
+});
+$(document).on('change', '.consumo-input', function () {
+  const cod = $(this).data('cod');
+  const consumoVal = parseFloat($(this).val()) || 0;
+  actualizarCampoManual('consumo_promedio', consumoVal, cod);
+
+  const stockVal = parseFloat($(`.stock-input[data-cod="${cod}"]`).val()) || 0;
+  const meses = consumoVal > 0 ? (stockVal / consumoVal).toFixed(2) : 0;
+  $(`.meses-input[data-cod="${cod}"]`).val(meses);
+  actualizarCampoManual('meses_consumo', meses, cod);
+});
+// .meses-input es solo de lectura
+$(document).on('change', '.situacion-input', function () {
+  actualizarCampoManual('situacion', $(this).val(), $(this).data('cod'));
+});
+
+
+// FIN ACTUALIZAR NUEVOS CAMPOS
+
 // ✏️ 5. Escuchar cambios de cantidad en inputs de tabla
+// Cantidad (siempre aplica)
 $(document).on('change', '.cantidad-input', function () {
   const nuevaCantidad = parseInt($(this).val());
   const codItem = $(this).data('cod');
-
   if (isNaN(nuevaCantidad) || nuevaCantidad < 1) {
     alert('Cantidad inválida. Debe ser mayor a 0.');
     return;
   }
-
   fetch('guardarItemManual.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: `iCodTramite=${iCodTramite}&codigoItem=${encodeURIComponent(codItem)}&nuevaCantidad=${nuevaCantidad}`
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.status === 'inserted') {
-      alert('✅ Ítem agregado correctamente');
-    } else if (data.status === 'updated') {
-      console.log('Cantidad actualizada');
-    } else {
-      alert('❌ Error: ' + data.message);
-    }
-  })
-  .catch(err => alert('❌ Error de red: ' + err));
+  }).then(r=>r.json()).then(data=>{
+    if (data.status === 'inserted') alert(' Ítem agregado correctamente');
+  });
 });
+
+// Solo para OF. 5 y 103
+if (mostrarCamposInventario) {
+  $(document).on('change', '.stock-input', function () {
+    const cod = $(this).data('cod');
+    const stockVal = parseFloat($(this).val()) || 0;
+    actualizarCampoManual('stock', stockVal, cod);
+
+    const consumoVal = parseFloat($(`.consumo-input[data-cod="${cod}"]`).val()) || 0;
+    const meses = consumoVal > 0 ? (stockVal / consumoVal).toFixed(2) : 0;
+    $(`.meses-input[data-cod="${cod}"]`).val(meses);
+    actualizarCampoManual('meses_consumo', meses, cod);
+  });
+
+  $(document).on('change', '.consumo-input', function () {
+    const cod = $(this).data('cod');
+    const consumoVal = parseFloat($(this).val()) || 0;
+    actualizarCampoManual('consumo_promedio', consumoVal, cod);
+
+    const stockVal = parseFloat($(`.stock-input[data-cod="${cod}"]`).val()) || 0;
+    const meses = consumoVal > 0 ? (stockVal / consumoVal).toFixed(2) : 0;
+    $(`.meses-input[data-cod="${cod}"]`).val(meses);
+    actualizarCampoManual('meses_consumo', meses, cod);
+  });
+
+  $(document).on('change', '.situacion-input', function () {
+    actualizarCampoManual('situacion', $(this).val(), $(this).data('cod'));
+  });
+}
 // 🔄 6A. Al cambiar tipo de requerimiento (Bien o Servicio)
 $('#tipoBien').on('change', function () {
   const nuevoTipo = $(this).val();
@@ -1633,52 +1801,231 @@ $('#pedidoSiga').on('change', function () {
   });
 });
 
-
-
-
 // 🔄 6C. Al cambiar tipo de documento (por ejemplo, de 109 a otro)
+let tipoAnterior = $('#tipoDocumento').val(); // inicial
 $('#tipoDocumento').on('change', function () {
   const tipo = $(this).val();
 
-  if ((tipo === '108' || tipo === '109') && !tieneItemsSIGA) {
+  if (tipo === '109' || tipo === '108') {
     $('#grupoRequerimiento').show();
   } else {
-    // Ocultar secciones de edición
-    $('#grupoRequerimiento, #seccionPedidoSiga, #resultadoBusqueda, #resultadoAgregado, #busquedaItemSinPedido').hide();
-    $('#tipoBien, #pedidoSiga').val('');
-    $('#expedienteSIGA, #buscarItemTexto, #buscarItemCodigo').val('');
-    $('#tablaSiga tbody, #tablaSigaAgregados tbody, #tablaItemsSinPedido tbody, #tablaItemsEncontrados tbody').empty();
-
-    // Solo si cambió a tipo distinto de 108 o 109
-    if (tipo !== '108' && tipo !== '109') {
-      if (confirm('⚠️ Al cambiar de tipo se eliminarán todos los ítems SIGA. ¿Desea continuar?')) {
-        fetch('eliminarItemsSigaTramite.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: `iCodTramite=${iCodTramite}`
-        });
-      } else {
-        $('#tipoDocumento').val('109');
-      }
+    if (confirm('Al cambiar de tipo se eliminarán todos los ítems SIGA. ¿Desea continuar?')) {
+      fetch('eliminarItemsSigaTramite.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `iCodTramite=${iCodTramite}`
+      })
+      .then(res => res.json())
+      .then(() => {
+        $('#grupoRequerimiento, #seccionPedidoSiga, #resultadoBusqueda, #resultadoAgregado, #busquedaItemSinPedido').hide();
+        $('#tipoBien, #pedidoSiga').val('');
+        $('#expedienteSIGA, #buscarItemTexto, #buscarItemCodigo').val('');
+        $('#tablaSiga tbody, #tablaSigaAgregados tbody, #tablaItemsSinPedido tbody, #tablaItemsEncontrados tbody').empty();
+        tipoAnterior = tipo; // actualizar si aceptó
+      });
+    } else {
+      $('#tipoDocumento').val(tipoAnterior); // 🔁 volver al tipo anterior dinámicamente
     }
-  }
+      }
 });
-
 // 🔍 Evaluar tipo de documento al cargar (caso al pasar desde registroOficina)
 $(document).ready(function () {
   const tipoInicial = $('#tipoDocumento').val();
-  if (tipoInicial === '109') {
+  if (tipoInicial === '109' || tipoInicial === '108') {
     $('#grupoRequerimiento').show();
+
+    const tienePedido = $('#pedidoSiga').val();
+    if (tienePedido === '1') {
+      $('#seccionPedidoSiga, #resultadoBusqueda, #resultadoAgregado').show();
+      $('#busquedaItemSinPedido').hide();
+    } else if (tienePedido === '0') {
+      $('#seccionPedidoSiga, #resultadoBusqueda').hide();
+      $('#resultadoAgregado, #busquedaItemSinPedido').show();
+    }
+
   } else {
     $('#grupoRequerimiento').hide(); // Seguridad extra
   }
 });
 
+
+//ELIMINAR ITEM EN ESPECIFICO
+$(document).on('click', '.eliminar-item', function () {
+  const cod = $(this).data('cod') || '*';
+  const pedido = $(this).data('pedido');
+  const tramite = $(this).data('tramite');
+
+  if (!confirm("¿Deseas eliminar este ítem?")) return;
+
+  fetch('eliminarItemManual.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `iCodTramite=${tramite}&codigoItem=${cod}&pedidoSiga=${pedido}`
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'deleted') {
+      $(`tr[data-clave$="${cod}"]`).remove();
+      alert(" Ítem eliminado correctamente.");
+      location.reload();
+    } else {
+      alert("No se pudo eliminar: " + data.message);
+    }
+  })
+  .catch(err => alert("❌ Error al eliminar: " + err));
+});
+// FIN DE ELIMINAR ITEM EN ESPECIFICO
+ 
+let pedidosSigaData = {};  
+$('#buscarSigaBtn').on('click', function () {
+  const nro = $('#nroPedidoSIGA').val().trim();
+  const tipoBien = $('#tipoBien').val();
+
+  if (!nro || !tipoBien) return alert("Debe ingresar N° Pedido y tipo de bien.");
+
+  $.get('buscar_pedido_siga.php', { nro_pedido: nro, tipo_bien: tipoBien }, function (res) {
+    if (res.status === 'success') {
+      const rows = res.datos.map(item => `
+        <tr>
+          <td>${item.NRO_PEDIDO}</td>
+          <td>${item.CODIGO_ITEM}</td>
+          <td>${item.NOMBRE_ITEM}</td>
+          <td>${item.CANT_SOLICITADA}</td>
+        </tr>`).join('');
+
+      $('#tablaSiga tbody').html(rows);
+      pedidosSigaData[`${nro}_${tipoBien}`] = res.datos;
+      $('#resultadoBusqueda').show();
+    } else {
+      alert("No se encontraron ítems para ese pedido SIGA.");
+    }
+  }, 'json');
+});
+
+$('#agregarPedidoBtn').on('click', function () {
+  const nro = $('#nroPedidoSIGA').val().trim();
+  const tipoBien = $('#tipoBien').val();
+  const clave = `${nro}_${tipoBien}`;
+  const datos = pedidosSigaData[clave];
+
+  if (!datos || datos.length === 0) return alert("Primero debe buscar un pedido SIGA válido.");
+  if ($(`#tablaSigaAgregados tr[data-pedido='${clave}']`).length > 0) {
+    return alert("Este pedido SIGA ya fue agregado.");
+  }
+
+  const totalItems = datos.length;
+  let filas = '';
+
+  datos.forEach((item, idx) => {
+    const cantidadEntera = parseInt(item.CANT_SOLICITADA.split('.')[0]); // corta todo lo decimal
+
+    // Llamada a guardarItemPedidoSiga.php
+    fetch('guardarItemPedidoSiga.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `iCodTramite=${iCodTramite}&pedidoSiga=${nro}&codigoItem=${item.CODIGO_ITEM}&cantidad=${cantidadEntera}`
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status !== 'inserted' && data.status !== 'updated') {
+        alert("❌ Error al guardar ítem SIGA: " + data.message);
+      }
+    });
+
+    const hidden = `<input type="hidden" name="pedidosSiga[]" value="${nro}_${tipoBien}_${item.CODIGO_ITEM}_${cantidadEntera}">`;
+
+    filas += `
+      <tr data-pedido="${clave}">
+        ${idx === 0 ? `<td rowspan="${totalItems}">${nro}</td>` : ''}
+        <td>${item.CODIGO_ITEM}</td>
+        <td>${item.NOMBRE_ITEM}</td>
+        <td>${cantidadEntera}</td>  
+        ${idx === 0 ? `<td rowspan="${totalItems}"><button type="button" class="btn-secondary" onclick="eliminarPedidoSiga('${clave}')">Eliminar</button></td>` : ''}
+        ${hidden}
+      </tr>
+    `;
+  });
+
+  $('#tablaSigaAgregados tbody').append(filas);
+  $('#tablaSiga tbody').empty();
+  $('#nroPedidoSIGA').val('');
+});
+
+
+function eliminarPedidoSiga(clave) {
+  const [pedidoSiga] = clave.split('_');
+
+  if (!confirm("¿Deseas eliminar este pedido SIGA completo y todos sus ítems?")) return;
+
+  fetch('eliminarPedidoSigaTramite.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `iCodTramite=${iCodTramite}&pedidoSiga=${pedidoSiga}`
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.status === 'deleted') {
+      $(`#tablaSigaAgregados tr[data-pedido='${pedidoSiga}']`).remove();
+      delete pedidosSigaData[clave];
+      alert("🗑️ Pedido eliminado correctamente.");
+    } else {
+      alert("⚠️ No se pudo eliminar: " + data.message);
+    }
+  })
+  .catch(err => alert("❌ Error de red: " + err));
+}
+
 // ==========================
 // 🔁 FIN: JS PARA SIGA EN EDITOR
 // ==========================
 
+
+////JS PARA AGREGAR ITEMS SIGA AL PDF 
+document.addEventListener("DOMContentLoaded", function () {
+    const btnSiga = document.getElementById("btnInsertarSiga");
+    if (btnSiga) {
+        btnSiga.addEventListener("click", function () {
+            const iCodTramite = <?= (int)$iCodTramite ?>;
+
+            fetch('generarBloqueSigaHTML.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'iCodTramite=' + iCodTramite
+            })
+            .then(response => response.text())
+            .then(html => {
+                tinymce.get('descripcion').execCommand('mceInsertContent', false, html);
+                alert("Contenido SIGA insertado en el documento.");
+            })
+            .catch(err => {
+                alert("Error al insertar data SIGA: " + err.message);
+            });
+        });
+    }
+});
+////FIN JS PARA AGREGAR ITEMS SIGA AL PDF 
+
+// INICIO JS PARA TOSTADAS
+
+function showToast(type, msg) {
+  const toast = document.getElementById('alert-toast');
+  toast.className = ''; // limpia clases previas
+  toast.classList.add(type); // aplica clase tipo
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  toast.style.animation = 'none';
+  void toast.offsetWidth; // reinicia animación
+  toast.style.animation = 'fadeInOut 2s forwards';
+  setTimeout(() => {
+    toast.style.display = 'none';
+  }, 2000);
+}
+
+
+
+// FIN JS PARA TOSTADAS
     </script>
-        <script src="https://apps.firmaperu.gob.pe/web/clienteweb/firmaperu.min.js"></script>
+    <script src="https://apps.firmaperu.gob.pe/web/clienteweb/firmaperu.min.js"></script>
+    <div id="alert-toast" style="display: none;"></div>
 </body>
 </html>

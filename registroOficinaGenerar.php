@@ -28,6 +28,10 @@ if (!$tipoDocumento || !$correlativo || !$asunto || !$icodOficinaRegistro || !$i
     exit();
 }
 
+// Regla de negocio: Proveído (97) directo; lo demás Por Aprobar
+$esProveido = ((int)$tipoDocumento === 97);
+$nFlgEnvio  = $esProveido ? 1 : 0;   // 1 = directo, 0 = por aprobar
+
 // Obtener sigla de oficina para codificación
 $sqlSigla = "SELECT cSiglaOficina FROM Tra_M_Oficinas WHERE iCodOficina = ?";
 $paramsSigla = array($icodOficinaRegistro);
@@ -49,7 +53,7 @@ $sqlInsert = "INSERT INTO Tra_M_Tramite
 
 $paramsInsert = array(
 $tipoDocumento,         substr($correlativo, 0, 150),    $asunto,       $observaciones,     $icodOficinaRegistro,       $fechaRegistro, 
-$fechaRegistro,         $icodTrabajadorRegistro,        2,              0,                  1,                          0, 
+$fechaRegistro,         $icodTrabajadorRegistro,        2,              $nFlgEnvio,                  1,                          0, 
 1,                      $cTipoBien,                     $nNumFolio,     null,               $nTienePedidoSiga,          1
 );
 

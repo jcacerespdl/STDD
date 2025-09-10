@@ -42,6 +42,14 @@ while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
   $tiposDoc[] = $row;
 }
 
+// // Tipos de documentos
+//         $sqlTiposDoc = "SELECT cCodTipoDoc, cDescTipoDoc FROM Tra_M_Tipo_Documento WHERE nFlgInterno = 1 ORDER BY cDescTipoDoc ASC";
+//         $resultTiposDoc = sqlsrv_query($cnx, $sqlTiposDoc);
+//         $tiposDoc = [];
+//         while ($row = sqlsrv_fetch_array($resultTiposDoc, SQLSRV_FETCH_ASSOC)) {
+//             $tiposDoc[] = $row;
+//         }
+//----** Restricciones por tipo de documento : FIN
 
 // Oficinas
 $sqlOficinas = "SELECT iCodOficina, cNomOficina, cSiglaOficina  FROM Tra_M_Oficinas";
@@ -265,7 +273,7 @@ input[type=number] {
     <input type="hidden" name="iCodTramite" value="<?= $iCodTramite ?>">
 
         <div class="form-card">
-            <h2>Redacción del Encabezado</h2>
+            <h2>Redacción del Documento</h2>
             <div class="form-row">
                  <div class="input-container select-flotante">
                     <select id="tipoDocumento" name="tipoDocumento" required>
@@ -281,7 +289,7 @@ input[type=number] {
 
                 <div class="input-container">
                     <input type="text" id="correlativo" name="correlativo" class="form-control" value="<?= $tramite['cCodificacion'] ?>" readonly>
-                    <label for="correlativo">Correlativo:</label>
+                    <label for="correlativo">Correlativo</label>
                 </div>
                 </div>
 
@@ -314,7 +322,7 @@ input[type=number] {
 
    <!-- === BLOQUE: CON PEDIDO SIGA === -->
    <?php if ((int)$tramite['nTienePedidoSiga'] == 1): ?>
-  <div id="seccionPedidoSiga" style="display:none; margin-top: 10px;">
+  <div id="seccionPedidoSiga" style="margin-top: 15px;">
     <div class="form-row">
       <div class="input-container">
       <input type="text" id="nroPedidoSIGA" placeholder=" " autocomplete="off">
@@ -328,36 +336,36 @@ input[type=number] {
       </div>
     </div>
 
-      <!-- Resultados búsqueda SIGA -->
+    <!-- Resultados búsqueda -->
     <div class="form-row" id="resultadoBusqueda" style="display: none; margin-top: 10px;">
       <div class="input-container" style="width: 100%; overflow-x: auto;">
         <h3>Ítems SIGA Búsqueda</h3>
-        <table id="tablaSiga" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+        <table id="tablaSiga" style="width: 100%; font-size: 14px;">
           <thead style="background: #f5f5f5;">
             <tr>
               <th>PEDIDO SIGA</th>
               <th>CÓDIGO ITEM</th>
               <th>NOMBRE ITEM</th>
               <th>CANTIDAD SOLICITADA</th>
+
             </tr>
           </thead>
           <tbody></tbody>
         </table>
       </div>
     </div>
-     <!-- FIN Resultados búsqueda SIGA -->
 
-<!-- Ítems agregados -->
+<!-- Ítems SIGA Agregados -->
   <div class="form-row" id="resultadoAgregado" style="margin-top: 10px;">
     <div class="input-container" style="width: 100%; overflow-x: auto;">
       <h3>Ítems SIGA Agregados</h3>
-      <table id="tablaSigaAgregados" style="width: 100%; border-collapse: collapse; font-size: 14px;">
+      <table id="tablaSigaAgregados" style="width: 100%; font-size: 14px;">
       <thead style="background: #f5f5f5;">
         <tr>
           <th>PEDIDO SIGA</th>
           <th>CÓDIGO ITEM</th>
           <th>NOMBRE ITEM</th>
-          <th>CANTIDAD SOLICITADA</th>
+          <th>CANTIDAD</th>
           <th>ACCIONES</th>
           </tr>
         </thead>
@@ -442,9 +450,9 @@ input[type=number] {
       </table>
     </div>
 
-      <!-- Ítems agregados -->
-  <div class="form-row">
-    <h4>Ítems Catálogo Agregados</h4>
+      <!-- Ítems agregados manualmente desde BD -->
+  <div class="form-row" style="margin-top: 35px;">
+    <h4 style="margin-bottom: 10px;">Ítems Catálogo Agregados</h4>
       <table id="tablaItemsSinPedido" style="width: 100%; font-size: 14px;">
         <thead style="background: #f5f5f5;">
         <tr>
@@ -498,9 +506,9 @@ input[type=number] {
 </div>
 <?php endif; ?>
 </div>
+  <!-- ==== -->
 <!-- FIN: GRUPO REQUERIMIENTO -->
- 
-         <!-- Asunto y Observaciones, Selección de destinos, etc. continúan aquí... -->
+  <!-- ==== -->
                 <div class="form-row">
                 <div class="input-container" style="flex: 1; position: relative;">
                     <textarea name="asunto" id="asunto" class="form-textarea relleno" required><?= htmlspecialchars($tramite['cAsunto']) ?></textarea>
@@ -919,42 +927,8 @@ document.getElementById('formularioEditor').addEventListener('submit', function(
         });
         //// FIN DE  Guardar y generar PDF
 // boton enviar
-document.getElementById('btnEnviar').addEventListener('click', async function () {
-  const iCodTramite = <?= json_encode($iCodTramite) ?>;
-
-  try {
-    // 1) (opcional) si quieres guardar cabecera/destinos antes:
-    // const fd = new FormData(document.getElementById('formularioEditorCabecera'));
-    // await fetch('actualizarCabeceraGenerar.php', { method:'POST', body: fd });
-
-    // 2) (opcional) si quieres guardar cuerpo antes:
-    // if (typeof tinymce !== 'undefined') tinymce.triggerSave();
-    // const fd2 = new FormData(document.getElementById('formularioEditor'));
-    // await fetch('actualizarDescripcion.php', { method:'POST', body: fd2 });
-
-    // 3) Aplicar reglas SOLO para nFlgEnvio
-    const res  = await fetch('aplicarReglasNflgEnvio.php', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ iCodTramite })
-    });
-    const data = await res.json();
-
-    if (data.status === 'success') {
-      if (data.nFlgEnvio === 1) {
-        // alert('Marcado como ENVIADO directo (Proveído sin V°B°).');
-        window.location.href = 'bandejaEnviados.php';
-      } else {
-        // alert('Marcado como POR APROBAR (no es Proveído o tiene V°B°).');
-        window.location.href = 'bandejaEnviados.php';
-      }
-    } else {
-      alert('Error: ' + (data.message || 'No se pudo aplicar la regla.'));
-    }
-  } catch (e) {
-    console.error(e);
-    alert('Error de red al aplicar la regla.');
-  }
+document.getElementById('btnEnviar').addEventListener('click', function () {
+  window.location.href = 'bandejaEnviados.php';
 });
 
 document.getElementById('formSubirComplementarios').addEventListener('submit', function(e) {
@@ -1710,8 +1684,7 @@ $(document).on('click', '.eliminar-item', function () {
   .then(data => {
     if (data.status === 'deleted') {
       $(`tr[data-clave$="${cod}"]`).remove();
-      alert("Ítem eliminado correctamente.");
-      location.reload();
+      alert("🗑️ Ítem eliminado correctamente.");
     } else {
       alert("⚠️ No se pudo eliminar: " + data.message);
     }

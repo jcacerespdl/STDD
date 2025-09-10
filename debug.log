@@ -11,3 +11,183 @@
 [2025-08-26 11:20:06] Actualizando BD para iCodTramite: 652918
 [2025-08-26 11:20:06] 🧹 Limpieza completada.
 [2025-08-26 11:20:06] === FIN PROCESO ===
+[2025-09-05 16:32:53] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-09-05 16:32:53] ZIP recibido: C:\AppServ\www\STDD_marchablanca/porAprobar_129_68bb56f85679e.signed.7z
+[2025-09-05 16:32:53] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\STDD_marchablanca/porAprobar_129_68bb56f85679e.signed.7z" -o"C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados" -y
+[2025-09-05 16:32:53] Código retorno: 0
+[2025-09-05 16:32:53] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 886822 bytes (867 KiB) |  | Extracting archive: C:\AppServ\www\STDD_marchablanca\porAprobar_129_68bb56f85679e.signed.7z | -- | Path = C:\AppServ\www\STDD_marchablanca\porAprobar_129_68bb56f85679e.signed.7z | Type = 7z | Physical Size = 886822 | Headers Size = 346 | Method = LZMA2:23 | Solid = - | Blocks = 2 |  | Everything is Ok |  | Files: 2 | Size:       1009377 | Compressed: 886822
+[2025-09-05 16:32:53] Procesando archivo: MEMORANDO-CIRCULAR-00013-2025_UTI_HEVES(e).pdf
+[2025-09-05 16:32:53] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/MEMORANDO-CIRCULAR-00013-2025_UTI_HEVES(e)[FP].pdf
+[2025-09-05 16:32:53] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/MEMORANDO-CIRCULAR-00013-2025_UTI_HEVES(e).pdf
+[2025-09-05 16:32:53] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/MEMORANDO-CIRCULAR-00013-2025_UTI_HEVES(e).pdf
+[2025-09-05 16:32:53] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/MEMORANDO-CIRCULAR-00013-2025_UTI_HEVES(e)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/MEMORANDO-CIRCULAR-00013-2025_UTI_HEVES(e).pdf
+[2025-09-05 16:32:53] Actualizando BD para iCodTramite: 658057
+[2025-09-05 16:32:53] Procesando archivo: NOTA-INFORMATIVA-REQUERIMIENTO-00003-2025_UTI_HEVES(e).pdf
+[2025-09-05 16:32:53] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00003-2025_UTI_HEVES(e)[FP].pdf
+[2025-09-05 16:32:53] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00003-2025_UTI_HEVES(e).pdf
+[2025-09-05 16:32:53] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00003-2025_UTI_HEVES(e).pdf
+[2025-09-05 16:32:53] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00003-2025_UTI_HEVES(e)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00003-2025_UTI_HEVES(e).pdf
+[2025-09-05 16:32:53] Actualizando BD para iCodTramite: 658049
+[2025-09-05 16:32:53] 🧹 Limpieza completada.
+[2025-09-05 16:32:53] === FIN PROCESO ===
+[2025-09-05 16:48:45] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-09-05 16:48:45] ZIP recibido: C:\AppServ\www\STDD_marchablanca/porAprobar_129_68bb5a9aec596.signed.7z
+[2025-09-05 16:48:45] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\STDD_marchablanca/porAprobar_129_68bb5a9aec596.signed.7z" -o"C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados" -y
+[2025-09-05 16:48:45] Código retorno: 0
+[2025-09-05 16:48:45] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 307804 bytes (301 KiB) |  | Extracting archive: C:\AppServ\www\STDD_marchablanca\porAprobar_129_68bb5a9aec596.signed.7z | -- | Path = C:\AppServ\www\STDD_marchablanca\porAprobar_129_68bb5a9aec596.signed.7z | Type = 7z | Physical Size = 307804 | Headers Size = 188 | Method = LZMA2:23 | Solid = - | Blocks = 1 |  | Everything is Ok |  | Size:       368810 | Compressed: 307804
+[2025-09-05 16:48:45] Procesando archivo: NOTA-INFORMATIVA-00090-2025_UTI_HEVES(e).pdf
+[2025-09-05 16:48:45] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00090-2025_UTI_HEVES(e)[FP].pdf
+[2025-09-05 16:48:45] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00090-2025_UTI_HEVES(e).pdf
+[2025-09-05 16:48:45] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00090-2025_UTI_HEVES(e).pdf
+[2025-09-05 16:48:45] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00090-2025_UTI_HEVES(e)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00090-2025_UTI_HEVES(e).pdf
+[2025-09-05 16:48:45] Actualizando BD para iCodTramite: 658059
+[2025-09-05 16:48:45] 🧹 Limpieza completada.
+[2025-09-05 16:48:45] === FIN PROCESO ===
+[2025-09-08 12:55:02] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-09-08 12:55:02] ZIP recibido: C:\AppServ\www\STDD_marchablanca/porAprobar_129_68bf18635325e.signed.7z
+[2025-09-08 12:55:02] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\STDD_marchablanca/porAprobar_129_68bf18635325e.signed.7z" -o"C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados" -y
+[2025-09-08 12:55:02] Código retorno: 0
+[2025-09-08 12:55:02] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 924065 bytes (903 KiB) |  | Extracting archive: C:\AppServ\www\STDD_marchablanca\porAprobar_129_68bf18635325e.signed.7z | -- | Path = C:\AppServ\www\STDD_marchablanca\porAprobar_129_68bf18635325e.signed.7z | Type = 7z | Physical Size = 924065 | Headers Size = 407 | Method = LZMA2:23 | Solid = - | Blocks = 3 |  | Everything is Ok |  | Files: 3 | Size:       1106997 | Compressed: 924065
+[2025-09-08 12:55:02] Procesando archivo: INFORME-00019-2025_UTI_HEVES(e).pdf
+[2025-09-08 12:55:02] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00019-2025_UTI_HEVES(e)[FP].pdf
+[2025-09-08 12:55:02] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00019-2025_UTI_HEVES(e).pdf
+[2025-09-08 12:55:02] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00019-2025_UTI_HEVES(e).pdf
+[2025-09-08 12:55:02] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00019-2025_UTI_HEVES(e)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00019-2025_UTI_HEVES(e).pdf
+[2025-09-08 12:55:02] Actualizando BD para iCodTramite: 658074
+[2025-09-08 12:55:02] Procesando archivo: MEMORANDO-CIRCULAR-00014-2025_UTI_HEVES(e).pdf
+[2025-09-08 12:55:02] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/MEMORANDO-CIRCULAR-00014-2025_UTI_HEVES(e)[FP].pdf
+[2025-09-08 12:55:02] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/MEMORANDO-CIRCULAR-00014-2025_UTI_HEVES(e).pdf
+[2025-09-08 12:55:02] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/MEMORANDO-CIRCULAR-00014-2025_UTI_HEVES(e).pdf
+[2025-09-08 12:55:02] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/MEMORANDO-CIRCULAR-00014-2025_UTI_HEVES(e)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/MEMORANDO-CIRCULAR-00014-2025_UTI_HEVES(e).pdf
+[2025-09-08 12:55:02] Actualizando BD para iCodTramite: 658064
+[2025-09-08 12:55:02] Procesando archivo: INFORME-00017-2025_UTI_HEVES(e).pdf
+[2025-09-08 12:55:02] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00017-2025_UTI_HEVES(e)[FP].pdf
+[2025-09-08 12:55:02] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00017-2025_UTI_HEVES(e).pdf
+[2025-09-08 12:55:02] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00017-2025_UTI_HEVES(e).pdf
+[2025-09-08 12:55:02] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00017-2025_UTI_HEVES(e)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00017-2025_UTI_HEVES(e).pdf
+[2025-09-08 12:55:02] Actualizando BD para iCodTramite: 658063
+[2025-09-08 12:55:02] 🧹 Limpieza completada.
+[2025-09-08 12:55:02] === FIN PROCESO ===
+[2025-09-08 13:34:31] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-09-08 13:34:31] ZIP recibido: C:\AppServ\www\STDD_marchablanca/porAprobar_137_68bf21a81b464.signed.7z
+[2025-09-08 13:34:31] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\STDD_marchablanca/porAprobar_137_68bf21a81b464.signed.7z" -o"C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados" -y
+[2025-09-08 13:34:31] Código retorno: 0
+[2025-09-08 13:34:31] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 772831 bytes (755 KiB) |  | Extracting archive: C:\AppServ\www\STDD_marchablanca\porAprobar_137_68bf21a81b464.signed.7z | -- | Path = C:\AppServ\www\STDD_marchablanca\porAprobar_137_68bf21a81b464.signed.7z | Type = 7z | Physical Size = 772831 | Headers Size = 290 | Method = LZMA2:23 | Solid = - | Blocks = 2 |  | Everything is Ok |  | Files: 2 | Size:       1035265 | Compressed: 772831
+[2025-09-08 13:34:31] Procesando archivo: INFORME-00009-2025_ES_UTI_HEVES(E).pdf
+[2025-09-08 13:34:31] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00009-2025_ES_UTI_HEVES(E)[FP].pdf
+[2025-09-08 13:34:31] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00009-2025_ES_UTI_HEVES(E).pdf
+[2025-09-08 13:34:31] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00009-2025_ES_UTI_HEVES(E).pdf
+[2025-09-08 13:34:31] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00009-2025_ES_UTI_HEVES(E)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00009-2025_ES_UTI_HEVES(E).pdf
+[2025-09-08 13:34:31] Actualizando BD para iCodTramite: 658077
+[2025-09-08 13:34:31] Procesando archivo: INFORME-00008-2025_ES_UTI_HEVES(E).pdf
+[2025-09-08 13:34:31] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00008-2025_ES_UTI_HEVES(E)[FP].pdf
+[2025-09-08 13:34:31] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00008-2025_ES_UTI_HEVES(E).pdf
+[2025-09-08 13:34:31] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00008-2025_ES_UTI_HEVES(E).pdf
+[2025-09-08 13:34:31] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00008-2025_ES_UTI_HEVES(E)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00008-2025_ES_UTI_HEVES(E).pdf
+[2025-09-08 13:34:31] Actualizando BD para iCodTramite: 658075
+[2025-09-08 13:34:31] 🧹 Limpieza completada.
+[2025-09-08 13:34:31] === FIN PROCESO ===
+[2025-09-08 13:35:56] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-09-08 13:35:56] ZIP recibido: C:\AppServ\www\STDD_marchablanca/porAprobar_137_68bf21feb023c.signed.7z
+[2025-09-08 13:35:56] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\STDD_marchablanca/porAprobar_137_68bf21feb023c.signed.7z" -o"C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados" -y
+[2025-09-08 13:35:56] Código retorno: 0
+[2025-09-08 13:35:56] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 391483 bytes (383 KiB) |  | Extracting archive: C:\AppServ\www\STDD_marchablanca\porAprobar_137_68bf21feb023c.signed.7z | -- | Path = C:\AppServ\www\STDD_marchablanca\porAprobar_137_68bf21feb023c.signed.7z | Type = 7z | Physical Size = 391483 | Headers Size = 176 | Method = LZMA2:23 | Solid = - | Blocks = 1 |  | Everything is Ok |  | Size:       805609 | Compressed: 391483
+[2025-09-08 13:35:56] Procesando archivo: INFORME-00009-2025_ES_UTI_HEVES(E).pdf
+[2025-09-08 13:35:56] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00009-2025_ES_UTI_HEVES(E)[FP].pdf
+[2025-09-08 13:35:56] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00009-2025_ES_UTI_HEVES(E).pdf
+[2025-09-08 13:35:56] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00009-2025_ES_UTI_HEVES(E).pdf
+[2025-09-08 13:35:56] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00009-2025_ES_UTI_HEVES(E)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/INFORME-00009-2025_ES_UTI_HEVES(E).pdf
+[2025-09-08 13:35:56] Actualizando BD para iCodTramite: 658078
+[2025-09-08 13:35:56] 🧹 Limpieza completada.
+[2025-09-08 13:35:56] === FIN PROCESO ===
+[2025-09-08 15:57:12] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-09-08 15:57:12] ZIP recibido: C:\AppServ\www\STDD_marchablanca/porAprobar_59_68bf430876502.signed.7z
+[2025-09-08 15:57:12] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\STDD_marchablanca/porAprobar_59_68bf430876502.signed.7z" -o"C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados" -y
+[2025-09-08 15:57:12] Código retorno: 0
+[2025-09-08 15:57:12] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 312026 bytes (305 KiB) |  | Extracting archive: C:\AppServ\www\STDD_marchablanca\porAprobar_59_68bf430876502.signed.7z | -- | Path = C:\AppServ\www\STDD_marchablanca\porAprobar_59_68bf430876502.signed.7z | Type = 7z | Physical Size = 312026 | Headers Size = 219 | Method = LZMA2:23 | Solid = - | Blocks = 1 |  | Everything is Ok |  | Size:       371979 | Compressed: 312026
+[2025-09-08 15:57:12] Procesando archivo: NOTA-INFORMATIVA-REQUERIMIENTO-00001-2025_UCII_HEVES(E).pdf
+[2025-09-08 15:57:12] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00001-2025_UCII_HEVES(E)[FP].pdf
+[2025-09-08 15:57:12] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00001-2025_UCII_HEVES(E).pdf
+[2025-09-08 15:57:12] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00001-2025_UCII_HEVES(E).pdf
+[2025-09-08 15:57:12] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00001-2025_UCII_HEVES(E)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00001-2025_UCII_HEVES(E).pdf
+[2025-09-08 15:57:12] Actualizando BD para iCodTramite: 658092
+[2025-09-08 15:57:12] 🧹 Limpieza completada.
+[2025-09-08 15:57:12] === FIN PROCESO ===
+[2025-09-09 12:12:14] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-09-09 12:12:14] ZIP recibido: C:\AppServ\www\STDD_marchablanca/porAprobar_129_68c05fb2ac119.signed.7z
+[2025-09-09 12:12:14] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\STDD_marchablanca/porAprobar_129_68c05fb2ac119.signed.7z" -o"C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados" -y
+[2025-09-09 12:12:14] Código retorno: 0
+[2025-09-09 12:12:14] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 307865 bytes (301 KiB) |  | Extracting archive: C:\AppServ\www\STDD_marchablanca\porAprobar_129_68c05fb2ac119.signed.7z | -- | Path = C:\AppServ\www\STDD_marchablanca\porAprobar_129_68c05fb2ac119.signed.7z | Type = 7z | Physical Size = 307865 | Headers Size = 188 | Method = LZMA2:23 | Solid = - | Blocks = 1 |  | Everything is Ok |  | Size:       368805 | Compressed: 307865
+[2025-09-09 12:12:14] Procesando archivo: NOTA-INFORMATIVA-00093-2025_UTI_HEVES(e).pdf
+[2025-09-09 12:12:14] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00093-2025_UTI_HEVES(e)[FP].pdf
+[2025-09-09 12:12:14] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00093-2025_UTI_HEVES(e).pdf
+[2025-09-09 12:12:14] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00093-2025_UTI_HEVES(e).pdf
+[2025-09-09 12:12:14] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00093-2025_UTI_HEVES(e)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00093-2025_UTI_HEVES(e).pdf
+[2025-09-09 12:12:14] Actualizando BD para iCodTramite: 658102
+[2025-09-09 12:12:14] 🧹 Limpieza completada.
+[2025-09-09 12:12:14] === FIN PROCESO ===
+[2025-09-09 12:42:01] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-09-09 12:42:01] ZIP recibido: C:\AppServ\www\STDD_marchablanca/porAprobar_129_68c066d6baddd.signed.7z
+[2025-09-09 12:42:01] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\STDD_marchablanca/porAprobar_129_68c066d6baddd.signed.7z" -o"C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados" -y
+[2025-09-09 12:42:01] Código retorno: 0
+[2025-09-09 12:42:01] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 307828 bytes (301 KiB) |  | Extracting archive: C:\AppServ\www\STDD_marchablanca\porAprobar_129_68c066d6baddd.signed.7z | -- | Path = C:\AppServ\www\STDD_marchablanca\porAprobar_129_68c066d6baddd.signed.7z | Type = 7z | Physical Size = 307828 | Headers Size = 188 | Method = LZMA2:23 | Solid = - | Blocks = 1 |  | Everything is Ok |  | Size:       368808 | Compressed: 307828
+[2025-09-09 12:42:01] Procesando archivo: NOTA-INFORMATIVA-00094-2025_UTI_HEVES(e).pdf
+[2025-09-09 12:42:01] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00094-2025_UTI_HEVES(e)[FP].pdf
+[2025-09-09 12:42:01] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00094-2025_UTI_HEVES(e).pdf
+[2025-09-09 12:42:01] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00094-2025_UTI_HEVES(e).pdf
+[2025-09-09 12:42:01] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00094-2025_UTI_HEVES(e)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00094-2025_UTI_HEVES(e).pdf
+[2025-09-09 12:42:01] Actualizando BD para iCodTramite: 658104
+[2025-09-09 12:42:01] 🧹 Limpieza completada.
+[2025-09-09 12:42:01] === FIN PROCESO ===
+[2025-09-09 12:52:27] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-09-09 12:52:27] ZIP recibido: C:\AppServ\www\STDD_marchablanca/porAprobar_1882_68c06947060c0.signed.7z
+[2025-09-09 12:52:27] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\STDD_marchablanca/porAprobar_1882_68c06947060c0.signed.7z" -o"C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados" -y
+[2025-09-09 12:52:27] Código retorno: 0
+[2025-09-09 12:52:27] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 305943 bytes (299 KiB) |  | Extracting archive: C:\AppServ\www\STDD_marchablanca\porAprobar_1882_68c06947060c0.signed.7z | -- | Path = C:\AppServ\www\STDD_marchablanca\porAprobar_1882_68c06947060c0.signed.7z | Type = 7z | Physical Size = 305943 | Headers Size = 192 | Method = LZMA2:23 | Solid = - | Blocks = 1 |  | Everything is Ok |  | Size:       365538 | Compressed: 305943
+[2025-09-09 12:52:27] Procesando archivo: NOTA-INFORMATIVA-00071-2025_UL_OA_HEVES(e).pdf
+[2025-09-09 12:52:27] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00071-2025_UL_OA_HEVES(e)[FP].pdf
+[2025-09-09 12:52:27] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00071-2025_UL_OA_HEVES(e).pdf
+[2025-09-09 12:52:27] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00071-2025_UL_OA_HEVES(e).pdf
+[2025-09-09 12:52:27] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00071-2025_UL_OA_HEVES(e)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00071-2025_UL_OA_HEVES(e).pdf
+[2025-09-09 12:52:27] Actualizando BD para iCodTramite: 657985
+[2025-09-09 12:52:27] 🧹 Limpieza completada.
+[2025-09-09 12:52:27] === FIN PROCESO ===
+[2025-09-09 13:17:01] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-09-09 13:17:01] ZIP recibido: C:\AppServ\www\STDD_marchablanca/porAprobar_129_68c06f0eecc2d.signed.7z
+[2025-09-09 13:17:01] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\STDD_marchablanca/porAprobar_129_68c06f0eecc2d.signed.7z" -o"C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados" -y
+[2025-09-09 13:17:01] Código retorno: 0
+[2025-09-09 13:17:01] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 307899 bytes (301 KiB) |  | Extracting archive: C:\AppServ\www\STDD_marchablanca\porAprobar_129_68c06f0eecc2d.signed.7z | -- | Path = C:\AppServ\www\STDD_marchablanca\porAprobar_129_68c06f0eecc2d.signed.7z | Type = 7z | Physical Size = 307899 | Headers Size = 216 | Method = LZMA2:23 | Solid = - | Blocks = 1 |  | Everything is Ok |  | Size:       368864 | Compressed: 307899
+[2025-09-09 13:17:01] Procesando archivo: NOTA-INFORMATIVA-REQUERIMIENTO-00010-2025_UTI_HEVES(e).pdf
+[2025-09-09 13:17:01] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00010-2025_UTI_HEVES(e)[FP].pdf
+[2025-09-09 13:17:01] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00010-2025_UTI_HEVES(e).pdf
+[2025-09-09 13:17:01] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00010-2025_UTI_HEVES(e).pdf
+[2025-09-09 13:17:01] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00010-2025_UTI_HEVES(e)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-REQUERIMIENTO-00010-2025_UTI_HEVES(e).pdf
+[2025-09-09 13:17:01] Actualizando BD para iCodTramite: 658108
+[2025-09-09 13:17:01] 🧹 Limpieza completada.
+[2025-09-09 13:17:01] === FIN PROCESO ===
+[2025-09-09 16:06:05] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-09-09 16:06:05] ZIP recibido: C:\AppServ\www\STDD_marchablanca/porAprobar_137_68c096ab4675c.signed.7z
+[2025-09-09 16:06:05] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\STDD_marchablanca/porAprobar_137_68c096ab4675c.signed.7z" -o"C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados" -y
+[2025-09-09 16:06:05] Código retorno: 0
+[2025-09-09 16:06:05] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 382268 bytes (374 KiB) |  | Extracting archive: C:\AppServ\www\STDD_marchablanca\porAprobar_137_68c096ab4675c.signed.7z | -- | Path = C:\AppServ\www\STDD_marchablanca\porAprobar_137_68c096ab4675c.signed.7z | Type = 7z | Physical Size = 382268 | Headers Size = 194 | Method = LZMA2:23 | Solid = - | Blocks = 1 |  | Everything is Ok |  | Size:       442713 | Compressed: 382268
+[2025-09-09 16:06:05] Procesando archivo: NOTA-INFORMATIVA-00017-2025_ES_UTI_HEVES(E).pdf
+[2025-09-09 16:06:05] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00017-2025_ES_UTI_HEVES(E)[FP].pdf
+[2025-09-09 16:06:05] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00017-2025_ES_UTI_HEVES(E).pdf
+[2025-09-09 16:06:05] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00017-2025_ES_UTI_HEVES(E).pdf
+[2025-09-09 16:06:05] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00017-2025_ES_UTI_HEVES(E)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00017-2025_ES_UTI_HEVES(E).pdf
+[2025-09-09 16:06:05] Actualizando BD para iCodTramite: 658114
+[2025-09-09 16:06:05] 🧹 Limpieza completada.
+[2025-09-09 16:06:05] === FIN PROCESO ===
+[2025-09-09 21:09:32] === INICIO PROCESO FIRMA POR APROBAR ===
+[2025-09-09 21:09:32] ZIP recibido: C:\AppServ\www\STDD_marchablanca/porAprobar_137_68c0ddcb8ca85.signed.7z
+[2025-09-09 21:09:32] Comando ejecutado: C:/7-Zip/7z.exe e "C:\AppServ\www\STDD_marchablanca/porAprobar_137_68c0ddcb8ca85.signed.7z" -o"C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados" -y
+[2025-09-09 21:09:32] Código retorno: 0
+[2025-09-09 21:09:32] Salida 7z:  | 7-Zip 23.01 (x64) : Copyright (c) 1999-2023 Igor Pavlov : 2023-06-20 |  | Scanning the drive for archives: | 1 file, 382159 bytes (374 KiB) |  | Extracting archive: C:\AppServ\www\STDD_marchablanca\porAprobar_137_68c0ddcb8ca85.signed.7z | -- | Path = C:\AppServ\www\STDD_marchablanca\porAprobar_137_68c0ddcb8ca85.signed.7z | Type = 7z | Physical Size = 382159 | Headers Size = 194 | Method = LZMA2:23 | Solid = - | Blocks = 1 |  | Everything is Ok |  | Size:       442593 | Compressed: 382159
+[2025-09-09 21:09:33] Procesando archivo: NOTA-INFORMATIVA-00018-2025_ES_UTI_HEVES(E).pdf
+[2025-09-09 21:09:33] Firmado esperado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00018-2025_ES_UTI_HEVES(E)[FP].pdf
+[2025-09-09 21:09:33] Original destino: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00018-2025_ES_UTI_HEVES(E).pdf
+[2025-09-09 21:09:33] 🗑️ Original eliminado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00018-2025_ES_UTI_HEVES(E).pdf
+[2025-09-09 21:09:33] ✅ Renombrado: C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00018-2025_ES_UTI_HEVES(E)[FP].pdf → C:\AppServ\www\STDD_marchablanca/cDocumentosFirmados/NOTA-INFORMATIVA-00018-2025_ES_UTI_HEVES(E).pdf
+[2025-09-09 21:09:33] Actualizando BD para iCodTramite: 658119
+[2025-09-09 21:09:33] 🧹 Limpieza completada.
+[2025-09-09 21:09:33] === FIN PROCESO ===

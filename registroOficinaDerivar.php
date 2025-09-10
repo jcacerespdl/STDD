@@ -28,6 +28,10 @@ try {
         throw new Exception("Faltan datos obligatorios.");
     }
 
+    // Regla de negocio: Proveído (97) directo; lo demás Por Aprobar
+    $esProveido = ((int)$tipoDocumento === 97);
+    $nFlgEnvio  = $esProveido ? 1 : 0;   // 1 = directo, 0 = por aprobar
+
     // Obtener extensión desde el movimiento que está siendo derivado
     $sqlExt = "SELECT extension FROM Tra_M_Tramite_Movimientos WHERE iCodMovimiento = ?";
     $stmtExt = sqlsrv_query($cnx, $sqlExt, [$_POST['iCodMovimiento']]);
@@ -52,7 +56,7 @@ try {
     $paramsTramite = [
         $tipoDocumento,     $correlativo,           $asunto,        $observaciones,     $iCodOficinaOrigen,         $iCodTrabajadorOrigen,
         $fFecRegistro,      $fFecRegistro,          $extension,     2,                  $expediente,                1, 
-        0,                  0,                      0,              $nNumFolio,         $fase,                      $cTipoBien, 
+        $nFlgEnvio,         0,                      0,              $nNumFolio,         $fase,                      $cTipoBien, 
         $nTienePedidoSiga,  $iCodTramiteRaiz,       1
     ];
     $stmt = sqlsrv_query($cnx, $sqlInsertTramite, $paramsTramite);
